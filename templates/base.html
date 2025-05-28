@@ -109,7 +109,7 @@
     </header>
 
     <!-- 主内容区域 -->
-    <main class="container py-4">
+    <main class="container py-4" id="main-content">
         {% if messages %}
             {% for message in messages %}
                 <div class="alert {% if message.tags == 'success' %}alert-success{% elif message.tags == 'error' %}alert-danger{% elif message.tags == 'info' %}alert-info{% else %}alert-info{% endif %} mb-4">
@@ -124,10 +124,45 @@
     </main>
 
     <!-- 底部区域 -->
-    <footer>
+    <footer class="footer">
         {% block footer %}
-        <div class="container text-center py-4 text-muted">
-            <p class="text-small">© {% now "Y" %} NovaCloud. 保留所有权利。</p>
+        <div class="footer-divider"></div>
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h5 class="footer-title">了解我们</h5>
+                    <div class="footer-links-grid">
+                        <a href="#">关于我们</a>
+                        <a href="#">加入我们</a>
+                        <a href="#">合作伙伴</a>
+                        <a href="#">使用条款</a>
+                    </div>
+                </div>
+                
+                <div class="footer-section">
+                    <h5 class="footer-title">开发者</h5>
+                    <div class="footer-links-grid">
+                        <a href="#">开发文档</a>
+                        <a href="#">API接口</a>
+                        <a href="#">示例代码</a>
+                        <a href="#">协议文档</a>
+                    </div>
+                </div>
+                
+                <div class="footer-section">
+                    <h5 class="footer-title">联系方式</h5>
+                    <div class="footer-links-grid">
+                        <a href="#"><i class="fab fa-qq"></i> QQ交流群</a>
+                        <a href="#"><i class="fab fa-weixin"></i> 官方微信</a>
+                        <a href="#"><i class="fas fa-envelope"></i> 电子邮件</a>
+                        <a href="#"><i class="fab fa-github"></i> GitHub</a>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="footer-bottom text-center py-3">
+                <p class="text-small mb-0">© {% now "Y" %} NovaCloud. 保留所有权利。</p>
+            </div>
         </div>
         {% endblock footer %}
     </footer>

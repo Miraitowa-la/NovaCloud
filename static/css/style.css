@@ -102,6 +102,8 @@ html[data-theme='dark'] {
 }
 
 body {
+    display: flex;
+    flex-direction: column;
     font-family: var(--font-family-sans-serif);
     font-size: 1rem;
     line-height: 1.6;
@@ -111,6 +113,10 @@ body {
     -moz-osx-font-smoothing: grayscale;
     transition: background-color 0.2s ease-in-out, color 0.2s ease-in-out;
     margin: 0;
+}
+
+#main-content {
+    flex: 1 0 auto;
 }
 
 /* 排版 */
@@ -1032,4 +1038,147 @@ html[data-theme='dark'] .alert-info {
     color: var(--text-default);
     background-color: transparent;
     border: 0;
+}
+
+/* 页面整体布局 - 固定底部的footer */
+html, body {
+    height: 100%;
+}
+
+/* 页脚样式 */
+.footer {
+    flex-shrink: 0;
+    background-color: var(--background-default);
+    color: var(--text-default);
+    padding-top: 1rem;
+    margin-top: 2rem;
+    width: 100%;
+}
+
+.footer-divider {
+    height: 1px;
+    background-color: var(--border-default);
+    margin-bottom: 1.5rem;
+}
+
+.footer-content {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    margin-bottom: 1rem;
+}
+
+.footer-section {
+    flex: 1;
+    min-width: 200px;
+    margin-bottom: 1.5rem;
+    padding: 0 1rem;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.footer-title {
+    font-size: 1rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+    color: var(--text-default);
+}
+
+.footer-links {
+    list-style: none;
+    padding-left: 0;
+    margin-bottom: 0;
+    text-align: center;
+    width: auto;
+}
+
+.footer-links li {
+    margin-bottom: 0.5rem;
+    text-align: center;
+}
+
+.footer-links a {
+    color: var(--text-muted);
+    text-decoration: none;
+    transition: color 0.15s ease-in-out;
+    font-size: 0.875rem;
+    display: inline-block;
+    text-align: center;
+}
+
+.footer-links a:hover {
+    color: var(--color-primary);
+    text-decoration: none;
+}
+
+.footer-links i {
+    margin-right: 0.35rem;
+    color: var(--text-muted);
+    text-align: center;
+    width: 1.25em;
+}
+
+.footer-links a:hover i {
+    color: var(--color-primary);
+}
+
+.footer-bottom {
+    border-top: 1px solid var(--border-muted);
+    color: var(--text-muted);
+}
+
+/* 响应式调整 */
+@media (max-width: 768px) {
+    .footer-content {
+        flex-direction: column;
+    }
+    
+    .footer-section {
+        width: 100%;
+        padding: 0 1rem;
+    }
+}
+
+/* 页脚链接网格布局 */
+.footer-links-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr; /* 二列布局 */
+    gap: 0.75rem 1.5rem; /* 行间距和列间距 */
+    width: 100%;
+    max-width: 280px; /* 限制最大宽度 */
+}
+
+.footer-links-grid a {
+    color: var(--text-muted);
+    text-decoration: none;
+    transition: color 0.15s ease-in-out;
+    font-size: 0.875rem;
+    text-align: center;
+    padding: 0.25rem;
+}
+
+.footer-links-grid a:hover {
+    color: var(--color-primary);
+    text-decoration: none;
+}
+
+.footer-links-grid i {
+    margin-right: 0.35rem;
+    color: var(--text-muted);
+    text-align: center;
+    width: 1.25em; /* 让所有图标宽度一致 */
+}
+
+.footer-links-grid a:hover i {
+    color: var(--color-primary);
+}
+
+/* 响应式调整 */
+@media (max-width: 576px) {
+    .footer-links-grid {
+        grid-template-columns: 1fr; /* 小屏幕时改为单列 */
+        gap: 0.5rem;
+    }
 } 
