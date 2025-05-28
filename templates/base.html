@@ -21,28 +21,68 @@
         {% block navbar %}
         <nav class="navbar">
             <div class="container d-flex justify-content-between align-items-center">
-                <a href="{% url 'core:index' %}" class="navbar-brand">NovaCloud</a>
+                <!-- 品牌/Logo -->
+                <a href="{% url 'core:index' %}" class="navbar-brand">
+                    <i class="fas fa-cloud"></i> NovaCloud
+                </a>
                 
+                <!-- 主要导航链接 (左侧) -->
+                <ul class="navbar-nav mr-auto">
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.resolver_match.view_name == 'core:index' %}active{% endif %}" href="{% url 'core:index' %}">
+                            <i class="fas fa-tachometer-alt"></i> 仪表盘
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#">
+                            <i class="fas fa-cubes"></i> 项目
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#">
+                            <i class="fas fa-microchip"></i> 设备
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#">
+                            <i class="fas fa-cogs"></i> 策略
+                        </a>
+                    </li>
+                </ul>
+                
+                <!-- 用户状态区域与主题切换 (右侧) -->
                 <div class="d-flex align-items-center">
-                    <!-- 用户认证状态 -->
                     {% if user.is_authenticated %}
-                        <span class="mr-3 text-muted">
-                            <i class="fas fa-user"></i> {{ user.username }}
-                        </span>
-                        <a href="{% url 'accounts:logout' %}" class="btn btn-outline-primary btn-sm mr-3">
-                            <i class="fas fa-sign-out-alt"></i> 登出
-                        </a>
+                        <div class="user-profile">
+                            <!-- 用户头像占位符 -->
+                            <span class="fa-stack fa-1x">
+                                <i class="fas fa-circle fa-stack-2x"></i>
+                                <i class="fas fa-user fa-stack-1x fa-inverse"></i>
+                            </span>
+                            <!-- 用户名 -->
+                            <span class="text-muted">{{ user.username }}</span>
+                            <!-- 登出链接 -->
+                            <a href="{% url 'accounts:logout' %}" class="nav-link">
+                                <i class="fas fa-sign-out-alt"></i> 登出
+                            </a>
+                        </div>
                     {% else %}
-                        <a href="{% url 'accounts:login' %}" class="btn btn-outline-primary btn-sm mr-2">
-                            <i class="fas fa-sign-in-alt"></i> 登录
-                        </a>
-                        <a href="{% url 'accounts:register' %}" class="btn btn-primary btn-sm mr-3">
-                            <i class="fas fa-user-plus"></i> 注册
-                        </a>
+                        <ul class="navbar-nav">
+                            <li class="nav-item">
+                                <a class="nav-link" href="{% url 'accounts:login' %}">
+                                    <i class="fas fa-sign-in-alt"></i> 登录
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="btn btn-primary btn-sm nav-register-btn" href="{% url 'accounts:register' %}">
+                                    注册
+                                </a>
+                            </li>
+                        </ul>
                     {% endif %}
                     
                     <!-- 主题切换按钮 -->
-                    <button id="themeToggleBtn" class="theme-toggle">
+                    <button id="themeToggleBtn" class="theme-toggle ml-3">
                         <i class="fas fa-moon"></i>
                     </button>
                 </div>
@@ -53,6 +93,14 @@
 
     <!-- 主内容区域 -->
     <main class="container py-4">
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert {% if message.tags == 'success' %}alert-success{% elif message.tags == 'error' %}alert-danger{% elif message.tags == 'info' %}alert-info{% else %}alert-info{% endif %} mb-4">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endif %}
+        
         {% block content %}
         <!-- 页面内容将在子模板中实现 -->
         {% endblock content %}
