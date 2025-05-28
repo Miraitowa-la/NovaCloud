@@ -2,6 +2,8 @@ from django import forms
 from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
 from django.contrib.auth.models import User
 
+from .models import UserProfile
+
 
 class UserRegistrationForm(UserCreationForm):
     """
@@ -71,4 +73,53 @@ class UserLoginForm(AuthenticationForm):
         self.fields['password'].widget.attrs.update({
             'class': 'form-control',
             'placeholder': '请输入您的密码'
-        }) 
+        })
+
+
+class UserProfileEditForm(forms.ModelForm):
+    """
+    用户个人资料编辑表单
+    用于编辑UserProfile中的字段
+    """
+    # 使用URLField替代ImageField，因为我们现在只处理头像URL
+    avatar_url = forms.URLField(
+        required=False,
+        widget=forms.URLInput(attrs={
+            'class': 'form-control',
+            'placeholder': '请输入头像URL'
+        })
+    )
+    
+    class Meta:
+        model = UserProfile
+        fields = ('phone_number',)  # 不直接包含avatar，因为我们用avatar_url代替
+        widgets = {
+            'phone_number': forms.TextInput(attrs={
+                'class': 'form-control', 
+                'placeholder': '请输入您的电话号码'
+            })
+        }
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['phone_number'].required = False
+        
+        # 如果实例存在且有avatar，将其URL放入avatar_url字段
+        if self.instance and self.instance.avatar:
+            self.fields['avatar_url'].initial = self.instance.avatar.url
+    
+    def save(self, commit=True):
+        # 暂不保存到数据库
+        profile = super().save(commit=False)
+        
+        # 处理avatar_url
+        avatar_url = self.cleaned_data.get('avatar_url')
+        if avatar_url:
+            # 在实际环境中，这里应该下载图片并保存
+            # 但现在我们只是将URL保存到avatar字段
+            profile.avatar = avatar_url
+        
+        if commit:
+            profile.save()
+        
+        return profile 

@@ -61,7 +61,10 @@
                             </span>
                             <!-- 用户名 -->
                             <span class="text-muted">{{ user.username }}</span>
-                            <!-- 登出链接 -->
+                            <!-- 个人资料和登出链接 -->
+                            <a href="{% url 'accounts:profile' %}" class="nav-link">
+                                <i class="fas fa-user-cog"></i> 个人资料
+                            </a>
                             <a href="{% url 'accounts:logout' %}" class="nav-link">
                                 <i class="fas fa-sign-out-alt"></i> 登出
                             </a>

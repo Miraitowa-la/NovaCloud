@@ -996,4 +996,23 @@ body.dark-mode .alert-info {
 .nav-register-btn {
     margin-left: 0.5rem;
     padding: 0.375rem 0.75rem;
+}
+
+/* 头像样式 */
+.img-avatar {
+    border: 3px solid var(--background-default);
+    box-shadow: var(--shadow-sm);
+    background-color: var(--background-muted);
+}
+
+.form-control-plaintext {
+    display: block;
+    width: 100%;
+    padding: 0.5rem 0;
+    margin-bottom: 0;
+    font-size: 0.875rem;
+    line-height: 1.5;
+    color: var(--text-default);
+    background-color: transparent;
+    border: 0;
 } 

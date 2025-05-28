@@ -1,8 +1,9 @@
 from django.shortcuts import render, redirect
 from django.contrib.auth import login, authenticate, logout
 from django.contrib import messages
+from django.contrib.auth.decorators import login_required
 
-from .forms import UserRegistrationForm, UserLoginForm
+from .forms import UserRegistrationForm, UserLoginForm, UserProfileEditForm
 from .models import UserProfile
 
 def register_view(request):
@@ -96,3 +97,62 @@ def logout_view(request):
     
     # 重定向到首页
     return redirect('core:index')
+
+
+@login_required
+def profile_view(request):
+    """
+    用户个人资料查看视图
+    显示当前登录用户的个人资料
+    """
+    # 获取当前用户的个人资料
+    try:
+        user_profile = UserProfile.objects.get(user=request.user)
+    except UserProfile.DoesNotExist:
+        # 如果个人资料不存在，创建一个
+        user_profile = UserProfile.objects.create(user=request.user)
+    
+    # 渲染个人资料模板
+    return render(request, 'accounts/profile.html', {
+        'profile': user_profile,
+        'page_title': '个人资料'
+    })
+
+
+@login_required
+def profile_edit_view(request):
+    """
+    用户个人资料编辑视图
+    处理用户个人资料编辑表单的提交和验证
+    """
+    # 获取当前用户的个人资料
+    try:
+        user_profile = UserProfile.objects.get(user=request.user)
+    except UserProfile.DoesNotExist:
+        # 如果个人资料不存在，创建一个
+        user_profile = UserProfile.objects.create(user=request.user)
+    
+    if request.method == 'POST':
+        form = UserProfileEditForm(request.POST, instance=user_profile)
+        if form.is_valid():
+            # 保存个人资料
+            form.save()
+            
+            # 添加成功消息
+            messages.success(request, '个人资料已成功更新。')
+            
+            # 重定向到个人资料查看页面
+            return redirect('accounts:profile')
+        else:
+            # 添加错误消息
+            messages.error(request, '个人资料更新失败，请检查您输入的信息。')
+    else:
+        # GET请求，显示当前个人资料
+        form = UserProfileEditForm(instance=user_profile)
+    
+    # 渲染个人资料编辑模板
+    return render(request, 'accounts/profile_edit.html', {
+        'form': form,
+        'profile': user_profile,
+        'page_title': '编辑个人资料'
+    })

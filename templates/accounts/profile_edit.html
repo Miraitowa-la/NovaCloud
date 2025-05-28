@@ -1,0 +1,88 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ page_title }}{% endblock title %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8 col-lg-6">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="card-title">编辑个人资料</h5>
+                <a href="{% url 'accounts:profile' %}" class="btn btn-outline-primary btn-sm">
+                    <i class="fas fa-arrow-left"></i> 返回资料
+                </a>
+            </div>
+            <div class="card-body">
+                <form method="post" novalidate>
+                    {% csrf_token %}
+                    
+                    <!-- 表单非字段错误 -->
+                    {% if form.non_field_errors %}
+                        <div class="alert alert-danger mb-4">
+                            {% for error in form.non_field_errors %}
+                                {{ error }}
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                    
+                    <!-- 头像URL -->
+                    <div class="form-group">
+                        <label for="{{ form.avatar_url.id_for_label }}" class="form-label">头像URL</label>
+                        {{ form.avatar_url }}
+                        {% if form.avatar_url.errors %}
+                            <small class="text-danger">
+                                {% for error in form.avatar_url.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </small>
+                        {% else %}
+                            <small class="text-muted">输入一个可用的图片URL，留空则使用默认头像</small>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- 预览当前头像 -->
+                    {% if profile.avatar %}
+                        <div class="text-center mb-3">
+                            <p class="text-muted">当前头像：</p>
+                            <img src="{{ profile.avatar }}" alt="{{ user.username }}" class="img-avatar rounded-circle" style="width: 100px; height: 100px; object-fit: cover;">
+                        </div>
+                    {% endif %}
+                    
+                    <!-- 手机号码 -->
+                    <div class="form-group">
+                        <label for="{{ form.phone_number.id_for_label }}" class="form-label">手机号码</label>
+                        {{ form.phone_number }}
+                        {% if form.phone_number.errors %}
+                            <small class="text-danger">
+                                {% for error in form.phone_number.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </small>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- 基本信息 (只读) -->
+                    <div class="form-group">
+                        <label class="form-label">用户名</label>
+                        <input type="text" class="form-control" value="{{ user.username }}" readonly>
+                        <small class="text-muted">用户名不可修改</small>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">邮箱</label>
+                        <input type="email" class="form-control" value="{{ user.email }}" readonly>
+                        <small class="text-muted">邮箱不可在此修改</small>
+                    </div>
+                    
+                    <!-- 提交按钮 -->
+                    <div class="form-group mt-4">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i> 保存修改
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock content %} 
