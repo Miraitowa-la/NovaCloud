@@ -50,8 +50,7 @@ class UserProfile(models.Model):
         related_name='child_profiles',
         verbose_name="上级用户"
     )
-    avatar = models.ImageField(
-        upload_to='avatars/',
+    avatar = models.URLField(
         null=True,
         blank=True,
         verbose_name="头像"

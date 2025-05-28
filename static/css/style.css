@@ -101,6 +101,18 @@ html[data-theme='dark'] {
     padding: 0;
 }
 
+/* 隐藏浏览器滚动条但保持滚动功能 */
+html {
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* IE 和 Edge */
+    overflow-y: scroll;
+}
+
+/* Chrome, Safari 和 新版 Edge */
+html::-webkit-scrollbar {
+    display: none;
+}
+
 body {
     display: flex;
     flex-direction: column;
@@ -1181,4 +1193,26 @@ html, body {
         grid-template-columns: 1fr; /* 小屏幕时改为单列 */
         gap: 0.5rem;
     }
+}
+
+/* 登录和注册按钮样式 */
+.login-btn, .register-btn {
+    width: 100%;  /* 强制100%宽度 */
+    display: flex;
+    justify-content: center;  /* 水平居中 */
+    align-items: center;      /* 垂直居中 */
+    padding: 0.6rem 1rem;     /* 上下内边距更大 */
+    font-weight: 500;
+    font-size: 1rem;
+    margin: 0 auto;           /* 水平居中定位 */
+}
+
+/* 导航栏头像样式 */
+.nav-avatar {
+    width: 30px;
+    height: 30px;
+    object-fit: cover;
+    border: 2px solid var(--background-default);
+    box-shadow: var(--shadow-sm);
+    margin-right: 0.5rem;
 } 

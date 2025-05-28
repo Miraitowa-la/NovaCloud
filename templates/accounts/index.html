@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}
+    欢迎来到 NovaCloud
+{% endblock title %}
+
+{% block content %}
+    <div class="container py-5">
+        <div class="row">
+            <div class="col-md-7 mb-4">
+                <h1 class="mb-4">欢迎来到 NovaCloud</h1>
+                <p class="lead">NovaCloud 是一个强大的物联网平台，帮助您连接、监控和管理各种设备。</p>
+                <p class="mb-4">通过我们的平台，您可以轻松创建项目、添加设备，并构建自动化策略，让您的物联网应用更加智能。</p>
+                
+                {% if not user.is_authenticated %}
+                <div class="mt-4">
+                    <a href="{% url 'accounts:register' %}" class="btn btn-primary btn-lg mr-3">
+                        <i class="fas fa-user-plus"></i> 立即注册
+                    </a>
+                    <a href="{% url 'accounts:login' %}" class="btn btn-outline-primary btn-lg">
+                        <i class="fas fa-sign-in-alt"></i> 登录
+                    </a>
+                </div>
+                {% else %}
+                <div class="mt-4">
+                    <a href="#" class="btn btn-primary btn-lg">
+                        <i class="fas fa-cubes"></i> 我的项目
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+            
+            <div class="col-md-5">
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="card-title">平台功能</h5>
+                    </div>
+                    <div class="card-body">
+                        <ul>
+                            <li>创建物联网项目</li>
+                            <li>添加和管理智能设备</li>
+                            <li>实时数据监控与可视化</li>
+                            <li>强大的自动化策略引擎</li>
+                            <li>多级用户权限控制</li>
+                            <li>安全的设备通信机制</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock content %} 

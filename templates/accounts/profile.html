@@ -26,39 +26,60 @@
                     <p class="text-muted">{{ user.email }}</p>
                 </div>
                 
-                <div class="profile-info">
-                    <div class="form-group row">
-                        <label class="col-sm-4 col-form-label">用户名</label>
-                        <div class="col-sm-8">
-                            <p class="form-control-plaintext">{{ user.username }}</p>
+                <div class="profile-info mt-4">
+                    <div class="row g-3">
+                        <!-- 第一行 -->
+                        <div class="col-md-6">
+                            <!-- 姓名 -->
+                            <div class="card h-100">
+                                <div class="card-body">
+                                    <h6 class="card-subtitle mb-2 text-muted">姓名</h6>
+                                    <p class="card-text">
+                                        {% if user.first_name or user.last_name %}
+                                            {{ user.last_name }}{{ user.first_name }}
+                                        {% else %}
+                                            <span class="text-muted">未设置</span>
+                                        {% endif %}
+                                    </p>
+                                </div>
+                            </div>
                         </div>
-                    </div>
-                    
-                    <div class="form-group row">
-                        <label class="col-sm-4 col-form-label">邮箱</label>
-                        <div class="col-sm-8">
-                            <p class="form-control-plaintext">{{ user.email }}</p>
+                        
+                        <div class="col-md-6">
+                            <!-- 手机号码 -->
+                            <div class="card h-100">
+                                <div class="card-body">
+                                    <h6 class="card-subtitle mb-2 text-muted">手机号码</h6>
+                                    <p class="card-text">
+                                        {% if profile.phone_number %}
+                                            {{ profile.phone_number }}
+                                        {% else %}
+                                            <span class="text-muted">未设置</span>
+                                        {% endif %}
+                                    </p>
+                                </div>
+                            </div>
                         </div>
-                    </div>
-                    
-                    <div class="form-group row">
-                        <label class="col-sm-4 col-form-label">手机号码</label>
-                        <div class="col-sm-8">
-                            <p class="form-control-plaintext">{{ profile.phone_number|default:"未设置" }}</p>
+                        
+                        <!-- 第二行 -->
+                        <div class="col-md-6">
+                            <!-- 注册时间 -->
+                            <div class="card h-100">
+                                <div class="card-body">
+                                    <h6 class="card-subtitle mb-2 text-muted">注册时间</h6>
+                                    <p class="card-text">{{ user.date_joined|date:"Y年m月d日 H:i" }}</p>
+                                </div>
+                            </div>
                         </div>
-                    </div>
-                    
-                    <div class="form-group row">
-                        <label class="col-sm-4 col-form-label">注册时间</label>
-                        <div class="col-sm-8">
-                            <p class="form-control-plaintext">{{ user.date_joined|date:"Y年m月d日 H:i" }}</p>
-                        </div>
-                    </div>
-                    
-                    <div class="form-group row">
-                        <label class="col-sm-4 col-form-label">上次登录</label>
-                        <div class="col-sm-8">
-                            <p class="form-control-plaintext">{{ user.last_login|date:"Y年m月d日 H:i" }}</p>
+                        
+                        <div class="col-md-6">
+                            <!-- 上次登录 -->
+                            <div class="card h-100">
+                                <div class="card-body">
+                                    <h6 class="card-subtitle mb-2 text-muted">上次登录</h6>
+                                    <p class="card-text">{{ user.last_login|date:"Y年m月d日 H:i" }}</p>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>

@@ -90,6 +90,25 @@ class UserProfileEditForm(forms.ModelForm):
         })
     )
     
+    # 添加姓和名字段，从User模型
+    first_name = forms.CharField(
+        required=False,
+        max_length=150,
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': '请输入您的名字'
+        })
+    )
+    
+    last_name = forms.CharField(
+        required=False,
+        max_length=150,
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': '请输入您的姓氏'
+        })
+    )
+    
     class Meta:
         model = UserProfile
         fields = ('phone_number',)  # 不直接包含avatar，因为我们用avatar_url代替
@@ -106,7 +125,12 @@ class UserProfileEditForm(forms.ModelForm):
         
         # 如果实例存在且有avatar，将其URL放入avatar_url字段
         if self.instance and self.instance.avatar:
-            self.fields['avatar_url'].initial = self.instance.avatar.url
+            self.fields['avatar_url'].initial = self.instance.avatar
+            
+        # 初始化姓名字段
+        if self.instance and self.instance.user:
+            self.fields['first_name'].initial = self.instance.user.first_name
+            self.fields['last_name'].initial = self.instance.user.last_name
     
     def save(self, commit=True):
         # 暂不保存到数据库
@@ -115,9 +139,14 @@ class UserProfileEditForm(forms.ModelForm):
         # 处理avatar_url
         avatar_url = self.cleaned_data.get('avatar_url')
         if avatar_url:
-            # 在实际环境中，这里应该下载图片并保存
-            # 但现在我们只是将URL保存到avatar字段
+            # 直接将URL保存到avatar字段
             profile.avatar = avatar_url
+            
+        # 保存姓名到User模型
+        if commit and profile.user:
+            profile.user.first_name = self.cleaned_data.get('first_name', '')
+            profile.user.last_name = self.cleaned_data.get('last_name', '')
+            profile.user.save(update_fields=['first_name', 'last_name'])
         
         if commit:
             profile.save()

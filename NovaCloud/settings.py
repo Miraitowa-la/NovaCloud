@@ -134,4 +134,10 @@ MEDIA_ROOT = BASE_DIR / 'media'
 
 # 用户认证相关设置
 LOGIN_URL = 'accounts:login'  # 用户访问受保护页面时重定向到此URL
-LOGIN_REDIRECT_URL = 'core:index'  # 用户成功登录后默认重定向到此URL
+LOGIN_REDIRECT_URL = 'accounts:index'  # 用户成功登录后默认重定向到此URL
+
+# 认证后端配置，添加支持邮箱登录的后端
+AUTHENTICATION_BACKENDS = [
+    'accounts.backends.EmailOrUsernameModelBackend',  # 自定义后端，支持邮箱登录
+    'django.contrib.auth.backends.ModelBackend',  # 默认后端，保留作为备用
+]

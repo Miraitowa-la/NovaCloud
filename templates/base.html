@@ -36,30 +36,20 @@
         <nav class="navbar">
             <div class="container d-flex justify-content-between align-items-center">
                 <!-- 品牌/Logo -->
-                <a href="{% url 'core:index' %}" class="navbar-brand">
+                <a href="{% url 'accounts:index' %}" class="navbar-brand">
                     <i class="fas fa-cloud"></i> NovaCloud
                 </a>
                 
                 <!-- 主要导航链接 (左侧) -->
                 <ul class="navbar-nav mr-auto">
                     <li class="nav-item">
-                        <a class="nav-link {% if request.resolver_match.view_name == 'core:index' %}active{% endif %}" href="{% url 'core:index' %}">
-                            <i class="fas fa-tachometer-alt"></i> 仪表盘
+                        <a class="nav-link {% if request.resolver_match.view_name == 'accounts:index' %}active{% endif %}" href="{% url 'accounts:index' %}">
+                            <i class="fas fa-home"></i> 首页
                         </a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" href="#">
                             <i class="fas fa-cubes"></i> 项目
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="#">
-                            <i class="fas fa-microchip"></i> 设备
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="#">
-                            <i class="fas fa-cogs"></i> 策略
                         </a>
                     </li>
                 </ul>
@@ -68,11 +58,15 @@
                 <div class="d-flex align-items-center">
                     {% if user.is_authenticated %}
                         <div class="user-profile">
-                            <!-- 用户头像占位符 -->
-                            <span class="fa-stack fa-1x">
-                                <i class="fas fa-circle fa-stack-2x"></i>
-                                <i class="fas fa-user fa-stack-1x fa-inverse"></i>
-                            </span>
+                            <!-- 用户头像 -->
+                            {% if user.profile.avatar %}
+                                <img src="{{ user.profile.avatar }}" alt="{{ user.username }}" class="nav-avatar rounded-circle">
+                            {% else %}
+                                <span class="fa-stack fa-1x">
+                                    <i class="fas fa-circle fa-stack-2x"></i>
+                                    <i class="fas fa-user fa-stack-1x fa-inverse"></i>
+                                </span>
+                            {% endif %}
                             <!-- 用户名 -->
                             <span class="text-muted">{{ user.username }}</span>
                             <!-- 个人资料和登出链接 -->
@@ -86,13 +80,13 @@
                     {% else %}
                         <ul class="navbar-nav">
                             <li class="nav-item">
-                                <a class="nav-link" href="{% url 'accounts:login' %}">
+                                <a class="nav-link {% if request.resolver_match.view_name == 'accounts:login' %}active{% endif %}" href="{% url 'accounts:login' %}">
                                     <i class="fas fa-sign-in-alt"></i> 登录
                                 </a>
                             </li>
                             <li class="nav-item">
-                                <a class="btn btn-primary btn-sm nav-register-btn" href="{% url 'accounts:register' %}">
-                                    注册
+                                <a class="nav-link {% if request.resolver_match.view_name == 'accounts:register' %}active{% endif %}" href="{% url 'accounts:register' %}">
+                                    <i class="fas fa-user-plus"></i> 注册
                                 </a>
                             </li>
                         </ul>

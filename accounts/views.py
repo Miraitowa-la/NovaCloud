@@ -6,6 +6,14 @@ from django.contrib.auth.decorators import login_required
 from .forms import UserRegistrationForm, UserLoginForm, UserProfileEditForm
 from .models import UserProfile
 
+def index(request):
+    """
+    网站主页视图
+    展示欢迎信息和平台介绍
+    """
+    return render(request, 'accounts/index.html')
+
+
 def register_view(request):
     """
     用户注册视图
@@ -65,7 +73,7 @@ def login_view(request):
                 if 'next' in request.POST and request.POST.get('next'):
                     return redirect(request.POST.get('next'))
                 else:
-                    return redirect('core:index')  # 默认重定向到首页
+                    return redirect('accounts:index')  # 默认重定向到首页
             else:
                 # 用户无效或未激活
                 messages.error(request, '登录失败：账户未激活或已被禁用。')
@@ -96,7 +104,7 @@ def logout_view(request):
     messages.info(request, '您已成功登出。')
     
     # 重定向到首页
-    return redirect('core:index')
+    return redirect('accounts:index')
 
 
 @login_required
