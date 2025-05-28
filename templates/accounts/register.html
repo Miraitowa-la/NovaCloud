@@ -1,0 +1,104 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ page_title }}{% endblock title %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8 col-lg-6">
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert {% if message.tags == 'success' %}alert-success{% elif message.tags == 'error' %}alert-danger{% else %}alert-info{% endif %} mb-4">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endif %}
+
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title">创建您的账户</h5>
+            </div>
+            <div class="card-body">
+                <form method="post" novalidate>
+                    {% csrf_token %}
+                    
+                    <!-- 用户名字段 -->
+                    <div class="form-group">
+                        <label for="{{ form.username.id_for_label }}" class="form-label">用户名</label>
+                        {{ form.username }}
+                        {% if form.username.errors %}
+                            <small class="text-danger">
+                                {% for error in form.username.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </small>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- 邮箱字段 -->
+                    <div class="form-group">
+                        <label for="{{ form.email.id_for_label }}" class="form-label">邮箱</label>
+                        {{ form.email }}
+                        {% if form.email.errors %}
+                            <small class="text-danger">
+                                {% for error in form.email.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </small>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- 密码字段 -->
+                    <div class="form-group">
+                        <label for="{{ form.password1.id_for_label }}" class="form-label">密码</label>
+                        {{ form.password1 }}
+                        {% if form.password1.errors %}
+                            <small class="text-danger">
+                                {% for error in form.password1.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </small>
+                        {% else %}
+                            <small class="text-muted">{{ form.password1.help_text }}</small>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- 确认密码字段 -->
+                    <div class="form-group">
+                        <label for="{{ form.password2.id_for_label }}" class="form-label">确认密码</label>
+                        {{ form.password2 }}
+                        {% if form.password2.errors %}
+                            <small class="text-danger">
+                                {% for error in form.password2.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </small>
+                        {% else %}
+                            <small class="text-muted">{{ form.password2.help_text }}</small>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- 表单非字段错误 -->
+                    {% if form.non_field_errors %}
+                        <div class="alert alert-danger">
+                            {% for error in form.non_field_errors %}
+                                {{ error }}
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                    
+                    <!-- 提交按钮 -->
+                    <div class="form-group mt-4">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-user-plus"></i> 立即注册
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <p class="text-center mt-3">
+            已经有账户了？<a href="{% url 'accounts:login' %}">立即登录</a>
+        </p>
+    </div>
+</div>
+{% endblock content %} 

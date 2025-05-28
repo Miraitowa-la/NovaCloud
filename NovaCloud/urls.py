@@ -21,6 +21,7 @@ from django.conf.urls.static import static
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path('accounts/', include('accounts.urls', namespace='accounts')),  # 用户账户相关URLs
     path('', include('core.urls', namespace='core')), # 主页和其他 core app 的 URLs
 ]
 
