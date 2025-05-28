@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}
+    {{ page_title }} - NovaCloud
+{% endblock title %}
+
+{% block content %}
+    <div class="container text-center py-5">
+        <h1>{{ page_title }}</h1>
+        <p class="lead text-muted">这是一个基础的首页，用于测试全局样式和主题切换。</p>
+        <p>尝试点击右上角的主题切换按钮（如果已在 base.html 中实现）。</p>
+
+        {# 临时添加一个按钮用于测试 UIDD 中的按钮样式 #}
+        <div style="margin-top: 2rem;">
+            <button class="btn btn-primary btn-lg"><i class="fas fa-rocket"></i> 示例主要按钮</button>
+            <button class="btn btn-secondary" style="margin-left: 1rem;">示例次要按钮</button>
+        </div>
+    </div>
+{% endblock content %} 
