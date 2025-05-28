@@ -14,6 +14,7 @@ document.addEventListener('DOMContentLoaded', function() {
 function initThemeToggle() {
     // 获取页面body元素
     const body = document.getElementById('page-body');
+    const html = document.documentElement;
     
     // 获取主题切换按钮（如果存在）
     const themeToggleBtn = document.getElementById('themeToggleBtn');
@@ -28,6 +29,8 @@ function initThemeToggle() {
     function setTheme(theme) {
         if (theme === 'dark') {
             body.classList.add('dark-mode');
+            html.classList.add('theme-dark');
+            html.setAttribute('data-theme', 'dark');
             
             // 更新按钮图标为太阳（表示点击后切换到浅色模式）
             if (themeToggleBtn.querySelector('i')) {
@@ -35,6 +38,8 @@ function initThemeToggle() {
             }
         } else {
             body.classList.remove('dark-mode');
+            html.classList.remove('theme-dark');
+            html.setAttribute('data-theme', 'light');
             
             // 更新按钮图标为月亮（表示点击后切换到暗色模式）
             if (themeToggleBtn.querySelector('i')) {

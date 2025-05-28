@@ -6,6 +6,20 @@
     <title>{% block title %}NovaCloud{% endblock title %}</title>
     {% load static %}
     
+    <!-- 主题闪烁预防脚本 -->
+    <script>
+        // 在DOM渲染前应用主题，防止闪烁
+        (function() {
+            var savedTheme = localStorage.getItem('theme');
+            if (savedTheme === 'dark' || 
+                (!savedTheme && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                document.documentElement.classList.add('theme-dark');
+                // 添加data-theme属性，供CSS变量使用
+                document.documentElement.setAttribute('data-theme', 'dark');
+            }
+        })();
+    </script>
+    
     <!-- Font Awesome CSS -->
     <link rel="stylesheet" href="{% static 'fonts/fontawesome/css/all.min.css' %}">
     
