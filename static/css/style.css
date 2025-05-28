@@ -595,6 +595,15 @@ strong, b {
     background-color: var(--background-hover);
 }
 
+/* 主题切换按钮图标 */
+.theme-toggle i {
+    transition: transform 0.3s ease-in-out;
+}
+
+.theme-toggle:hover i {
+    transform: rotate(30deg);
+}
+
 /* 导航栏样式 */
 .navbar {
     display: flex;
@@ -660,29 +669,20 @@ strong, b {
 .user-profile {
     display: flex;
     align-items: center;
-    padding: 0.25rem 0.75rem;
+    padding: 0.25rem 0.5rem;
     margin-right: 0.5rem;
     border-radius: var(--border-radius-md);
+    transition: background-color 0.15s ease-in-out;
+}
+
+.user-profile:hover {
+    background-color: var(--background-hover);
 }
 
 .user-profile .fa-stack {
     font-size: 1.2rem;
     margin-right: 0.5rem;
     color: var(--text-muted);
-}
-
-.user-profile .text-muted {
-    margin-right: 1rem;
-}
-
-.user-profile .nav-link {
-    padding: 0.25rem 0.5rem;
-    color: var(--text-muted);
-}
-
-.user-profile .nav-link:hover {
-    background-color: transparent;
-    color: var(--color-primary);
 }
 
 /* 按钮样式 */
@@ -1196,7 +1196,7 @@ html, body {
 }
 
 /* 登录和注册按钮样式 */
-.login-btn, .register-btn {
+.login-btn, .register-btn, .profile-edit-btn {
     width: 100%;  /* 强制100%宽度 */
     display: flex;
     justify-content: center;  /* 水平居中 */
@@ -1215,4 +1215,93 @@ html, body {
     border: 2px solid var(--background-default);
     box-shadow: var(--shadow-sm);
     margin-right: 0.5rem;
+}
+
+/* 用户下拉菜单样式 */
+.user-dropdown-wrapper {
+    position: relative;
+    cursor: pointer;
+}
+
+.user-dropdown-trigger {
+    display: flex;
+    align-items: center;
+    padding: 0.25rem;
+    border-radius: var(--border-radius-md);
+    transition: background-color 0.15s ease-in-out;
+}
+
+.user-dropdown-trigger:hover {
+    background-color: var(--background-hover);
+}
+
+.user-dropdown-icon {
+    margin-left: 0.5rem;
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    transition: transform 0.2s ease-in-out;
+}
+
+.user-dropdown-wrapper:hover .user-dropdown-icon {
+    transform: rotate(-90deg);
+    color: var(--color-primary);
+}
+
+.user-dropdown-menu {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    width: 180px;
+    margin-top: 0.5rem;
+    background-color: var(--background-default);
+    border: 1px solid var(--border-default);
+    border-radius: var(--border-radius-md);
+    box-shadow: var(--shadow-md);
+    z-index: 1000;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(10px);
+    transition: opacity 0.2s ease, visibility 0.2s ease, transform 0.2s ease;
+}
+
+.user-dropdown-wrapper:hover .user-dropdown-menu {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+
+.user-dropdown-item {
+    display: flex;
+    align-items: center;
+    padding: 0.75rem 1rem;
+    color: var(--text-default);
+    transition: background-color 0.15s ease-in-out, color 0.15s ease-in-out;
+}
+
+.user-dropdown-item:first-child {
+    border-top-left-radius: calc(var(--border-radius-md) - 1px);
+    border-top-right-radius: calc(var(--border-radius-md) - 1px);
+}
+
+.user-dropdown-item:last-child {
+    border-bottom-left-radius: calc(var(--border-radius-md) - 1px);
+    border-bottom-right-radius: calc(var(--border-radius-md) - 1px);
+}
+
+.user-dropdown-item:hover {
+    background-color: var(--background-hover);
+    color: var(--color-primary);
+    text-decoration: none;
+}
+
+.user-dropdown-item i {
+    width: 1.25rem;
+    margin-right: 0.75rem;
+    text-align: center;
+}
+
+.user-dropdown-divider {
+    height: 1px;
+    background-color: var(--border-default);
+    margin: 0.25rem 0;
 } 

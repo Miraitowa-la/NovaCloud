@@ -67,15 +67,28 @@
                                     <i class="fas fa-user fa-stack-1x fa-inverse"></i>
                                 </span>
                             {% endif %}
-                            <!-- 用户名 -->
-                            <span class="text-muted">{{ user.username }}</span>
-                            <!-- 个人资料和登出链接 -->
-                            <a href="{% url 'accounts:profile' %}" class="nav-link">
-                                <i class="fas fa-user-cog"></i> 个人资料
-                            </a>
-                            <a href="{% url 'accounts:logout' %}" class="nav-link">
-                                <i class="fas fa-sign-out-alt"></i> 登出
-                            </a>
+                            
+                            <!-- 用户名和下拉菜单触发器 -->
+                            <div class="user-dropdown-wrapper">
+                                <div class="user-dropdown-trigger">
+                                    <span class="text-muted">{{ user.username }}</span>
+                                    <i class="fas fa-chevron-left user-dropdown-icon"></i>
+                                </div>
+                                
+                                <!-- 下拉菜单 -->
+                                <div class="user-dropdown-menu">
+                                    <a href="{% url 'accounts:profile' %}" class="user-dropdown-item">
+                                        <i class="fas fa-user-cog"></i> 个人资料
+                                    </a>
+                                    <a href="#" class="user-dropdown-item">
+                                        <i class="fas fa-ticket-alt"></i> 邀请码
+                                    </a>
+                                    <div class="user-dropdown-divider"></div>
+                                    <a href="{% url 'accounts:logout' %}" class="user-dropdown-item">
+                                        <i class="fas fa-sign-out-alt"></i> 登出
+                                    </a>
+                                </div>
+                            </div>
                         </div>
                     {% else %}
                         <ul class="navbar-nav">
