@@ -39,6 +39,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'accounts',
     'iot_devices',
+    'strategy_engine',
 ]
 
 MIDDLEWARE = [
