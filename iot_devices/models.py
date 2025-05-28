@@ -2,6 +2,7 @@ import uuid
 from django.db import models
 from django.contrib.auth.models import User
 from django.utils.crypto import get_random_string
+from django.utils import timezone
 
 
 class Project(models.Model):
@@ -237,3 +238,144 @@ class Actuator(models.Model):
 
     def __str__(self):
         return f"{self.device.name} - {self.name} ({self.actuator_type})"
+
+
+class SensorData(models.Model):
+    """
+    传感器数据记录模型，存储传感器的历史数据
+    """
+    sensor = models.ForeignKey(
+        Sensor,
+        on_delete=models.CASCADE,
+        related_name='data_records',
+        verbose_name="传感器"
+    )
+    timestamp = models.DateTimeField(
+        default=timezone.now,
+        db_index=True,
+        verbose_name="时间戳"
+    )
+    value_float = models.FloatField(
+        null=True,
+        blank=True,
+        verbose_name="浮点值"
+    )
+    value_string = models.CharField(
+        max_length=255,
+        null=True,
+        blank=True,
+        verbose_name="字符串值"
+    )
+    value_boolean = models.BooleanField(
+        null=True,
+        blank=True,
+        verbose_name="布尔值"
+    )
+    value_json = models.JSONField(
+        default=dict,
+        null=True,
+        blank=True,
+        verbose_name="JSON值"
+    )
+
+    class Meta:
+        verbose_name = "传感器数据"
+        verbose_name_plural = "传感器数据"
+        ordering = ['-timestamp']
+        indexes = [
+            models.Index(fields=['sensor', '-timestamp']),
+        ]
+
+    def get_value(self):
+        """返回第一个非空的值"""
+        if self.value_float is not None:
+            return self.value_float
+        if self.value_string is not None:
+            return self.value_string
+        if self.value_boolean is not None:
+            return self.value_boolean
+        if self.value_json:
+            return self.value_json
+        return None
+
+    def __str__(self):
+        return f"{self.sensor} - {self.timestamp}: {self.get_value()}"
+
+
+class ActuatorCommandLog(models.Model):
+    """
+    执行器命令日志模型，记录控制命令的发送和执行状态
+    """
+    STATUS_CHOICES = [
+        ('pending_send', '待发送'),
+        ('sent', '已发送'),
+        ('acknowledged', '已确认'),
+        ('failed', '执行失败'),
+        ('timeout', '执行超时'),
+    ]
+
+    SOURCE_CHOICES = [
+        ('user_ui', '用户界面'),
+        ('api_call', 'API调用'),
+        ('strategy_engine', '策略引擎'),
+    ]
+
+    actuator = models.ForeignKey(
+        Actuator,
+        on_delete=models.CASCADE,
+        related_name='command_logs',
+        verbose_name="执行器"
+    )
+    user = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='actuator_commands',
+        verbose_name="用户"
+    )
+    command_payload = models.JSONField(
+        default=dict,
+        verbose_name="命令内容"
+    )
+    status = models.CharField(
+        max_length=30,
+        choices=STATUS_CHOICES,
+        default='pending_send',
+        verbose_name="状态"
+    )
+    source = models.CharField(
+        max_length=30,
+        choices=SOURCE_CHOICES,
+        null=True,
+        blank=True,
+        verbose_name="来源"
+    )
+    sent_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name="发送时间"
+    )
+    acknowledged_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name="确认时间"
+    )
+    response_payload = models.JSONField(
+        default=dict,
+        null=True,
+        blank=True,
+        verbose_name="响应内容"
+    )
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name="创建时间"
+    )
+
+    class Meta:
+        verbose_name = "执行器命令日志"
+        verbose_name_plural = "执行器命令日志"
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"命令 - {self.actuator} - {self.created_at} - 状态: {self.get_status_display()}"
