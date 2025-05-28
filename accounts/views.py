@@ -1,5 +1,5 @@
 from django.shortcuts import render, redirect
-from django.contrib.auth import login, authenticate
+from django.contrib.auth import login, authenticate, logout
 from django.contrib import messages
 
 from .forms import UserRegistrationForm, UserLoginForm
@@ -81,3 +81,18 @@ def login_view(request):
         'next': next_url,
         'page_title': '用户登录'
     })
+
+
+def logout_view(request):
+    """
+    用户登出视图
+    清除用户会话并重定向
+    """
+    # 登出用户
+    logout(request)
+    
+    # 添加成功消息
+    messages.info(request, '您已成功登出。')
+    
+    # 重定向到首页
+    return redirect('core:index')
