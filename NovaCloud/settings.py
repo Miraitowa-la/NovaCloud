@@ -40,6 +40,7 @@ INSTALLED_APPS = [
     'accounts',
     'iot_devices',
     'strategy_engine',
+    'core',
 ]
 
 MIDDLEWARE = [
