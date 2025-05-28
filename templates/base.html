@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}NovaCloud{% endblock title %}</title>
+    {% load static %}
+    
+    <!-- Font Awesome CSS -->
+    <link rel="stylesheet" href="{% static 'fonts/fontawesome/css/all.min.css' %}">
+    
+    <!-- 全局样式表 -->
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    
+    <!-- 额外的CSS引入 -->
+    {% block extra_head_css %}{% endblock extra_head_css %}
+</head>
+<body id="page-body">
+    <!-- 顶部导航栏 -->
+    <header>
+        {% block navbar %}
+        <!-- 导航栏将在后续阶段实现 -->
+        <nav class="navbar">
+            <div class="container d-flex justify-content-between align-items-center">
+                <a href="#" class="navbar-brand">NovaCloud</a>
+                
+                <div class="d-flex align-items-center">
+                    <!-- 主题切换按钮 -->
+                    <button id="themeToggleBtn" class="theme-toggle">
+                        <i class="fas fa-moon"></i>
+                    </button>
+                </div>
+            </div>
+        </nav>
+        {% endblock navbar %}
+    </header>
+
+    <!-- 主内容区域 -->
+    <main class="container py-4">
+        {% block content %}
+        <!-- 页面内容将在子模板中实现 -->
+        {% endblock content %}
+    </main>
+
+    <!-- 底部区域 -->
+    <footer>
+        {% block footer %}
+        <div class="container text-center py-4 text-muted">
+            <p class="text-small">© {% now "Y" %} NovaCloud. 保留所有权利。</p>
+        </div>
+        {% endblock footer %}
+    </footer>
+
+    <!-- 全局JavaScript -->
+    <script src="{% static 'js/script.js' %}"></script>
+    
+    <!-- 额外的JavaScript引入 -->
+    {% block extra_body_js %}{% endblock extra_body_js %}
+</body>
+</html> 
