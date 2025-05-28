@@ -131,3 +131,7 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # Media files (uploads)
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
+
+# 用户认证相关设置
+LOGIN_URL = 'accounts:login'  # 用户访问受保护页面时重定向到此URL
+LOGIN_REDIRECT_URL = 'core:index'  # 用户成功登录后默认重定向到此URL

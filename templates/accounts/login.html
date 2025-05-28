@@ -1,0 +1,84 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ page_title }}{% endblock title %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8 col-lg-6">
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert {% if message.tags == 'success' %}alert-success{% elif message.tags == 'error' %}alert-danger{% else %}alert-info{% endif %} mb-4">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endif %}
+
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title">登录您的 NovaCloud 账户</h5>
+            </div>
+            <div class="card-body">
+                <form method="post" novalidate>
+                    {% csrf_token %}
+                    
+                    <!-- 如果有next参数，保存到表单中 -->
+                    {% if next %}
+                        <input type="hidden" name="next" value="{{ next }}">
+                    {% endif %}
+                    
+                    <!-- 表单非字段错误 -->
+                    {% if form.non_field_errors %}
+                        <div class="alert alert-danger mb-4">
+                            {% for error in form.non_field_errors %}
+                                {{ error }}
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                    
+                    <!-- 用户名/邮箱字段 -->
+                    <div class="form-group">
+                        <label for="{{ form.username.id_for_label }}" class="form-label">{{ form.username.label }}</label>
+                        {{ form.username }}
+                        {% if form.username.errors %}
+                            <small class="text-danger">
+                                {% for error in form.username.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </small>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- 密码字段 -->
+                    <div class="form-group">
+                        <label for="{{ form.password.id_for_label }}" class="form-label">密码</label>
+                        {{ form.password }}
+                        {% if form.password.errors %}
+                            <small class="text-danger">
+                                {% for error in form.password.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </small>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- 提交按钮 -->
+                    <div class="form-group mt-4">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-sign-in-alt"></i> 立即登录
+                        </button>
+                    </div>
+                    
+                    <!-- 忘记密码链接 -->
+                    <div class="mt-2 text-right">
+                        <a href="#" class="text-muted">忘记密码?</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <p class="text-center mt-3">
+            还没有账户？<a href="{% url 'accounts:register' %}">立即注册</a>
+        </p>
+    </div>
+</div>
+{% endblock content %} 

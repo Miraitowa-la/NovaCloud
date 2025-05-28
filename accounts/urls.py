@@ -5,5 +5,6 @@ app_name = 'accounts'
 
 urlpatterns = [
     path('register/', views.register_view, name='register'),
-    # 后续会添加登录、登出等URL
+    path('login/', views.login_view, name='login'),
+    # 后续会添加登出等URL
 ] 

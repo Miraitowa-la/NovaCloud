@@ -1,5 +1,5 @@
 from django import forms
-from django.contrib.auth.forms import UserCreationForm
+from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
 from django.contrib.auth.models import User
 
 
@@ -49,4 +49,26 @@ class UserRegistrationForm(UserCreationForm):
         email = self.cleaned_data.get('email')
         if User.objects.filter(email=email).exists():
             raise forms.ValidationError("此邮箱已被注册，请使用其他邮箱。")
-        return email 
+        return email
+
+
+class UserLoginForm(AuthenticationForm):
+    """
+    用户登录表单
+    扩展Django内置的AuthenticationForm，并自定义样式
+    """
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        
+        # 自定义用户名字段
+        self.fields['username'].widget.attrs.update({
+            'class': 'form-control',
+            'placeholder': '用户名或邮箱'
+        })
+        self.fields['username'].label = '用户名/邮箱'
+        
+        # 自定义密码字段
+        self.fields['password'].widget.attrs.update({
+            'class': 'form-control',
+            'placeholder': '请输入您的密码'
+        }) 
