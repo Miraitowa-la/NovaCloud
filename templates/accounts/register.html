@@ -77,6 +77,19 @@
                         {% endif %}
                     </div>
                     
+                    <!-- 邀请码字段 -->
+                    <div class="form-group">
+                        <label for="{{ form.invitation_code.id_for_label }}" class="form-label">{{ form.invitation_code.label }}</label>
+                        {{ form.invitation_code }}
+                        {% if form.invitation_code.errors %}
+                            <small class="text-danger">
+                                {% for error in form.invitation_code.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </small>
+                        {% endif %}
+                    </div>
+                    
                     <!-- 表单非字段错误 -->
                     {% if form.non_field_errors %}
                         <div class="alert alert-danger">

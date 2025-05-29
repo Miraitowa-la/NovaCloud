@@ -26,7 +26,34 @@ def register_view(request):
             new_user = form.save()
             
             # 创建用户配置文件
-            UserProfile.objects.create(user=new_user)
+            user_profile = UserProfile.objects.create(user=new_user)
+            
+            # 处理邀请码
+            code_str = form.cleaned_data.get('invitation_code')
+            if code_str:
+                try:
+                    invitation = InvitationCode.objects.get(code=code_str)
+                    
+                    # 检查是否是用户自己创建的邀请码
+                    if invitation.issuer == new_user:
+                        messages.warning(request, '您不能使用自己创建的邀请码。')
+                    else:
+                        # 设置上级用户关系
+                        user_profile.parent_user = invitation.issuer
+                        user_profile.save()
+                        
+                        # 更新邀请码使用次数
+                        invitation.times_used += 1
+                        
+                        # 如果达到最大使用次数，设为非激活
+                        if invitation.max_uses is not None and invitation.times_used >= invitation.max_uses:
+                            invitation.is_active = False
+                            
+                        invitation.save()
+                        messages.info(request, f'已成功使用邀请码 "{invitation.code}"。')
+                except InvitationCode.DoesNotExist:
+                    # 这种情况应该在表单验证中已经处理过，但为保险起见再检查一次
+                    messages.error(request, '邀请码不存在。')
             
             # 添加成功消息
             messages.success(request, '恭喜您，注册成功！现在您可以登录了。')

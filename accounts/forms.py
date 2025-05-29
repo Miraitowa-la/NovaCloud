@@ -18,6 +18,16 @@ class UserRegistrationForm(UserCreationForm):
         })
     )
 
+    invitation_code = forms.CharField(
+        max_length=32,
+        required=False,
+        label="邀请码 (可选)",
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': '如果您有邀请码，请在此输入'
+        })
+    )
+
     class Meta:
         model = User
         fields = ('username', 'email', 'password1', 'password2')
@@ -52,6 +62,25 @@ class UserRegistrationForm(UserCreationForm):
         if User.objects.filter(email=email).exists():
             raise forms.ValidationError("此邮箱已被注册，请使用其他邮箱。")
         return email
+    
+    def clean_invitation_code(self):
+        """验证邀请码是否有效"""
+        code = self.cleaned_data.get('invitation_code')
+        if not code:
+            # 邀请码是可选的
+            return code
+        
+        try:
+            # 尝试查询邀请码
+            invitation = InvitationCode.objects.get(code=code)
+            
+            # 检查邀请码是否有效
+            if not invitation.is_currently_valid:
+                raise forms.ValidationError("此邀请码无效、已过期或已达使用上限。")
+                
+            return code
+        except InvitationCode.DoesNotExist:
+            raise forms.ValidationError("邀请码不存在。")
 
 
 class UserLoginForm(AuthenticationForm):
