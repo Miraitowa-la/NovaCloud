@@ -239,10 +239,20 @@ def create_invitation_view(request):
 def invitation_list_view(request):
     """
     邀请码列表视图
-    显示用户创建的所有邀请码
+    显示用户创建的所有邀请码，分为有效和无效两类
     """
     # 获取当前登录用户创建的所有邀请码
     invitations = InvitationCode.objects.filter(issuer=request.user).order_by('-created_at')
+    
+    # 分离有效和无效的邀请码
+    valid_invitations = []
+    invalid_invitations = []
+    
+    for invitation in invitations:
+        if invitation.is_currently_valid:
+            valid_invitations.append(invitation)
+        else:
+            invalid_invitations.append(invitation)
     
     # 获取当前会话中可能存在的新创建的邀请码（新创建提示后会删除）
     new_code = request.session.get('new_invitation_code', '')
@@ -255,7 +265,62 @@ def invitation_list_view(request):
     # 渲染邀请码列表模板
     return render(request, 'accounts/invitation_list.html', {
         'invitations': invitations,
+        'valid_invitations': valid_invitations,
+        'invalid_invitations': invalid_invitations,
+        'valid_invitations_count': len(valid_invitations),
+        'invalid_invitations_count': len(invalid_invitations),
         'new_code': new_code,
         'now': now,
         'page_title': '我的邀请码'
     })
+
+
+@login_required
+def delete_invitation_view(request, invitation_id):
+    """
+    删除邀请码视图
+    处理用户删除邀请码的请求
+    """
+    try:
+        # 查找指定ID的邀请码，并确认是当前用户创建的
+        invitation = InvitationCode.objects.get(id=invitation_id, issuer=request.user)
+        code = invitation.code  # 保存邀请码以在消息中使用
+        
+        # 删除邀请码
+        invitation.delete()
+        
+        # 添加成功消息
+        messages.success(request, f'邀请码 "{code}" 已成功删除。')
+    except InvitationCode.DoesNotExist:
+        # 添加错误消息
+        messages.error(request, '邀请码不存在或您无权删除。')
+    
+    # 重定向回邀请码列表页面
+    return redirect('accounts:invitation_list')
+
+
+@login_required
+def toggle_invitation_status_view(request, invitation_id):
+    """
+    切换邀请码状态视图
+    处理启用/禁用邀请码的请求
+    """
+    try:
+        # 查找指定ID的邀请码，并确认是当前用户创建的
+        invitation = InvitationCode.objects.get(id=invitation_id, issuer=request.user)
+        
+        # 切换状态
+        invitation.is_active = not invitation.is_active
+        invitation.save()
+        
+        # 添加成功消息
+        if invitation.is_active:
+            messages.success(request, f'邀请码 "{invitation.code}" 已启用。')
+        else:
+            messages.success(request, f'邀请码 "{invitation.code}" 已禁用。')
+    except InvitationCode.DoesNotExist:
+        # 添加错误消息
+        messages.error(request, '邀请码不存在或您无权操作。')
+    
+    # 重定向回邀请码列表页面
+    return redirect('accounts:invitation_list')

@@ -2,72 +2,247 @@
 
 {% block title %}我的邀请码 - NovaCloud{% endblock %}
 
+{% block extra_head_css %}
+<style>
+    .code-invitation {
+        background-color: var(--background-muted);
+        padding: 0.25rem 0.5rem;
+        border-radius: 3px;
+        font-size: 0.9em;
+        user-select: all;
+    }
+    
+    /* 操作按钮的间距 */
+    .btn-action + .btn-action {
+        margin-left: 0.35rem;
+    }
+    
+    /* 复制成功提示 */
+    .copy-tooltip {
+        position: fixed;
+        padding: 5px 10px;
+        background-color: var(--color-primary);
+        color: #fff;
+        border-radius: 4px;
+        font-size: 12px;
+        z-index: 1000;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+    }
+    .copy-tooltip.show {
+        opacity: 1;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
-<div class="card">
-    <div class="card-header d-flex justify-content-between align-items-center">
-        <h5 class="card-title mb-0">我创建的邀请码</h5>
-        <a href="{% url 'accounts:create_invitation' %}" class="btn btn-primary btn-sm">
-            <i class="fas fa-plus"></i> 创建新邀请码
-        </a>
-    </div>
-    <div class="card-body">
-        {% if new_code %}
-            <div class="alert alert-success">
-                <i class="fas fa-check-circle"></i> 新邀请码 <strong>{{ new_code }}</strong> 已成功创建！
+<div class="row">
+    <div class="col-12">
+        <div class="card mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-ticket-alt text-primary me-2"></i> 我创建的邀请码
+                </h5>
+                <a href="{% url 'accounts:create_invitation' %}" class="btn btn-primary btn-sm">
+                    <i class="fas fa-plus"></i> 创建新邀请码
+                </a>
             </div>
-        {% endif %}
-        
-        {% if invitations %}
-            <div class="table-responsive">
-                <table class="table table-striped table-hover">
-                    <thead>
-                        <tr>
-                            <th>邀请码</th>
-                            <th>状态</th>
-                            <th>已使用/上限</th>
-                            <th>过期时间</th>
-                            <th>创建时间</th>
-                            <th>操作</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for invitation in invitations %}
-                        <tr>
-                            <td><code>{{ invitation.code }}</code></td>
-                            <td>
-                                {% if invitation.is_currently_valid %}
-                                    <span class="badge badge-success">有效</span>
-                                {% elif not invitation.is_active %}
-                                    <span class="badge badge-secondary">已禁用</span>
-                                {% elif invitation.expires_at and invitation.expires_at < now %}
-                                    <span class="badge badge-secondary">已过期</span>
-                                {% elif invitation.max_uses and invitation.times_used >= invitation.max_uses %}
-                                    <span class="badge badge-secondary">已用完</span>
-                                {% else %}
-                                    <span class="badge badge-danger">无效</span>
-                                {% endif %}
-                            </td>
-                            <td>{{ invitation.times_used }} / {{ invitation.max_uses|default:"无限制" }}</td>
-                            <td>{{ invitation.expires_at|date:"Y-m-d H:i"|default:"永不过期" }}</td>
-                            <td>{{ invitation.created_at|date:"Y-m-d H:i" }}</td>
-                            <td>
-                                {% if invitation.is_currently_valid and invitation.is_active %}
-                                    <button class="btn btn-warning btn-sm" disabled>
-                                        <i class="fas fa-ban"></i> 禁用 (开发中)
-                                    </button>
-                                {% endif %}
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+            <div class="card-body">
+                {% if new_code %}
+                    <div class="alert alert-success">
+                        <i class="fas fa-check-circle"></i> 新邀请码 <strong>{{ new_code }}</strong> 已成功创建！
+                    </div>
+                {% endif %}
+                
+                {% if invitations %}
+                    <!-- 有效邀请码部分 -->
+                    <h6 class="fw-bold mb-3"><i class="fas fa-check-circle text-success me-2"></i>可用邀请码</h6>
+                    {% with valid_invitations=valid_invitations|default:invitations %}
+                        {% if valid_invitations_count > 0 %}
+                            <div class="table-responsive mb-4 border rounded shadow-sm">
+                                <table class="table table-striped table-hover table-bordered table-rounded mb-0">
+                                    <thead class="bg-primary text-white">
+                                        <tr>
+                                            <th>邀请码</th>
+                                            <th>状态</th>
+                                            <th>已使用/上限</th>
+                                            <th>过期时间</th>
+                                            <th>创建时间</th>
+                                            <th>操作</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for invitation in invitations %}
+                                            {% if invitation.is_currently_valid %}
+                                            <tr>
+                                                <td><code class="code-invitation">{{ invitation.code }}</code></td>
+                                                <td>
+                                                    <span class="badge bg-success text-white">
+                                                        <i class="fas fa-check-circle"></i> 有效
+                                                    </span>
+                                                </td>
+                                                <td>
+                                                    {{ invitation.times_used }} / {{ invitation.max_uses|default:"∞" }}
+                                                </td>
+                                                <td>{% if invitation.expires_at %}
+                                                        {{ invitation.expires_at|date:"Y-m-d H:i" }}
+                                                    {% else %}
+                                                        <span class="text-muted">永不过期</span>
+                                                    {% endif %}
+                                                </td>
+                                                <td>{{ invitation.created_at|date:"Y-m-d H:i" }}</td>
+                                                <td>
+                                                    <div class="btn-group">
+                                                        <button class="btn btn-outline-primary btn-sm btn-action copy-btn" data-code="{{ invitation.code }}" title="复制邀请码">
+                                                            <i class="fas fa-copy"></i> 复制
+                                                        </button>
+                                                        <a href="{% url 'accounts:toggle_invitation_status' invitation.id %}" class="btn btn-outline-warning btn-sm btn-action" title="禁用邀请码" onclick="return confirm('确定要禁用此邀请码吗？禁用后可以再次启用。')">
+                                                            <i class="fas fa-ban"></i> 禁用
+                                                        </a>
+                                                        <a href="{% url 'accounts:delete_invitation' invitation.id %}" class="btn btn-outline-danger btn-sm btn-action" title="删除邀请码" onclick="return confirm('确定要删除此邀请码吗？此操作无法撤销！')">
+                                                            <i class="fas fa-trash"></i> 删除
+                                                        </a>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                            {% endif %}
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        {% else %}
+                            <div class="alert alert-info">
+                                <i class="fas fa-info-circle"></i> 您目前没有可用的邀请码。
+                            </div>
+                        {% endif %}
+                    {% endwith %}
+
+                    <!-- 无效邀请码部分 -->
+                    <h6 class="fw-bold mb-3"><i class="fas fa-ban text-secondary me-2"></i>不可用邀请码</h6>
+                    {% with invalid_invitations=invalid_invitations|default:invitations %}
+                        {% if invalid_invitations_count > 0 %}
+                            <div class="table-responsive border rounded shadow-sm">
+                                <table class="table table-striped table-hover table-bordered table-rounded mb-0">
+                                    <thead class="bg-primary text-white">
+                                        <tr>
+                                            <th>邀请码</th>
+                                            <th>状态</th>
+                                            <th>失效原因</th>
+                                            <th>已使用/上限</th>
+                                            <th>过期时间</th>
+                                            <th>创建时间</th>
+                                            <th>操作</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for invitation in invitations %}
+                                            {% if not invitation.is_currently_valid %}
+                                            <tr class="text-muted">
+                                                <td><code class="code-invitation">{{ invitation.code }}</code></td>
+                                                <td>
+                                                    <span class="badge bg-secondary text-white">
+                                                        <i class="fas fa-ban"></i> 无效
+                                                    </span>
+                                                </td>
+                                                <td>
+                                                    {% if not invitation.is_active %}
+                                                        <span class="text-secondary">已禁用</span>
+                                                    {% elif invitation.expires_at and invitation.expires_at < now %}
+                                                        <span class="text-secondary">已过期</span>
+                                                    {% elif invitation.max_uses and invitation.times_used >= invitation.max_uses %}
+                                                        <span class="text-secondary">已达使用上限</span>
+                                                    {% else %}
+                                                        <span class="text-secondary">未知原因</span>
+                                                    {% endif %}
+                                                </td>
+                                                <td>{{ invitation.times_used }} / {{ invitation.max_uses|default:"∞" }}</td>
+                                                <td>{% if invitation.expires_at %}
+                                                        {{ invitation.expires_at|date:"Y-m-d H:i" }}
+                                                    {% else %}
+                                                        <span class="text-muted">永不过期</span>
+                                                    {% endif %}
+                                                </td>
+                                                <td>{{ invitation.created_at|date:"Y-m-d H:i" }}</td>
+                                                <td>
+                                                    <div class="btn-group">
+                                                        <button class="btn btn-outline-primary btn-sm btn-action copy-btn" data-code="{{ invitation.code }}" title="复制邀请码">
+                                                            <i class="fas fa-copy"></i> 复制
+                                                        </button>
+                                                        {% if not invitation.is_active %}
+                                                            <a href="{% url 'accounts:toggle_invitation_status' invitation.id %}" class="btn btn-outline-success btn-sm btn-action" title="启用邀请码">
+                                                                <i class="fas fa-check-circle"></i> 启用
+                                                            </a>
+                                                        {% endif %}
+                                                        <a href="{% url 'accounts:delete_invitation' invitation.id %}" class="btn btn-outline-danger btn-sm btn-action" title="删除邀请码" onclick="return confirm('确定要删除此邀请码吗？此操作无法撤销！')">
+                                                            <i class="fas fa-trash"></i> 删除
+                                                        </a>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                            {% endif %}
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        {% else %}
+                            <div class="alert alert-light">
+                                <i class="fas fa-info-circle"></i> 您没有任何不可用的邀请码。
+                            </div>
+                        {% endif %}
+                    {% endwith %}
+                {% else %}
+                    <div class="text-center py-5">
+                        <i class="fas fa-ticket-alt text-muted" style="font-size: 3rem;"></i>
+                        <p class="text-muted mt-3">
+                            您还没有创建任何邀请码。
+                        </p>
+                        <a href="{% url 'accounts:create_invitation' %}" class="btn btn-primary">
+                            <i class="fas fa-plus"></i> 立即创建第一个邀请码
+                        </a>
+                    </div>
+                {% endif %}
             </div>
-        {% else %}
-            <p class="text-muted">
-                <i class="fas fa-info-circle"></i> 您还没有创建任何邀请码。
-                <a href="{% url 'accounts:create_invitation' %}">立即创建</a> 一个邀请码来邀请其他用户加入。
-            </p>
-        {% endif %}
+        </div>
     </div>
 </div>
+
+<!-- 复制成功提示 -->
+<div class="copy-tooltip" id="copyTooltip">已复制到剪贴板</div>
+
+{% endblock %}
+
+{% block extra_body_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // 获取所有复制按钮
+        const copyButtons = document.querySelectorAll('.copy-btn');
+        const copyTooltip = document.getElementById('copyTooltip');
+        
+        // 为每个复制按钮添加点击事件
+        copyButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                const code = this.getAttribute('data-code');
+                
+                // 复制邀请码到剪贴板
+                navigator.clipboard.writeText(code)
+                    .then(() => {
+                        // 显示复制成功提示
+                        const buttonRect = this.getBoundingClientRect();
+                        copyTooltip.style.top = `${buttonRect.top - 30}px`;
+                        copyTooltip.style.left = `${buttonRect.left + (buttonRect.width / 2) - 50}px`;
+                        copyTooltip.classList.add('show');
+                        
+                        // 2秒后隐藏提示
+                        setTimeout(() => {
+                            copyTooltip.classList.remove('show');
+                        }, 2000);
+                    })
+                    .catch(err => {
+                        console.error('复制失败:', err);
+                        alert('复制失败，请手动选择并复制邀请码。');
+                    });
+            });
+        });
+    });
+</script>
 {% endblock %} 

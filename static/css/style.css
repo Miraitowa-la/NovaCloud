@@ -1305,3 +1305,257 @@ html, body {
     background-color: var(--border-default);
     margin: 0.25rem 0;
 } 
+
+/* 表格样式 */
+.table {
+    width: 100%;
+    margin-bottom: 1rem;
+    color: var(--text-default);
+    vertical-align: middle;
+    border-collapse: collapse;
+}
+
+.table th,
+.table td {
+    padding: 0.75rem;
+    vertical-align: middle;
+    border-top: 1px solid var(--border-default);
+}
+
+/* 强化表头样式，使其更加醒目但不过于强烈 */
+.table thead th {
+    vertical-align: bottom;
+    border-bottom: 2px solid var(--border-default);
+    font-weight: 600;
+    background-color: rgba(var(--color-primary-rgb), 0.7); /* 降低主色不透明度 */
+    color: white; /* 表头文字白色 */
+    padding-top: 1rem;
+    padding-bottom: 1rem;
+    text-shadow: 0 1px 1px rgba(0, 0, 0, 0.1); /* 文字阴影增强可读性 */
+}
+
+.table tbody + tbody {
+    border-top: 2px solid var(--border-default);
+}
+
+/* 表格变体 */
+/* 奇偶行分别设置不同的背景色 */
+.table-striped tbody tr:nth-of-type(odd) {
+    background-color: rgba(var(--color-primary-rgb), 0.03); /* 奇数行浅色背景 */
+}
+
+.table-striped tbody tr:nth-of-type(even) {
+    background-color: var(--background-default); /* 偶数行默认背景 */
+}
+
+/* 确保所有行悬停时都有效果 */
+.table-hover tbody tr:hover {
+    background-color: rgba(var(--color-primary-rgb), 0.08) !important; /* 强制所有行悬停效果 */
+    color: var(--text-default);
+    transition: background-color 0.15s ease-in-out;
+}
+
+/* 带边框表格 */
+.table-bordered {
+    border: 1px solid var(--border-default);
+}
+
+.table-bordered th,
+.table-bordered td {
+    border: 1px solid var(--border-default);
+}
+
+.table-bordered thead th,
+.table-bordered thead td {
+    border-bottom-width: 2px;
+}
+
+/* 表格头部背景 - 重写默认的 bg-light 样式 */
+.table thead.bg-light th {
+    background-color: rgba(var(--color-primary-rgb), 0.7) !important; /* 降低不透明度 */
+    border-bottom: 2px solid rgba(var(--color-primary-rgb), 0.7);
+    color: white;
+    font-weight: 600;
+    padding-top: 1rem;
+    padding-bottom: 1rem;
+}
+
+/* 圆角表格 */
+.table-rounded {
+    border-radius: var(--border-radius-md);
+    overflow: hidden;
+}
+
+.table-rounded thead th:first-child {
+    border-top-left-radius: var(--border-radius-md);
+}
+
+.table-rounded thead th:last-child {
+    border-top-right-radius: var(--border-radius-md);
+}
+
+.table-rounded tbody tr:last-child td:first-child {
+    border-bottom-left-radius: var(--border-radius-md);
+}
+
+.table-rounded tbody tr:last-child td:last-child {
+    border-bottom-right-radius: var(--border-radius-md);
+}
+
+/* 响应式表格容器 */
+.table-responsive {
+    display: block;
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    border-radius: var(--border-radius-md);
+    box-shadow: var(--shadow-sm);
+    margin-bottom: 1.5rem;
+}
+
+/* 设置code元素在表格中的样式 */
+.table td code {
+    font-family: var(--font-family-monospace);
+    font-size: 0.9em;
+    padding: 0.2rem 0.4rem;
+    background-color: var(--background-muted);
+    border-radius: var(--border-radius-sm);
+}
+
+/* 邀请码特殊样式 */
+.code-invitation {
+    display: inline-block;
+    font-family: var(--font-family-monospace);
+    font-size: 0.95em;
+    padding: 0.3rem 0.6rem;
+    background-color: var(--background-muted);
+    border-radius: var(--border-radius-md);
+    border: 1px solid var(--border-muted);
+    color: var(--color-primary);
+    letter-spacing: 0.05em;
+    font-weight: 500;
+    transition: background-color 0.2s, box-shadow 0.2s;
+}
+
+/* 悬浮效果 */
+tr:hover .code-invitation {
+    background-color: var(--background-default);
+    box-shadow: var(--shadow-sm);
+}
+
+/* 表格进度条美化 */
+.table .progress {
+    background-color: var(--background-muted);
+    height: 6px;
+    width: 80px;
+    border-radius: 3px;
+    overflow: hidden;
+    margin-left: 0.75rem;
+}
+
+.table .progress .progress-bar {
+    transition: width 0.3s ease;
+}
+
+/* 表格标题美化 */
+.card-body h6.fw-bold {
+    font-size: 1.05rem;
+    margin: 1.5rem 0 1rem;
+    padding-left: 0.5rem;
+    border-left: 3px solid var(--color-primary);
+}
+
+/* 表格容器美化 */
+.table-responsive.border {
+    border-color: var(--border-default) !important;
+}
+
+/* 暗色模式下表格调整 */
+body.dark-mode .table-striped tbody tr:nth-of-type(odd),
+html.theme-dark .table-striped tbody tr:nth-of-type(odd),
+html[data-theme='dark'] .table-striped tbody tr:nth-of-type(odd) {
+    background-color: rgba(var(--color-primary-rgb), 0.1);
+}
+
+body.dark-mode .table-striped tbody tr:nth-of-type(even),
+html.theme-dark .table-striped tbody tr:nth-of-type(even),
+html[data-theme='dark'] .table-striped tbody tr:nth-of-type(even) {
+    background-color: var(--background-default);
+}
+
+body.dark-mode .table-hover tbody tr:hover,
+html.theme-dark .table-hover tbody tr:hover,
+html[data-theme='dark'] .table-hover tbody tr:hover {
+    background-color: rgba(var(--color-primary-rgb), 0.15) !important;
+}
+
+body.dark-mode .code-invitation,
+html.theme-dark .code-invitation,
+html[data-theme='dark'] .code-invitation {
+    background-color: var(--background-muted);
+    border-color: var(--border-default);
+}
+
+/* 暗色模式下表头调整 */
+body.dark-mode .table thead th,
+html.theme-dark .table thead th,
+html[data-theme='dark'] .table thead th {
+    background-color: rgba(var(--color-primary-rgb), 0.5); /* 暗色模式下更淡 */
+    color: white;
+    border-bottom-color: var(--color-primary-hover);
+}
+
+body.dark-mode .table thead.bg-light th,
+html.theme-dark .table thead.bg-light th,
+html[data-theme='dark'] .table thead.bg-light th {
+    background-color: rgba(var(--color-primary-rgb), 0.8) !important;
+}
+
+body.dark-mode .table thead.bg-primary th,
+html.theme-dark .table thead.bg-primary th,
+html[data-theme='dark'] .table thead.bg-primary th {
+    background-color: rgba(var(--color-primary-rgb), 0.5) !important; /* 暗色模式下更淡 */
+}
+
+/* 暗色模式下边框颜色调整 */
+body.dark-mode .table-bordered,
+html.theme-dark .table-bordered,
+html[data-theme='dark'] .table-bordered,
+body.dark-mode .table-bordered th,
+html.theme-dark .table-bordered th,
+html[data-theme='dark'] .table-bordered th,
+body.dark-mode .table-bordered td,
+html.theme-dark .table-bordered td,
+html[data-theme='dark'] .table-bordered td {
+    border-color: var(--border-default);
+}
+
+/* 卡片内部标题和图标样式 */
+.card-body h6.fw-bold {
+    font-size: 1.05rem;
+    margin: 1.5rem 0 1rem;
+    padding-left: 0.5rem;
+    border-left: 3px solid var(--color-primary);
+}
+
+/* 图标与文本间距通用类 */
+.icon-spacing-right {
+    margin-right: 0.5rem;
+}
+
+.icon-spacing-left {
+    margin-left: 0.5rem;
+}
+
+/* 图标样式 */
+i.text-success {
+    color: var(--color-success) !important;
+}
+
+i.text-secondary {
+    color: var(--text-muted) !important;
+}
+
+i.text-primary {
+    color: var(--color-primary) !important;
+} 

@@ -14,4 +14,6 @@ urlpatterns = [
     # 邀请码相关URL
     path('invitations/', views.invitation_list_view, name='invitation_list'),
     path('invitations/create/', views.create_invitation_view, name='create_invitation'),
+    path('invitations/<int:invitation_id>/delete/', views.delete_invitation_view, name='delete_invitation'),
+    path('invitations/<int:invitation_id>/toggle/', views.toggle_invitation_status_view, name='toggle_invitation_status'),
 ] 
