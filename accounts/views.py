@@ -2,6 +2,7 @@ from django.shortcuts import render, redirect
 from django.contrib.auth import login, authenticate, logout
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.utils import timezone
 
 from .forms import UserRegistrationForm, UserLoginForm, UserProfileEditForm, InvitationCodeCreateForm
 from .models import UserProfile, InvitationCode
@@ -236,15 +237,22 @@ def invitation_list_view(request):
     """
     邀请码列表视图
     显示用户创建的所有邀请码
-    注意：这是一个临时版本，将在阶段4.3中完善
     """
-    # 获取当前会话中可能存在的新创建的邀请码
+    # 获取当前登录用户创建的所有邀请码
+    invitations = InvitationCode.objects.filter(issuer=request.user).order_by('-created_at')
+    
+    # 获取当前会话中可能存在的新创建的邀请码（新创建提示后会删除）
     new_code = request.session.get('new_invitation_code', '')
     if 'new_invitation_code' in request.session:
         del request.session['new_invitation_code']
     
+    # 获取当前时间，用于模板中判断邀请码是否过期
+    now = timezone.now()
+    
     # 渲染邀请码列表模板
     return render(request, 'accounts/invitation_list.html', {
+        'invitations': invitations,
         'new_code': new_code,
+        'now': now,
         'page_title': '我的邀请码'
     })

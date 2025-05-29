@@ -5,13 +5,69 @@
 {% block content %}
 <div class="card">
     <div class="card-header d-flex justify-content-between align-items-center">
-        <h5 class="card-title mb-0">我的邀请码</h5>
+        <h5 class="card-title mb-0">我创建的邀请码</h5>
         <a href="{% url 'accounts:create_invitation' %}" class="btn btn-primary btn-sm">
             <i class="fas fa-plus"></i> 创建新邀请码
         </a>
     </div>
     <div class="card-body">
-        <p class="text-muted">此功能将在下一阶段实现。您刚创建的邀请码是: {{ new_code }}</p>
+        {% if new_code %}
+            <div class="alert alert-success">
+                <i class="fas fa-check-circle"></i> 新邀请码 <strong>{{ new_code }}</strong> 已成功创建！
+            </div>
+        {% endif %}
+        
+        {% if invitations %}
+            <div class="table-responsive">
+                <table class="table table-striped table-hover">
+                    <thead>
+                        <tr>
+                            <th>邀请码</th>
+                            <th>状态</th>
+                            <th>已使用/上限</th>
+                            <th>过期时间</th>
+                            <th>创建时间</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for invitation in invitations %}
+                        <tr>
+                            <td><code>{{ invitation.code }}</code></td>
+                            <td>
+                                {% if invitation.is_currently_valid %}
+                                    <span class="badge badge-success">有效</span>
+                                {% elif not invitation.is_active %}
+                                    <span class="badge badge-secondary">已禁用</span>
+                                {% elif invitation.expires_at and invitation.expires_at < now %}
+                                    <span class="badge badge-secondary">已过期</span>
+                                {% elif invitation.max_uses and invitation.times_used >= invitation.max_uses %}
+                                    <span class="badge badge-secondary">已用完</span>
+                                {% else %}
+                                    <span class="badge badge-danger">无效</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ invitation.times_used }} / {{ invitation.max_uses|default:"无限制" }}</td>
+                            <td>{{ invitation.expires_at|date:"Y-m-d H:i"|default:"永不过期" }}</td>
+                            <td>{{ invitation.created_at|date:"Y-m-d H:i" }}</td>
+                            <td>
+                                {% if invitation.is_currently_valid and invitation.is_active %}
+                                    <button class="btn btn-warning btn-sm" disabled>
+                                        <i class="fas fa-ban"></i> 禁用 (开发中)
+                                    </button>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <p class="text-muted">
+                <i class="fas fa-info-circle"></i> 您还没有创建任何邀请码。
+                <a href="{% url 'accounts:create_invitation' %}">立即创建</a> 一个邀请码来邀请其他用户加入。
+            </p>
+        {% endif %}
     </div>
 </div>
 {% endblock %} 
