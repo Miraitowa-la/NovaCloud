@@ -3,8 +3,8 @@ from django.contrib.auth import login, authenticate, logout
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 
-from .forms import UserRegistrationForm, UserLoginForm, UserProfileEditForm
-from .models import UserProfile
+from .forms import UserRegistrationForm, UserLoginForm, UserProfileEditForm, InvitationCodeCreateForm
+from .models import UserProfile, InvitationCode
 
 def index(request):
     """
@@ -163,4 +163,61 @@ def profile_edit_view(request):
         'form': form,
         'profile': user_profile,
         'page_title': '编辑个人资料'
+    })
+
+
+@login_required
+def create_invitation_view(request):
+    """
+    创建邀请码视图
+    处理用户创建邀请码表单的提交和验证
+    """
+    if request.method == 'POST':
+        form = InvitationCodeCreateForm(request.POST)
+        if form.is_valid():
+            # 创建邀请码实例但不立即保存
+            invitation = form.save(commit=False)
+            # 设置当前用户为发行者
+            invitation.issuer = request.user
+            # 保存到数据库（此时会自动生成邀请码）
+            invitation.save()
+            
+            # 将邀请码存入会话，以便在列表页面显示
+            request.session['new_invitation_code'] = invitation.code
+            
+            # 添加成功消息
+            messages.success(request, f'邀请码 "{invitation.code}" 已成功创建！')
+            
+            # 重定向到邀请码列表页面
+            return redirect('accounts:invitation_list')
+        else:
+            # 添加错误消息
+            messages.error(request, '创建邀请码失败，请检查您输入的信息。')
+    else:
+        # GET请求，显示空表单
+        form = InvitationCodeCreateForm()
+    
+    # 渲染创建邀请码模板
+    return render(request, 'accounts/create_invitation.html', {
+        'form': form,
+        'page_title': '创建邀请码'
+    })
+
+
+@login_required
+def invitation_list_view(request):
+    """
+    邀请码列表视图
+    显示用户创建的所有邀请码
+    注意：这是一个临时版本，将在阶段4.3中完善
+    """
+    # 获取当前会话中可能存在的新创建的邀请码
+    new_code = request.session.get('new_invitation_code', '')
+    if 'new_invitation_code' in request.session:
+        del request.session['new_invitation_code']
+    
+    # 渲染邀请码列表模板
+    return render(request, 'accounts/invitation_list.html', {
+        'new_code': new_code,
+        'page_title': '我的邀请码'
     })

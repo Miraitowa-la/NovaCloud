@@ -2,7 +2,7 @@ from django import forms
 from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
 from django.contrib.auth.models import User
 
-from .models import UserProfile
+from .models import UserProfile, InvitationCode
 
 
 class UserRegistrationForm(UserCreationForm):
@@ -152,3 +152,34 @@ class UserProfileEditForm(forms.ModelForm):
             profile.save()
         
         return profile 
+
+
+class InvitationCodeCreateForm(forms.ModelForm):
+    """
+    邀请码创建表单
+    用于创建新的邀请码
+    """
+    class Meta:
+        model = InvitationCode
+        fields = ('max_uses', 'expires_at')
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        
+        # 设置最大使用次数字段
+        self.fields['max_uses'].required = False
+        self.fields['max_uses'].widget = forms.NumberInput(attrs={
+            'class': 'form-control',
+            'placeholder': '留空表示无限制',
+            'min': '1'  # 最小值限制
+        })
+        self.fields['max_uses'].help_text = '设置此邀请码可使用的最大次数，留空表示无限制。'
+        
+        # 设置过期时间字段
+        self.fields['expires_at'].required = False
+        self.fields['expires_at'].widget = forms.DateTimeInput(attrs={
+            'class': 'form-control',
+            'type': 'datetime-local',
+            'placeholder': '留空表示永不过期'
+        })
+        self.fields['expires_at'].help_text = '设置此邀请码的过期时间，留空表示永不过期。' 

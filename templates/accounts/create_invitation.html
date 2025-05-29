@@ -1,0 +1,72 @@
+{% extends 'base.html' %}
+
+{% block title %}创建邀请码 - NovaCloud{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title">创建新的邀请码</h5>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    
+                    <!-- 表单字段 -->
+                    <div class="form-group">
+                        <label for="{{ form.max_uses.id_for_label }}" class="form-label">最大使用次数</label>
+                        {{ form.max_uses }}
+                        {% if form.max_uses.help_text %}
+                        <small class="form-text text-muted">{{ form.max_uses.help_text }}</small>
+                        {% endif %}
+                        {% if form.max_uses.errors %}
+                        <div class="text-danger">
+                            {% for error in form.max_uses.errors %}
+                            <small>{{ error }}</small>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="{{ form.expires_at.id_for_label }}" class="form-label">过期时间</label>
+                        {{ form.expires_at }}
+                        {% if form.expires_at.help_text %}
+                        <small class="form-text text-muted">{{ form.expires_at.help_text }}</small>
+                        {% endif %}
+                        {% if form.expires_at.errors %}
+                        <div class="text-danger">
+                            {% for error in form.expires_at.errors %}
+                            <small>{{ error }}</small>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- 非字段错误 -->
+                    {% if form.non_field_errors %}
+                    <div class="alert alert-danger">
+                        {% for error in form.non_field_errors %}
+                        {{ error }}
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                    
+                    <!-- 提交按钮 -->
+                    <div class="form-group mb-0">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-ticket-alt"></i> 生成邀请码
+                        </button>
+                    </div>
+                </form>
+            </div>
+            <div class="card-footer">
+                <div class="text-muted text-small">
+                    <i class="fas fa-info-circle"></i> 创建的邀请码可以分享给他人注册使用，您可以在邀请码列表中查看和管理所有邀请码。
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

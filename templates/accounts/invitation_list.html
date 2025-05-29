@@ -1,0 +1,17 @@
+{% extends 'base.html' %}
+
+{% block title %}我的邀请码 - NovaCloud{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="card-title mb-0">我的邀请码</h5>
+        <a href="{% url 'accounts:create_invitation' %}" class="btn btn-primary btn-sm">
+            <i class="fas fa-plus"></i> 创建新邀请码
+        </a>
+    </div>
+    <div class="card-body">
+        <p class="text-muted">此功能将在下一阶段实现。您刚创建的邀请码是: {{ new_code }}</p>
+    </div>
+</div>
+{% endblock %} 

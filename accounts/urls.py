@@ -10,4 +10,8 @@ urlpatterns = [
     path('logout/', views.logout_view, name='logout'),
     path('profile/', views.profile_view, name='profile'),
     path('profile/edit/', views.profile_edit_view, name='profile_edit'),
+    
+    # 邀请码相关URL
+    path('invitations/', views.invitation_list_view, name='invitation_list'),
+    path('invitations/create/', views.create_invitation_view, name='create_invitation'),
 ] 
