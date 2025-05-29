@@ -1,6 +1,7 @@
 from django import forms
 from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
 from django.contrib.auth.models import User
+from django.utils import timezone
 
 from .models import UserProfile, InvitationCode
 
@@ -75,7 +76,13 @@ class UserRegistrationForm(UserCreationForm):
             invitation = InvitationCode.objects.get(code=code)
             
             # 检查邀请码是否有效
-            if not invitation.is_currently_valid:
+            if not invitation.is_active:
+                raise forms.ValidationError("此邀请码已被禁用。")
+            elif invitation.expires_at and timezone.now() > invitation.expires_at:
+                raise forms.ValidationError("此邀请码已过期。")
+            elif invitation.max_uses is not None and invitation.times_used >= invitation.max_uses:
+                raise forms.ValidationError("此邀请码已达到最大使用次数。")
+            elif not invitation.is_currently_valid:
                 raise forms.ValidationError("此邀请码无效、已过期或已达使用上限。")
                 
             return code

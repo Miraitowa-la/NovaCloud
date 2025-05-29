@@ -38,6 +38,9 @@ def register_view(request):
                     # 检查是否是用户自己创建的邀请码
                     if invitation.issuer == new_user:
                         messages.warning(request, '您不能使用自己创建的邀请码。')
+                    # 显式检查邀请码是否有效
+                    elif not invitation.is_currently_valid:
+                        messages.warning(request, '此邀请码已无效、已过期或已达使用上限。')
                     else:
                         # 设置上级用户关系
                         user_profile.parent_user = invitation.issuer
