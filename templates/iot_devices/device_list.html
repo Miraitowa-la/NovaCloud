@@ -4,14 +4,6 @@
 
 {% block content %}
 <div class="container">
-    <!-- 面包屑导航 -->
-    <nav aria-label="breadcrumb" class="mb-4">
-        <ol class="breadcrumb">
-            <li class="breadcrumb-item"><a href="{% url 'iot_devices:project_list' %}">我的项目</a></li>
-            <li class="breadcrumb-item active">{{ project.name }}</li>
-        </ol>
-    </nav>
-
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h2>{{ project.name }} - 设备列表</h2>
         <a href="{% url 'iot_devices:device_create' project.project_id %}" class="btn btn-primary">
