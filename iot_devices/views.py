@@ -2,7 +2,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.db.models import Q
-from .models import Project, Device, Sensor, Actuator
+from .models import Project, Device, Sensor, Actuator, SensorData
 from .forms import ProjectForm, DeviceForm, SensorForm, ActuatorForm
 
 # Create your views here.
@@ -160,10 +160,21 @@ def device_detail_view(request, project_id, device_id):
     sensors = device.sensors.all()
     actuators = device.actuators.all()
     
+    # 为每个传感器获取最新的数据记录
+    sensors_with_latest_data = []
+    for sensor in device.sensors.all().order_by('name'):
+        latest_data = SensorData.objects.filter(sensor=sensor).order_by('-timestamp').first()
+        sensors_with_latest_data.append({
+            'sensor_info': sensor,
+            'latest_data_record': latest_data,
+            'latest_value': latest_data.get_value() if latest_data else None
+        })
+    
     return render(request, 'iot_devices/device_detail.html', {
         'device': device, 
         'project': project,
         'sensors': sensors,
+        'sensors_with_latest_data': sensors_with_latest_data,
         'actuators': actuators
     })
 

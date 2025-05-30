@@ -1561,4 +1561,33 @@ i.text-secondary {
 
 i.text-primary {
     color: var(--color-primary) !important;
+}
+
+/* 状态指示器 */
+.status-dot {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    margin-right: 5px;
+}
+
+.status-dot-success {
+    background-color: var(--color-success);
+}
+
+.status-dot-danger {
+    background-color: var(--color-danger);
+}
+
+.status-dot-warning {
+    background-color: var(--color-warning);
+}
+
+.status-dot-info {
+    background-color: var(--color-info);
+}
+
+.status-dot-offline {
+    background-color: var(--color-secondary);
 } 
