@@ -21,4 +21,9 @@ urlpatterns = [
     path('projects/<uuid:project_id>/devices/<uuid:device_id>/sensors/add/', views.sensor_add_view, name='sensor_add'),
     path('projects/<uuid:project_id>/devices/<uuid:device_id>/sensors/<int:sensor_id>/update/', views.sensor_update_view, name='sensor_update'),
     path('projects/<uuid:project_id>/devices/<uuid:device_id>/sensors/<int:sensor_id>/delete/', views.sensor_delete_view, name='sensor_delete'),
+    
+    # 执行器管理URLs
+    path('projects/<uuid:project_id>/devices/<uuid:device_id>/actuators/add/', views.actuator_add_view, name='actuator_add'),
+    path('projects/<uuid:project_id>/devices/<uuid:device_id>/actuators/<int:actuator_id>/update/', views.actuator_update_view, name='actuator_update'),
+    path('projects/<uuid:project_id>/devices/<uuid:device_id>/actuators/<int:actuator_id>/delete/', views.actuator_delete_view, name='actuator_delete'),
 ] 

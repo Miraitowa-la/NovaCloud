@@ -2,8 +2,8 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.db.models import Q
-from .models import Project, Device, Sensor
-from .forms import ProjectForm, DeviceForm, SensorForm
+from .models import Project, Device, Sensor, Actuator
+from .forms import ProjectForm, DeviceForm, SensorForm, ActuatorForm
 
 # Create your views here.
 
@@ -245,3 +245,93 @@ def sensor_delete_view(request, project_id, device_id, sensor_id):
     
     return render(request, 'iot_devices/sensor_confirm_delete.html', 
                  {'sensor': sensor, 'device': device, 'project': project})
+
+# 执行器管理视图
+
+@login_required
+def actuator_add_view(request, project_id, device_id):
+    """在设备下添加新执行器"""
+    device = get_object_or_404(Device, pk=device_id, project__pk=project_id, 
+                               project__owner=request.user)
+    project = device.project
+    
+    if request.method == 'POST':
+        form = ActuatorForm(request.POST)
+        if form.is_valid():
+            actuator = form.save(commit=False)
+            name = form.cleaned_data.get('name')
+            command_key = form.cleaned_data.get('command_key')
+            
+            # 检查name在该设备下的唯一性
+            if Actuator.objects.filter(device=device, name=name).exists():
+                form.add_error('name', '此执行器名称在该设备下已存在。')
+                return render(request, 'iot_devices/actuator_form.html', 
+                             {'form': form, 'device': device, 'project': project})
+            
+            # 检查command_key在该设备下的唯一性
+            if Actuator.objects.filter(device=device, command_key=command_key).exists():
+                form.add_error('command_key', '此命令键名在该设备下已存在。')
+                return render(request, 'iot_devices/actuator_form.html', 
+                             {'form': form, 'device': device, 'project': project})
+            
+            actuator.device = device
+            actuator.save()
+            messages.success(request, f'执行器 "{actuator.name}" 已成功添加到设备 "{device.name}"！')
+            return redirect('iot_devices:device_detail', project_id=project_id, device_id=device_id)
+    else:
+        form = ActuatorForm()
+    
+    return render(request, 'iot_devices/actuator_form.html', 
+                 {'form': form, 'device': device, 'project': project})
+
+@login_required
+def actuator_update_view(request, project_id, device_id, actuator_id):
+    """更新执行器信息"""
+    actuator = get_object_or_404(Actuator, pk=actuator_id, device__pk=device_id,
+                              device__project__pk=project_id, device__project__owner=request.user)
+    device = actuator.device
+    project = device.project
+    
+    if request.method == 'POST':
+        form = ActuatorForm(request.POST, instance=actuator)
+        if form.is_valid():
+            name = form.cleaned_data.get('name')
+            command_key = form.cleaned_data.get('command_key')
+            
+            # 检查name在该设备下的唯一性（排除当前执行器）
+            if Actuator.objects.filter(device=device, name=name).exclude(pk=actuator_id).exists():
+                form.add_error('name', '此执行器名称在该设备下已存在。')
+                return render(request, 'iot_devices/actuator_form.html', 
+                             {'form': form, 'device': device, 'project': project, 'actuator': actuator})
+            
+            # 检查command_key在该设备下的唯一性（排除当前执行器）
+            if Actuator.objects.filter(device=device, command_key=command_key).exclude(pk=actuator_id).exists():
+                form.add_error('command_key', '此命令键名在该设备下已存在。')
+                return render(request, 'iot_devices/actuator_form.html', 
+                             {'form': form, 'device': device, 'project': project, 'actuator': actuator})
+            
+            form.save()
+            messages.success(request, f'执行器 "{actuator.name}" 已成功更新！')
+            return redirect('iot_devices:device_detail', project_id=project_id, device_id=device_id)
+    else:
+        form = ActuatorForm(instance=actuator)
+    
+    return render(request, 'iot_devices/actuator_form.html', 
+                 {'form': form, 'device': device, 'project': project, 'actuator': actuator})
+
+@login_required
+def actuator_delete_view(request, project_id, device_id, actuator_id):
+    """删除执行器"""
+    actuator = get_object_or_404(Actuator, pk=actuator_id, device__pk=device_id,
+                              device__project__pk=project_id, device__project__owner=request.user)
+    device = actuator.device
+    project = device.project
+    
+    if request.method == 'POST':
+        actuator_name = actuator.name
+        actuator.delete()
+        messages.success(request, f'执行器 "{actuator_name}" 已成功删除。')
+        return redirect('iot_devices:device_detail', project_id=project_id, device_id=device_id)
+    
+    return render(request, 'iot_devices/actuator_confirm_delete.html', 
+                 {'actuator': actuator, 'device': device, 'project': project})

@@ -1,5 +1,5 @@
 from django import forms
-from .models import Project, Device, Sensor
+from .models import Project, Device, Sensor, Actuator
 
 class ProjectForm(forms.ModelForm):
     class Meta:
@@ -60,4 +60,25 @@ class SensorForm(forms.ModelForm):
         self.fields['value_key'].widget.attrs.update({
             'class': 'form-control',
             'placeholder': '上报JSON中的数据键名，例如：temperature'
+        })
+
+class ActuatorForm(forms.ModelForm):
+    class Meta:
+        model = Actuator
+        fields = ('name', 'actuator_type', 'command_key')
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # 为表单字段添加样式和占位符
+        self.fields['name'].widget.attrs.update({
+            'class': 'form-control',
+            'placeholder': '例如：客厅灯'
+        })
+        self.fields['actuator_type'].widget.attrs.update({
+            'class': 'form-control',
+            'placeholder': '例如：开关、调光器、风扇、电机等'
+        })
+        self.fields['command_key'].widget.attrs.update({
+            'class': 'form-control',
+            'placeholder': '用于控制的JSON键名，例如：switch_state'
         }) 
