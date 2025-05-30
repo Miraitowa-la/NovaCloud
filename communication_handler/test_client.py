@@ -13,6 +13,7 @@ import time
 import sys
 import json
 import uuid
+import random
 
 def parse_args():
     """解析命令行参数"""
@@ -25,11 +26,26 @@ def parse_args():
                         help='设备ID (UUID格式)')
     parser.add_argument('--device_key', type=str, default=None,
                         help='设备密钥 (128位字符串)')
+    parser.add_argument('--auto', action='store_true',
+                        help='自动生成并发送模拟传感器数据')
     return parser.parse_args()
 
 def format_json_message(data):
     """将数据格式化为JSON消息，添加换行符作为消息结束标记"""
     return json.dumps(data) + '\n'
+
+def generate_mock_sensor_data():
+    """生成模拟传感器数据"""
+    return {
+        "type": "data",
+        "timestamp": int(time.time()),
+        "payload": {
+            "temperature": round(random.uniform(18.0, 28.0), 1),  # 模拟温度 18-28°C
+            "humidity": round(random.uniform(30.0, 70.0), 1),     # 模拟湿度 30-70%
+            "light_level": random.randint(0, 1000),               # 模拟光照级别 0-1000
+            "motion_detected": random.choice([True, False])       # 模拟运动检测
+        }
+    }
 
 def main():
     """主函数"""
@@ -53,9 +69,7 @@ def main():
             print("- 请使用 --device_key 参数提供设备密钥。")
         print("\n您可以在设备详情页面获取这些信息。")
         print("或者使用以下命令查询数据库中的设备：")
-        print("python manage.py shell")
-        print(">>> from iot_devices.models import Device")
-        print(">>> Device.objects.values_list('device_id', 'device_key')")
+        print("python communication_handler/list_devices.py")
         return
     
     print(f"正在连接到TCP服务器 {args.host}:{args.port}...")
@@ -92,36 +106,119 @@ def main():
             if response.get("status") == "ok":
                 print("认证成功! 现在可以发送数据...")
                 
-                # 发送数据循环
-                while True:
-                    # 获取用户输入
-                    message = input("请输入要发送的消息（输入'exit'退出）: ")
-                    
-                    if message.lower() == 'exit':
-                        break
-                    
-                    # 发送数据帧
-                    data_frame = {
-                        "type": "data",
-                        "timestamp": int(time.time()),
-                        "payload": {
-                            "message": message
-                        }
-                    }
-                    
-                    data_message = format_json_message(data_frame)
-                    sock.sendall(data_message.encode())
-                    print(f"已发送数据: {data_frame}")
-                    
-                    # 接收响应
-                    response_raw = sock.recv(1024)
-                    response_str = response_raw.decode().strip()
-                    
+                # 自动模式下，生成并发送模拟数据
+                if args.auto:
                     try:
-                        response = json.loads(response_str)
-                        print(f"收到响应: {response}")
-                    except json.JSONDecodeError:
-                        print(f"收到非JSON响应: {response_str}")
+                        print("\n===== 自动数据生成模式 =====")
+                        print("将每2秒发送一次随机生成的传感器数据")
+                        print("按Ctrl+C可停止发送并退出")
+                        print("===========================\n")
+                        
+                        while True:
+                            # 生成随机传感器数据
+                            data_frame = generate_mock_sensor_data()
+                            
+                            # 发送数据
+                            data_message = format_json_message(data_frame)
+                            sock.sendall(data_message.encode())
+                            print(f"已发送数据: {data_frame}")
+                            
+                            # 接收响应
+                            response_raw = sock.recv(1024)
+                            response_str = response_raw.decode().strip()
+                            
+                            try:
+                                response = json.loads(response_str)
+                                print(f"收到响应: {response}")
+                            except json.JSONDecodeError:
+                                print(f"收到非JSON响应: {response_str}")
+                            
+                            # 等待2秒
+                            time.sleep(2)
+                    except KeyboardInterrupt:
+                        print("\n自动数据生成已停止")
+                
+                # 手动输入模式
+                else:
+                    # 发送数据循环
+                    while True:
+                        print("\n请选择操作:")
+                        print("1. 发送自定义消息")
+                        print("2. 发送传感器数据")
+                        print("3. 退出")
+                        choice = input("请输入选项 (1-3): ")
+                        
+                        if choice == '3':
+                            break
+                        
+                        if choice == '1':
+                            # 获取用户输入
+                            message = input("请输入要发送的消息: ")
+                            
+                            # 发送简单消息
+                            data_frame = {
+                                "type": "data",
+                                "timestamp": int(time.time()),
+                                "payload": {
+                                    "message": message
+                                }
+                            }
+                        elif choice == '2':
+                            # 发送传感器数据
+                            temperature = input("请输入温度值 (按Enter跳过): ")
+                            humidity = input("请输入湿度值 (按Enter跳过): ")
+                            light = input("请输入光照值 (按Enter跳过): ")
+                            motion = input("请输入运动检测 (true/false, 按Enter跳过): ")
+                            
+                            # 构建传感器数据
+                            sensor_payload = {}
+                            if temperature:
+                                try:
+                                    sensor_payload["temperature"] = float(temperature)
+                                except ValueError:
+                                    print("温度值必须是数字，已忽略")
+                            if humidity:
+                                try:
+                                    sensor_payload["humidity"] = float(humidity)
+                                except ValueError:
+                                    print("湿度值必须是数字，已忽略")
+                            if light:
+                                try:
+                                    sensor_payload["light_level"] = int(light)
+                                except ValueError:
+                                    print("光照值必须是整数，已忽略")
+                            if motion and motion.lower() in ['true', 'false']:
+                                sensor_payload["motion_detected"] = motion.lower() == 'true'
+                            
+                            # 如果没有任何有效数据，跳过发送
+                            if not sensor_payload:
+                                print("没有提供任何有效的传感器数据，已跳过发送")
+                                continue
+                            
+                            # 构建数据帧
+                            data_frame = {
+                                "type": "data",
+                                "timestamp": int(time.time()),
+                                "payload": sensor_payload
+                            }
+                        else:
+                            print("无效选项，请重试")
+                            continue
+                        
+                        # 发送数据
+                        data_message = format_json_message(data_frame)
+                        sock.sendall(data_message.encode())
+                        print(f"已发送数据: {data_frame}")
+                        
+                        # 接收响应
+                        response_raw = sock.recv(1024)
+                        response_str = response_raw.decode().strip()
+                        
+                        try:
+                            response = json.loads(response_str)
+                            print(f"收到响应: {response}")
+                        except json.JSONDecodeError:
+                            print(f"收到非JSON响应: {response_str}")
             else:
                 print(f"认证失败: {response.get('message', '未知错误')}")
                 

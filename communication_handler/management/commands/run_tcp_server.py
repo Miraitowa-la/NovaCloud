@@ -4,7 +4,8 @@ from django.conf import settings
 import logging
 import json
 from django.utils import timezone
-from iot_devices.models import Device
+from datetime import datetime
+from iot_devices.models import Device, Sensor, SensorData
 from asgiref.sync import sync_to_async
 
 # 配置日志
@@ -62,27 +63,79 @@ class Command(BaseCommand):
                 return
 
             # 2. 验证凭据
-            is_authenticated = await self.authenticate_device(device_id_str, device_key_str)
+            device_instance = await self.authenticate_device_orm(device_id_str, device_key_str)
 
-            if is_authenticated:
+            if device_instance:
                 authenticated_device_id = device_id_str
                 self.stdout.write(self.style.SUCCESS(f"设备 {device_id_str} 认证成功，来自 {addr}"))
                 await self.send_json_response(writer, {"status": "ok", "message": "认证成功"})
                 
                 # 更新设备状态为'online'
                 await self.update_device_status(authenticated_device_id, 'online')
-
-                # 进入数据接收循环 (简单版，仅用于测试)
+                
+                self.stdout.write(self.style.SUCCESS(f"设备 {authenticated_device_id} 已准备好接收数据"))
+                
+                # 进入数据接收循环
                 while True:
-                    data_raw = await reader.readline()
-                    if not data_raw:  # 连接关闭
+                    try:
+                        line_raw = await reader.readline()
+                        if not line_raw:
+                            self.stdout.write(self.style.WARNING(f"设备 {authenticated_device_id} 关闭了连接 (EOF)"))
+                            break  # 连接已关闭
+
+                        line_str = line_raw.decode().strip()
+                        if not line_str:  # 空行忽略
+                            continue
+
+                        self.stdout.write(f"来自设备 {authenticated_device_id} 的数据: {line_str}")
+
+                        try:
+                            data_payload_json = json.loads(line_str)
+                            if data_payload_json.get("type") != "data":
+                                self.stderr.write(self.style.ERROR(f"来自设备 {authenticated_device_id} 的非数据载荷: {line_str}，已忽略"))
+                                await self.send_json_response(writer, {"status": "error", "message": "预期'data'类型的载荷"})
+                                continue
+                            
+                            sensor_readings = data_payload_json.get("payload", {})
+                            device_timestamp_unix = data_payload_json.get("timestamp")
+
+                            if not sensor_readings:
+                                self.stdout.write(self.style.WARNING(f"来自设备 {authenticated_device_id} 的传感器读数为空，已忽略"))
+                                continue
+
+                            # 处理传感器数据并存储
+                            data_count = await self.process_and_store_sensor_data(
+                                authenticated_device_id,  # UUID string
+                                device_instance,          # Device ORM 实例
+                                sensor_readings,
+                                device_timestamp_unix
+                            )
+                            
+                            # 更新设备 last_seen (即使没有有效数据，收到消息也认为在线)
+                            await self.update_device_status(authenticated_device_id, 'online')
+                            
+                            # 发送数据接收确认
+                            await self.send_json_response(writer, {
+                                "status": "ok", 
+                                "message": f"数据已接收并存储，处理了{data_count}个传感器读数"
+                            })
+
+                        except json.JSONDecodeError:
+                            self.stderr.write(self.style.ERROR(f"来自设备 {authenticated_device_id} 的JSON数据无效: {line_str}，已忽略"))
+                            await self.send_json_response(writer, {"status": "error", "message": "无效的JSON数据格式"})
+                        except Exception as e_proc:  # 捕获处理数据时的其他错误
+                            self.stderr.write(self.style.ERROR(f"处理来自设备 {authenticated_device_id} 的数据时出错: {e_proc}"))
+                            await self.send_json_response(writer, {"status": "error", "message": "处理数据时出错"})
+                    
+                    except asyncio.IncompleteReadError:
+                        self.stdout.write(self.style.WARNING(f"从设备 {authenticated_device_id} 读取数据不完整，连接可能正在关闭"))
                         break
-                    
-                    data_str = data_raw.decode().strip()
-                    self.stdout.write(f"收到来自设备 {authenticated_device_id} 的数据: {data_str}")
-                    
-                    # 回显数据（仅用于测试）
-                    await self.send_json_response(writer, {"status": "received", "echo": data_str})
+                    except ConnectionResetError:
+                        self.stdout.write(self.style.WARNING(f"与设备 {authenticated_device_id} 的连接在数据阶段被重置"))
+                        break
+                    except Exception as e_loop:
+                        self.stderr.write(self.style.ERROR(f"设备 {authenticated_device_id} 的数据循环中出错: {e_loop}"))
+                        break  # 退出循环
 
             else:
                 self.stderr.write(self.style.ERROR(f"设备 {device_id_str} 认证失败，来自 {addr}"))
@@ -145,6 +198,58 @@ class Command(BaseCommand):
     async def update_device_status(self, device_id_str, status):
         """异步更新设备状态"""
         return await self.update_device_status_orm(device_id_str, status)
+
+    @sync_to_async
+    def store_sensor_data_orm(self, device_id_str, device_obj, sensor_readings, device_timestamp_unix):
+        """通过ORM存储传感器数据"""
+        try:
+            # 确定时间戳
+            if device_timestamp_unix:
+                try:
+                    # 假设是秒级 Unix 时间戳
+                    record_timestamp = datetime.fromtimestamp(int(device_timestamp_unix), tz=timezone.get_current_timezone())
+                except ValueError:
+                    self.stderr.write(self.style.ERROR(f"设备 {device_id_str} 提供的时间戳 {device_timestamp_unix} 无效，使用服务器时间"))
+                    record_timestamp = timezone.now()
+            else:
+                record_timestamp = timezone.now()
+
+            created_data_count = 0
+            for value_key, value in sensor_readings.items():
+                try:
+                    sensor = Sensor.objects.get(device=device_obj, value_key=value_key)
+                    
+                    # 根据值的类型存入对应字段
+                    data_entry = SensorData(sensor=sensor, timestamp=record_timestamp)
+                    if isinstance(value, bool):
+                        data_entry.value_boolean = value
+                    elif isinstance(value, (int, float)):
+                        data_entry.value_float = float(value)
+                    elif isinstance(value, str):
+                        data_entry.value_string = value
+                    elif isinstance(value, dict) or isinstance(value, list):  # JSONField 可以存 dict 或 list
+                        data_entry.value_json = value
+                    else:
+                        self.stderr.write(self.style.WARNING(f"设备 {device_id_str} 的 {value_key} 值类型不支持: {type(value)}，以字符串形式存储"))
+                        data_entry.value_string = str(value)  # 降级为字符串存储
+                    
+                    data_entry.save()
+                    created_data_count += 1
+                    self.stdout.write(f"已存储设备 {device_id_str} 的 {sensor} 数据")
+
+                except Sensor.DoesNotExist:
+                    self.stderr.write(self.style.WARNING(f"设备 {device_id_str} 没有value_key为 '{value_key}' 的传感器，数据已忽略"))
+                except Exception as e_save:
+                    self.stderr.write(self.style.ERROR(f"保存设备 {device_id_str} 的 {value_key} 传感器数据时出错: {e_save}"))
+            return created_data_count
+
+        except Exception as e_orm:
+            self.stderr.write(self.style.ERROR(f"处理设备 {device_id_str} 的传感器数据时ORM错误: {e_orm}"))
+            return 0
+
+    async def process_and_store_sensor_data(self, device_id_str, device_obj, sensor_readings, device_timestamp_unix):
+        """异步处理和存储传感器数据"""
+        return await self.store_sensor_data_orm(device_id_str, device_obj, sensor_readings, device_timestamp_unix)
 
     async def send_json_response(self, writer: asyncio.StreamWriter, data: dict):
         """发送JSON响应"""
