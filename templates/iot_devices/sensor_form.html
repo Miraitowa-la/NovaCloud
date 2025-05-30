@@ -1,0 +1,94 @@
+{% extends 'base.html' %}
+
+{% block title %}
+    {% if sensor %}编辑传感器：{{ sensor.name }}{% else %}添加新传感器{% endif %} - {{ device.name }} - NovaCloud
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow-sm">
+                <div class="card-header">
+                    <h4 class="card-title mb-0">
+                        {% if sensor %}编辑传感器：{{ sensor.name }}{% else %}添加新传感器{% endif %}
+                        <small class="text-muted">- {{ device.name }}</small>
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        {% if form.non_field_errors %}
+                            <div class="alert alert-danger">
+                                {% for error in form.non_field_errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                        
+                        <div class="form-group mb-3">
+                            <label for="{{ form.name.id_for_label }}" class="form-label">传感器名称</label>
+                            {{ form.name }}
+                            {% if form.name.errors %}
+                                <div class="text-danger">
+                                    {% for error in form.name.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="form-group mb-3">
+                            <label for="{{ form.sensor_type.id_for_label }}" class="form-label">传感器类型</label>
+                            {{ form.sensor_type }}
+                            {% if form.sensor_type.errors %}
+                                <div class="text-danger">
+                                    {% for error in form.sensor_type.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="form-group mb-3">
+                            <label for="{{ form.unit.id_for_label }}" class="form-label">测量单位</label>
+                            {{ form.unit }}
+                            {% if form.unit.errors %}
+                                <div class="text-danger">
+                                    {% for error in form.unit.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="form-group mb-3">
+                            <label for="{{ form.value_key.id_for_label }}" class="form-label">数据键名</label>
+                            {{ form.value_key }}
+                            {% if form.value_key.errors %}
+                                <div class="text-danger">
+                                    {% for error in form.value_key.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                            <div class="form-text text-muted">设备上报JSON数据中用于此传感器值的键名</div>
+                        </div>
+                        
+                        <div class="d-flex justify-content-between mt-4">
+                            <a href="{% url 'iot_devices:device_detail' project.project_id device.device_id %}" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left"></i> 返回
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i> 
+                                {% if sensor %}保存修改{% else %}创建传感器{% endif %}
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

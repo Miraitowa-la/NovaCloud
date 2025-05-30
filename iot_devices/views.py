@@ -2,8 +2,8 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.db.models import Q
-from .models import Project, Device
-from .forms import ProjectForm, DeviceForm
+from .models import Project, Device, Sensor
+from .forms import ProjectForm, DeviceForm, SensorForm
 
 # Create your views here.
 
@@ -155,3 +155,93 @@ def device_detail_view(request, project_id, device_id):
         'sensors': sensors,
         'actuators': actuators
     })
+
+# 传感器管理视图
+
+@login_required
+def sensor_add_view(request, project_id, device_id):
+    """在设备下添加新传感器"""
+    device = get_object_or_404(Device, pk=device_id, project__pk=project_id, 
+                               project__owner=request.user)
+    project = device.project
+    
+    if request.method == 'POST':
+        form = SensorForm(request.POST)
+        if form.is_valid():
+            sensor = form.save(commit=False)
+            name = form.cleaned_data.get('name')
+            value_key = form.cleaned_data.get('value_key')
+            
+            # 检查name在该设备下的唯一性
+            if Sensor.objects.filter(device=device, name=name).exists():
+                form.add_error('name', '此传感器名称在该设备下已存在。')
+                return render(request, 'iot_devices/sensor_form.html', 
+                             {'form': form, 'device': device, 'project': project})
+            
+            # 检查value_key在该设备下的唯一性
+            if Sensor.objects.filter(device=device, value_key=value_key).exists():
+                form.add_error('value_key', '此数据键名在该设备下已存在。')
+                return render(request, 'iot_devices/sensor_form.html', 
+                             {'form': form, 'device': device, 'project': project})
+            
+            sensor.device = device
+            sensor.save()
+            messages.success(request, f'传感器 "{sensor.name}" 已成功添加到设备 "{device.name}"！')
+            return redirect('iot_devices:device_detail', project_id=project_id, device_id=device_id)
+    else:
+        form = SensorForm()
+    
+    return render(request, 'iot_devices/sensor_form.html', 
+                 {'form': form, 'device': device, 'project': project})
+
+@login_required
+def sensor_update_view(request, project_id, device_id, sensor_id):
+    """更新传感器信息"""
+    sensor = get_object_or_404(Sensor, pk=sensor_id, device__pk=device_id,
+                              device__project__pk=project_id, device__project__owner=request.user)
+    device = sensor.device
+    project = device.project
+    
+    if request.method == 'POST':
+        form = SensorForm(request.POST, instance=sensor)
+        if form.is_valid():
+            name = form.cleaned_data.get('name')
+            value_key = form.cleaned_data.get('value_key')
+            
+            # 检查name在该设备下的唯一性（排除当前传感器）
+            if Sensor.objects.filter(device=device, name=name).exclude(pk=sensor_id).exists():
+                form.add_error('name', '此传感器名称在该设备下已存在。')
+                return render(request, 'iot_devices/sensor_form.html', 
+                             {'form': form, 'device': device, 'project': project, 'sensor': sensor})
+            
+            # 检查value_key在该设备下的唯一性（排除当前传感器）
+            if Sensor.objects.filter(device=device, value_key=value_key).exclude(pk=sensor_id).exists():
+                form.add_error('value_key', '此数据键名在该设备下已存在。')
+                return render(request, 'iot_devices/sensor_form.html', 
+                             {'form': form, 'device': device, 'project': project, 'sensor': sensor})
+            
+            form.save()
+            messages.success(request, f'传感器 "{sensor.name}" 已成功更新！')
+            return redirect('iot_devices:device_detail', project_id=project_id, device_id=device_id)
+    else:
+        form = SensorForm(instance=sensor)
+    
+    return render(request, 'iot_devices/sensor_form.html', 
+                 {'form': form, 'device': device, 'project': project, 'sensor': sensor})
+
+@login_required
+def sensor_delete_view(request, project_id, device_id, sensor_id):
+    """删除传感器"""
+    sensor = get_object_or_404(Sensor, pk=sensor_id, device__pk=device_id,
+                              device__project__pk=project_id, device__project__owner=request.user)
+    device = sensor.device
+    project = device.project
+    
+    if request.method == 'POST':
+        sensor_name = sensor.name
+        sensor.delete()
+        messages.success(request, f'传感器 "{sensor_name}" 已成功删除。')
+        return redirect('iot_devices:device_detail', project_id=project_id, device_id=device_id)
+    
+    return render(request, 'iot_devices/sensor_confirm_delete.html', 
+                 {'sensor': sensor, 'device': device, 'project': project})

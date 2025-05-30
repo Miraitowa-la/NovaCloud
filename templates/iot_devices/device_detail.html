@@ -83,7 +83,7 @@
     <div class="card shadow-sm mb-4">
         <div class="card-header d-flex justify-content-between align-items-center">
             <h4 class="card-title mb-0">传感器列表</h4>
-            <a href="#" class="btn btn-outline-primary btn-sm">
+            <a href="{% url 'iot_devices:sensor_add' project.project_id device.device_id %}" class="btn btn-outline-primary btn-sm">
                 <i class="fas fa-plus"></i> 添加传感器
             </a>
         </div>
@@ -95,6 +95,7 @@
                             <tr>
                                 <th>名称</th>
                                 <th>类型</th>
+                                <th>单位</th>
                                 <th>数据键名</th>
                                 <th>操作</th>
                             </tr>
@@ -104,12 +105,14 @@
                                 <tr>
                                     <td>{{ sensor.name }}</td>
                                     <td>{{ sensor.sensor_type }}</td>
+                                    <td>{{ sensor.unit }}</td>
                                     <td><code>{{ sensor.value_key }}</code></td>
                                     <td>
-                                        <a href="#" class="btn btn-outline-secondary btn-sm me-1">
+                                        <a href="{% url 'iot_devices:sensor_update' project.project_id device.device_id sensor.id %}" class="btn btn-outline-secondary btn-sm me-1">
                                             <i class="fas fa-edit"></i>
                                         </a>
-                                        <a href="#" class="btn btn-outline-danger btn-sm">
+                                        <a href="{% url 'iot_devices:sensor_delete' project.project_id device.device_id sensor.id %}" class="btn btn-outline-danger btn-sm"
+                                           onclick="return confirm('您确定要删除传感器 \'{{ sensor.name }}\' 吗？此操作不可恢复！');">
                                             <i class="fas fa-trash"></i>
                                         </a>
                                     </td>
@@ -121,7 +124,7 @@
             {% else %}
                 <div class="text-center">
                     <p class="text-muted mb-3">该设备还没有添加任何传感器</p>
-                    <a href="#" class="btn btn-outline-primary">
+                    <a href="{% url 'iot_devices:sensor_add' project.project_id device.device_id %}" class="btn btn-outline-primary">
                         <i class="fas fa-plus"></i> 添加第一个传感器
                     </a>
                 </div>
