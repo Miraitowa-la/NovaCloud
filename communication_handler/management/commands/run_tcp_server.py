@@ -2,6 +2,10 @@ import asyncio
 from django.core.management.base import BaseCommand
 from django.conf import settings
 import logging
+import json
+from django.utils import timezone
+from iot_devices.models import Device
+from asgiref.sync import sync_to_async
 
 # 配置日志
 logger = logging.getLogger(__name__)
@@ -29,31 +33,124 @@ class Command(BaseCommand):
         addr = writer.get_extra_info('peername')
         self.stdout.write(self.style.HTTP_INFO(f"接受来自 {addr} 的连接"))
         
-        # 在此阶段仅实现简单的回显功能
-        try:
-            while True:
-                data = await reader.read(1024)  # 读取数据块
-                if not data:  # 连接关闭
-                    break
-                
-                message = data.decode('utf-8', errors='replace')  # 解码，容错处理
-                self.stdout.write(f"收到来自 {addr!r} 的数据: {message!r}")
+        authenticated_device_id = None  # 用于存储认证成功的设备ID
 
-                # 回显数据（仅用于初步测试）
-                writer.write(data)
-                await writer.drain()
-                self.stdout.write(f"已回显数据给 {addr!r}")
-        
+        try:
+            # 1. 接收认证数据 (假设以换行符结束的JSON)
+            auth_data_raw = await reader.readline()
+            if not auth_data_raw:
+                self.stdout.write(self.style.WARNING(f"未收到来自 {addr} 的认证数据，关闭连接"))
+                return  # 结束协程
+
+            auth_data_str = auth_data_raw.decode().strip()
+            self.stdout.write(f"来自 {addr} 的认证尝试: {auth_data_str}")
+
+            try:
+                auth_payload = json.loads(auth_data_str)
+                if auth_payload.get("type") != "auth":
+                    raise ValueError("无效的认证类型")
+                
+                device_id_str = auth_payload.get("device_id")
+                device_key_str = auth_payload.get("device_key")
+                
+                if not device_id_str or not device_key_str:
+                    raise ValueError("认证信息缺少device_id或device_key")
+
+            except (json.JSONDecodeError, ValueError) as e:
+                self.stderr.write(self.style.ERROR(f"来自 {addr} 的认证信息无效: {e}，关闭连接"))
+                await self.send_json_response(writer, {"status": "error", "message": "无效的认证信息格式"})
+                return
+
+            # 2. 验证凭据
+            is_authenticated = await self.authenticate_device(device_id_str, device_key_str)
+
+            if is_authenticated:
+                authenticated_device_id = device_id_str
+                self.stdout.write(self.style.SUCCESS(f"设备 {device_id_str} 认证成功，来自 {addr}"))
+                await self.send_json_response(writer, {"status": "ok", "message": "认证成功"})
+                
+                # 更新设备状态为'online'
+                await self.update_device_status(authenticated_device_id, 'online')
+
+                # 进入数据接收循环 (简单版，仅用于测试)
+                while True:
+                    data_raw = await reader.readline()
+                    if not data_raw:  # 连接关闭
+                        break
+                    
+                    data_str = data_raw.decode().strip()
+                    self.stdout.write(f"收到来自设备 {authenticated_device_id} 的数据: {data_str}")
+                    
+                    # 回显数据（仅用于测试）
+                    await self.send_json_response(writer, {"status": "received", "echo": data_str})
+
+            else:
+                self.stderr.write(self.style.ERROR(f"设备 {device_id_str} 认证失败，来自 {addr}"))
+                await self.send_json_response(writer, {"status": "error", "message": "认证失败，无效的凭据"})
+                return  # 认证失败，关闭连接
+
         except ConnectionResetError:
             self.stdout.write(self.style.WARNING(f"连接被重置: {addr}"))
-        except asyncio.CancelledError:
-            self.stdout.write(self.style.WARNING(f"连接处理被取消: {addr}"))
+        except asyncio.IncompleteReadError:
+            self.stdout.write(self.style.WARNING(f"读取不完整，来自 {addr}，连接可能已关闭"))
         except Exception as e:
             self.stderr.write(self.style.ERROR(f"处理客户端 {addr} 时出错: {e}"))
         finally:
+            if authenticated_device_id:
+                # 设备断开连接，更新状态为'offline'
+                await self.update_device_status(authenticated_device_id, 'offline')
+                self.stdout.write(self.style.HTTP_INFO(f"设备 {authenticated_device_id} 已断开连接，来自 {addr}"))
+            
             self.stdout.write(self.style.HTTP_INFO(f"关闭与 {addr} 的连接"))
             writer.close()
             await writer.wait_closed()
+
+    @sync_to_async
+    def authenticate_device_orm(self, device_id_str, device_key_str):
+        """通过ORM验证设备凭据"""
+        try:
+            device = Device.objects.get(device_id=device_id_str, device_key=device_key_str)
+            # 可选：这里可以检查device的其他状态，如device.status != 'disabled'
+            return device  # 返回device实例
+        except Device.DoesNotExist:
+            return None
+        except Exception as e:
+            self.stderr.write(self.style.ERROR(f"验证设备 {device_id_str} 时ORM错误: {e}"))
+            return None
+    
+    async def authenticate_device(self, device_id_str, device_key_str):
+        """异步验证设备凭据"""
+        device_instance = await self.authenticate_device_orm(device_id_str, device_key_str)
+        return device_instance is not None
+    
+    @sync_to_async
+    def update_device_status_orm(self, device_id_str, status):
+        """通过ORM更新设备状态"""
+        try:
+            device = Device.objects.get(device_id=device_id_str)
+            device.status = status
+            if status == 'online':
+                device.last_seen = timezone.now()
+                device.save(update_fields=['status', 'last_seen'])
+            else:
+                device.save(update_fields=['status'])
+            return True
+        except Device.DoesNotExist:
+            self.stderr.write(self.style.ERROR(f"更新状态时设备 {device_id_str} 不存在"))
+            return False
+        except Exception as e:
+            self.stderr.write(self.style.ERROR(f"更新设备 {device_id_str} 状态时ORM错误: {e}"))
+            return False
+
+    async def update_device_status(self, device_id_str, status):
+        """异步更新设备状态"""
+        return await self.update_device_status_orm(device_id_str, status)
+
+    async def send_json_response(self, writer: asyncio.StreamWriter, data: dict):
+        """发送JSON响应"""
+        response_str = json.dumps(data) + '\n'  # 添加换行符作为消息结束标记
+        writer.write(response_str.encode())
+        await writer.drain()
 
     async def handle_async(self, options):
         """异步处理入口"""
