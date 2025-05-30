@@ -91,34 +91,68 @@ class Command(BaseCommand):
 
                         try:
                             data_payload_json = json.loads(line_str)
-                            if data_payload_json.get("type") != "data":
-                                self.stderr.write(self.style.ERROR(f"来自设备 {authenticated_device_id} 的非数据载荷: {line_str}，已忽略"))
-                                await self.send_json_response(writer, {"status": "error", "message": "预期'data'类型的载荷"})
-                                continue
-                            
-                            sensor_readings = data_payload_json.get("payload", {})
-                            device_timestamp_unix = data_payload_json.get("timestamp")
+                            msg_type = data_payload_json.get("type")
 
-                            if not sensor_readings:
-                                self.stdout.write(self.style.WARNING(f"来自设备 {authenticated_device_id} 的传感器读数为空，已忽略"))
-                                continue
+                            if msg_type == "data":
+                                # 处理传感器数据
+                                sensor_readings = data_payload_json.get("payload", {})
+                                device_timestamp_unix = data_payload_json.get("timestamp")
 
-                            # 处理传感器数据并存储
-                            data_count = await self.process_and_store_sensor_data(
-                                authenticated_device_id,  # UUID string
-                                device_instance,          # Device ORM 实例
-                                sensor_readings,
-                                device_timestamp_unix
-                            )
-                            
-                            # 更新设备 last_seen (即使没有有效数据，收到消息也认为在线)
-                            await self.update_device_status(authenticated_device_id, 'online')
-                            
-                            # 发送数据接收确认
-                            await self.send_json_response(writer, {
-                                "status": "ok", 
-                                "message": f"数据已接收并存储，处理了{data_count}个传感器读数"
-                            })
+                                if not sensor_readings:
+                                    self.stdout.write(self.style.WARNING(f"来自设备 {authenticated_device_id} 的传感器读数为空，已忽略"))
+                                    continue
+
+                                # 处理传感器数据并存储
+                                data_count = await self.process_and_store_sensor_data(
+                                    authenticated_device_id,  # UUID string
+                                    device_instance,          # Device ORM 实例
+                                    sensor_readings,
+                                    device_timestamp_unix
+                                )
+                                
+                                # 更新设备 last_seen 和状态
+                                await self.update_device_status(authenticated_device_id, 'online')
+                                
+                                # 发送数据接收确认
+                                await self.send_json_response(writer, {
+                                    "status": "ok", 
+                                    "message": f"数据已接收并存储，处理了{data_count}个传感器读数"
+                                })
+                                
+                            elif msg_type == "heartbeat":
+                                # 处理心跳包
+                                self.stdout.write(self.style.SUCCESS(f"收到设备 {authenticated_device_id} 的心跳"))
+                                
+                                # 更新设备 last_seen 和状态
+                                await self.update_device_status(authenticated_device_id, 'online')
+                                
+                                # 回复心跳确认
+                                await self.send_json_response(writer, {
+                                    "status": "ok", 
+                                    "message": "心跳已确认"
+                                })
+                                
+                            elif msg_type == "status":
+                                # 处理设备状态上报
+                                status_payload = data_payload_json.get("payload", {})
+                                self.stdout.write(f"设备 {authenticated_device_id} 状态上报: {status_payload}")
+                                
+                                # 更新设备 last_seen 和状态
+                                await self.update_device_status(authenticated_device_id, 'online')
+                                
+                                # 回复状态接收确认
+                                await self.send_json_response(writer, {
+                                    "status": "ok", 
+                                    "message": "状态已接收"
+                                })
+                                
+                            else:
+                                # 未知消息类型
+                                self.stderr.write(self.style.ERROR(f"来自设备 {authenticated_device_id} 的未知消息类型 '{msg_type}'，已忽略"))
+                                await self.send_json_response(writer, {
+                                    "status": "error", 
+                                    "message": f"未知消息类型: {msg_type}"
+                                })
 
                         except json.JSONDecodeError:
                             self.stderr.write(self.style.ERROR(f"来自设备 {authenticated_device_id} 的JSON数据无效: {line_str}，已忽略"))

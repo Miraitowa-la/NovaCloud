@@ -4,7 +4,7 @@ NovaCloud TCP客户端测试脚本
 用于测试TCP服务器的设备认证和数据通信功能
 
 使用方法:
-python test_client.py --device_id <设备UUID> --device_key <设备密钥> [--host HOST] [--port PORT]
+python test_client.py --device_id <设备UUID> --device_key <设备密钥> [--host HOST] [--port PORT] [--auto] [--heartbeat]
 """
 
 import socket
@@ -14,6 +14,7 @@ import sys
 import json
 import uuid
 import random
+import threading
 
 def parse_args():
     """解析命令行参数"""
@@ -28,6 +29,10 @@ def parse_args():
                         help='设备密钥 (128位字符串)')
     parser.add_argument('--auto', action='store_true',
                         help='自动生成并发送模拟传感器数据')
+    parser.add_argument('--heartbeat', action='store_true',
+                        help='启用心跳机制 (每30秒发送一次心跳)')
+    parser.add_argument('--heartbeat-interval', type=int, default=30,
+                        help='心跳间隔，单位为秒 (默认: 30)')
     return parser.parse_args()
 
 def format_json_message(data):
@@ -46,6 +51,61 @@ def generate_mock_sensor_data():
             "motion_detected": random.choice([True, False])       # 模拟运动检测
         }
     }
+
+def generate_status_data():
+    """生成设备状态数据"""
+    return {
+        "type": "status",
+        "timestamp": int(time.time()),
+        "payload": {
+            "battery": random.randint(0, 100),       # 电池电量 0-100%
+            "rssi": random.randint(-100, -30),       # 信号强度 -100 to -30 dBm
+            "uptime": random.randint(1, 1000000),    # 运行时间（秒）
+            "version": "1.0.0"                       # 设备固件版本
+        }
+    }
+
+def generate_heartbeat():
+    """生成心跳包"""
+    return {
+        "type": "heartbeat",
+        "timestamp": int(time.time())
+    }
+
+def heartbeat_thread(sock, interval):
+    """心跳线程函数"""
+    print(f"\n心跳线程已启动，间隔: {interval}秒")
+    try:
+        while True:
+            # 生成并发送心跳包
+            heartbeat = generate_heartbeat()
+            heartbeat_message = format_json_message(heartbeat)
+            sock.sendall(heartbeat_message.encode())
+            print(f"\n已发送心跳: {heartbeat}")
+            
+            # 接收响应
+            try:
+                sock.settimeout(5)  # 设置5秒超时
+                response_raw = sock.recv(1024)
+                response_str = response_raw.decode().strip()
+                
+                try:
+                    response = json.loads(response_str)
+                    print(f"收到心跳响应: {response}")
+                except json.JSONDecodeError:
+                    print(f"收到非JSON心跳响应: {response_str}")
+            except socket.timeout:
+                print("心跳响应超时")
+            except Exception as e:
+                print(f"接收心跳响应时出错: {e}")
+                break
+            
+            # 等待下一次心跳
+            time.sleep(interval)
+    except Exception as e:
+        print(f"心跳线程异常: {e}")
+    finally:
+        print("心跳线程已停止")
 
 def main():
     """主函数"""
@@ -106,6 +166,17 @@ def main():
             if response.get("status") == "ok":
                 print("认证成功! 现在可以发送数据...")
                 
+                # 如果启用了心跳，启动心跳线程
+                heartbeat_thread_instance = None
+                if args.heartbeat:
+                    # 创建并启动心跳线程
+                    heartbeat_thread_instance = threading.Thread(
+                        target=heartbeat_thread,
+                        args=(sock, args.heartbeat_interval),
+                        daemon=True  # 设为守护线程，主线程结束时自动结束
+                    )
+                    heartbeat_thread_instance.start()
+                
                 # 自动模式下，生成并发送模拟数据
                 if args.auto:
                     try:
@@ -145,10 +216,12 @@ def main():
                         print("\n请选择操作:")
                         print("1. 发送自定义消息")
                         print("2. 发送传感器数据")
-                        print("3. 退出")
-                        choice = input("请输入选项 (1-3): ")
+                        print("3. 发送心跳包")
+                        print("4. 发送状态信息")
+                        print("5. 退出")
+                        choice = input("请输入选项 (1-5): ")
                         
-                        if choice == '3':
+                        if choice == '5':
                             break
                         
                         if choice == '1':
@@ -201,6 +274,12 @@ def main():
                                 "timestamp": int(time.time()),
                                 "payload": sensor_payload
                             }
+                        elif choice == '3':
+                            # 发送心跳包
+                            data_frame = generate_heartbeat()
+                        elif choice == '4':
+                            # 发送状态信息
+                            data_frame = generate_status_data()
                         else:
                             print("无效选项，请重试")
                             continue
