@@ -1,0 +1,79 @@
+{% extends 'base.html' %}
+
+{% block title %}项目 "{{ project.name }}" - 设备列表 - NovaCloud{% endblock %}
+
+{% block content %}
+<div class="container">
+    <!-- 面包屑导航 -->
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'iot_devices:project_list' %}">我的项目</a></li>
+            <li class="breadcrumb-item active">{{ project.name }}</li>
+        </ol>
+    </nav>
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>{{ project.name }} - 设备列表</h2>
+        <a href="{% url 'iot_devices:device_create' project.project_id %}" class="btn btn-primary">
+            <i class="fas fa-plus"></i> 添加新设备
+        </a>
+    </div>
+
+    {% if not devices %}
+        <div class="card">
+            <div class="card-body text-center">
+                <p class="text-muted mb-3">该项目下还没有添加任何设备</p>
+                <a href="{% url 'iot_devices:device_create' project.project_id %}" class="btn btn-outline-primary">
+                    <i class="fas fa-plus"></i> 立即添加您的第一个设备
+                </a>
+            </div>
+        </div>
+    {% else %}
+        <div class="row">
+            {% for device in devices %}
+                <div class="col-md-6 mb-4">
+                    <div class="card device-card shadow-sm h-100">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h5 class="card-title mb-0">{{ device.name }}</h5>
+                            <div>
+                                {% if device.status == 'online' %}
+                                    <span class="status-dot status-dot-success"></span>
+                                    <span class="text-muted">在线</span>
+                                {% elif device.status == 'offline' %}
+                                    <span class="status-dot status-dot-offline"></span>
+                                    <span class="text-muted">离线</span>
+                                {% else %}
+                                    <span class="status-dot status-dot-warning"></span>
+                                    <span class="text-muted">未注册</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <p class="card-text text-muted">设备ID: {{ device.device_id|truncatechars:12 }}...</p>
+                            {% if device.last_seen %}
+                                <p class="card-text"><small class="text-muted">最后上线: {{ device.last_seen|date:"Y-m-d H:i" }}</small></p>
+                            {% else %}
+                                <p class="card-text"><small class="text-muted">尚未上线</small></p>
+                            {% endif %}
+                        </div>
+                        <div class="card-footer bg-transparent border-0">
+                            <div class="d-flex justify-content-end">
+                                <a href="{% url 'iot_devices:device_detail' project.project_id device.device_id %}" class="btn btn-outline-primary btn-sm me-2">
+                                    <i class="fas fa-cogs"></i> 详情
+                                </a>
+                                <a href="{% url 'iot_devices:device_update' project.project_id device.device_id %}" class="btn btn-outline-secondary btn-sm me-2">
+                                    <i class="fas fa-edit"></i> 编辑
+                                </a>
+                                <a href="{% url 'iot_devices:device_delete' project.project_id device.device_id %}" class="btn btn-outline-danger btn-sm" 
+                                   onclick="return confirm('您确定要删除设备 \'{{ device.name }}\' 吗？所有关联的传感器和执行器数据也将被删除！');">
+                                    <i class="fas fa-trash"></i> 删除
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+</div>
+{% endblock %} 

@@ -1,0 +1,229 @@
+{% extends 'base.html' %}
+
+{% block title %}设备详情 - {{ device.name }} - NovaCloud{% endblock %}
+
+{% block content %}
+<div class="container">
+    <!-- 面包屑导航 -->
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'iot_devices:project_list' %}">我的项目</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'iot_devices:device_list' project.project_id %}">{{ project.name }}</a></li>
+            <li class="breadcrumb-item active">{{ device.name }}</li>
+        </ol>
+    </nav>
+
+    <!-- 设备信息卡片 -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h4 class="card-title mb-0">设备信息</h4>
+            <a href="{% url 'iot_devices:device_update' project.project_id device.device_id %}" class="btn btn-outline-secondary btn-sm">
+                <i class="fas fa-edit"></i> 编辑设备信息
+            </a>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="device-info mb-3">
+                        <h5 class="text-muted">设备名称</h5>
+                        <p class="lead">{{ device.name }}</p>
+                    </div>
+                    
+                    <div class="device-info mb-3">
+                        <h5 class="text-muted">状态</h5>
+                        <p>
+                            {% if device.status == 'online' %}
+                                <span class="status-dot status-dot-success"></span> 在线
+                            {% elif device.status == 'offline' %}
+                                <span class="status-dot status-dot-offline"></span> 离线
+                            {% else %}
+                                <span class="status-dot status-dot-warning"></span> 未注册
+                            {% endif %}
+                        </p>
+                    </div>
+                    
+                    {% if device.last_seen %}
+                        <div class="device-info mb-3">
+                            <h5 class="text-muted">最后上线时间</h5>
+                            <p>{{ device.last_seen|date:"Y-m-d H:i:s" }}</p>
+                        </div>
+                    {% endif %}
+                    
+                    <div class="device-info mb-3">
+                        <h5 class="text-muted">创建时间</h5>
+                        <p>{{ device.created_at|date:"Y-m-d H:i:s" }}</p>
+                    </div>
+                </div>
+                
+                <div class="col-md-6">
+                    <div class="device-info mb-3">
+                        <h5 class="text-muted">设备ID</h5>
+                        <div class="input-group">
+                            <input type="text" class="form-control" value="{{ device.device_id }}" id="device_id" readonly>
+                            <button class="btn btn-outline-secondary" type="button" onclick="copyToClipboard('device_id')">
+                                <i class="fas fa-copy"></i>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    {% if device.device_identifier %}
+                        <div class="device-info mb-3">
+                            <h5 class="text-muted">设备物理标识</h5>
+                            <p>{{ device.device_identifier }}</p>
+                        </div>
+                    {% endif %}
+                    
+                    <div class="device-info mb-3">
+                        <h5 class="text-muted">设备密钥 <span class="text-danger">(重要，请妥善保管)</span></h5>
+                        <div class="input-group">
+                            <input type="text" class="form-control" value="{{ device.device_key }}" id="device_key" readonly>
+                            <button class="btn btn-outline-secondary" type="button" onclick="copyToClipboard('device_key')">
+                                <i class="fas fa-copy"></i>
+                            </button>
+                        </div>
+                        <small class="form-text text-muted">此密钥用于设备连接认证，请妥善保管，避免泄露。</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 传感器部分 -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h4 class="card-title mb-0">传感器列表</h4>
+            <a href="#" class="btn btn-outline-primary btn-sm">
+                <i class="fas fa-plus"></i> 添加传感器
+            </a>
+        </div>
+        <div class="card-body">
+            {% if sensors %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>名称</th>
+                                <th>类型</th>
+                                <th>数据键名</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for sensor in sensors %}
+                                <tr>
+                                    <td>{{ sensor.name }}</td>
+                                    <td>{{ sensor.sensor_type }}</td>
+                                    <td><code>{{ sensor.value_key }}</code></td>
+                                    <td>
+                                        <a href="#" class="btn btn-outline-secondary btn-sm me-1">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                        <a href="#" class="btn btn-outline-danger btn-sm">
+                                            <i class="fas fa-trash"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="text-center">
+                    <p class="text-muted mb-3">该设备还没有添加任何传感器</p>
+                    <a href="#" class="btn btn-outline-primary">
+                        <i class="fas fa-plus"></i> 添加第一个传感器
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- 执行器部分 -->
+    <div class="card shadow-sm">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h4 class="card-title mb-0">执行器列表</h4>
+            <a href="#" class="btn btn-outline-primary btn-sm">
+                <i class="fas fa-plus"></i> 添加执行器
+            </a>
+        </div>
+        <div class="card-body">
+            {% if actuators %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>名称</th>
+                                <th>类型</th>
+                                <th>命令键名</th>
+                                <th>当前状态</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for actuator in actuators %}
+                                <tr>
+                                    <td>{{ actuator.name }}</td>
+                                    <td>{{ actuator.actuator_type }}</td>
+                                    <td><code>{{ actuator.command_key }}</code></td>
+                                    <td>
+                                        {% if actuator.current_state_payload %}
+                                            <code>{{ actuator.current_state_payload }}</code>
+                                        {% else %}
+                                            <span class="text-muted">未知</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <a href="#" class="btn btn-outline-primary btn-sm me-1">
+                                            <i class="fas fa-gamepad"></i>
+                                        </a>
+                                        <a href="#" class="btn btn-outline-secondary btn-sm me-1">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                        <a href="#" class="btn btn-outline-danger btn-sm">
+                                            <i class="fas fa-trash"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="text-center">
+                    <p class="text-muted mb-3">该设备还没有添加任何执行器</p>
+                    <a href="#" class="btn btn-outline-primary">
+                        <i class="fas fa-plus"></i> 添加第一个执行器
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+{% block extra_body_js %}
+<script>
+    function copyToClipboard(elementId) {
+        const element = document.getElementById(elementId);
+        element.select();
+        document.execCommand("copy");
+        
+        // 创建提示元素
+        const tooltip = document.createElement("div");
+        tooltip.className = "copy-tooltip alert alert-success";
+        tooltip.textContent = "已复制到剪贴板";
+        tooltip.style.position = "fixed";
+        tooltip.style.top = "20px";
+        tooltip.style.left = "50%";
+        tooltip.style.transform = "translateX(-50%)";
+        tooltip.style.padding = "8px 16px";
+        tooltip.style.zIndex = "9999";
+        document.body.appendChild(tooltip);
+        
+        // 2秒后移除提示
+        setTimeout(function() {
+            document.body.removeChild(tooltip);
+        }, 2000);
+    }
+</script>
+{% endblock %}
+{% endblock %} 
