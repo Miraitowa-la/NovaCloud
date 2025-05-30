@@ -25,6 +25,21 @@ python manage.py run_tcp_server --host 192.168.1.100 --port 9999
 | `--host` | 字符串 | `0.0.0.0` 或配置文件中的`NOVA_TCP_SERVER_HOST` | TCP服务器监听地址 |
 | `--port` | 整数 | `8100` 或配置文件中的`NOVA_TCP_SERVER_PORT`    | TCP服务器监听端口 |
 
+### 自动启动配置
+
+从当前版本开始，TCP服务器可以在Django启动时自动启动。相关配置位于`settings.py`：
+
+```python
+# TCP服务器配置
+NOVA_TCP_SERVER_HOST = '0.0.0.0'  # 监听所有网络接口
+NOVA_TCP_SERVER_PORT = 8100  # TCP服务器端口
+NOVA_TCP_SERVER_AUTOSTART = True  # 是否在Django启动时自动启动TCP服务器
+```
+
+通过设置`NOVA_TCP_SERVER_AUTOSTART = False`可以禁用自动启动功能。
+
+自动启动的TCP服务器将作为Django的子进程运行，它的输出会被重定向到Django的控制台，前缀为`[TCP服务器]`。当Django服务停止时，TCP服务器也会自动停止。
+
 ### 功能特性
 
 1. **设备认证**：验证设备的`device_id`和`device_key`，认证成功后建立持久连接。
@@ -315,8 +330,9 @@ python communication_handler/check_sensor_data.py --device_id <设备UUID> --lim
    - 使用 `check_sensor_data.py` 验证数据存储。
 
 2. **服务器启动**：
-   - 在开发环境，使用 `python manage.py run_tcp_server` 单独启动。
-   - 在生产环境，考虑使用 systemd 服务或 Supervisor 确保服务自启动和故障重启。
+   - 在开发环境，可以通过设置`NOVA_TCP_SERVER_AUTOSTART = True`让TCP服务器随Django自动启动。
+   - 也可以使用`python manage.py run_tcp_server`单独启动。
+   - 在生产环境，考虑使用systemd服务或Supervisor确保服务自启动和故障重启。
 
 3. **设备认证安全**：
    - 避免在代码和版本控制中硬编码设备密钥。
