@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     'iot_devices',
     'strategy_engine',
     'core',
+    'communication_handler',
 ]
 
 MIDDLEWARE = [
@@ -141,3 +142,7 @@ AUTHENTICATION_BACKENDS = [
     'accounts.backends.EmailOrUsernameModelBackend',  # 自定义后端，支持邮箱登录
     'django.contrib.auth.backends.ModelBackend',  # 默认后端，保留作为备用
 ]
+
+# TCP服务器配置
+NOVA_TCP_SERVER_HOST = '0.0.0.0'  # 监听所有网络接口
+NOVA_TCP_SERVER_PORT = 8888  # TCP服务器端口
