@@ -47,6 +47,11 @@ class Project(models.Model):
         return self.name
 
 
+def generate_device_id():
+    """生成10个字符的设备ID"""
+    return get_random_string(length=10, allowed_chars='abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789')
+
+
 class Device(models.Model):
     """
     设备模型，代表一个物联网设备
@@ -59,9 +64,10 @@ class Device(models.Model):
         ('disabled', '已禁用'),
     ]
 
-    device_id = models.UUIDField(
+    device_id = models.CharField(
         primary_key=True,
-        default=uuid.uuid4,
+        max_length=10,
+        default=generate_device_id,
         editable=False,
         verbose_name="设备ID"
     )
@@ -72,7 +78,7 @@ class Device(models.Model):
         verbose_name="设备物理标识"
     )
     device_key = models.CharField(
-        max_length=128,
+        max_length=50,
         editable=False,
         verbose_name="设备密钥"
     )
@@ -122,7 +128,7 @@ class Device(models.Model):
         """重写保存方法，自动生成设备密钥"""
         # 仅在新对象创建时生成设备密钥
         if not self.device_key:
-            self.device_key = get_random_string(64)
+            self.device_key = get_random_string(50)
         super().save(*args, **kwargs)
 
     def __str__(self):

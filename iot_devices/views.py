@@ -11,6 +11,11 @@ from .forms import ProjectForm, DeviceForm, SensorForm, ActuatorForm
 def project_list_view(request):
     """显示当前用户的所有项目列表"""
     projects = Project.objects.filter(owner=request.user).order_by('-created_at')
+    
+    # 为每个项目添加设备数量信息
+    for project in projects:
+        project.device_count = Device.objects.filter(project=project).count()
+        
     return render(request, 'iot_devices/project_list.html', {'projects': projects})
 
 @login_required
@@ -65,6 +70,12 @@ def device_list_view(request, project_id):
     """显示项目下的所有设备"""
     project = get_object_or_404(Project, pk=project_id, owner=request.user)
     devices = Device.objects.filter(project=project).order_by('-created_at')
+    
+    # 为每个设备添加传感器和执行器数量信息
+    for device in devices:
+        device.sensor_count = Sensor.objects.filter(device=device).count()
+        device.actuator_count = Actuator.objects.filter(device=device).count()
+    
     return render(request, 'iot_devices/device_list.html', {'project': project, 'devices': devices})
 
 @login_required

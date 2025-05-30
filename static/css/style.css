@@ -960,6 +960,7 @@ html[data-theme='dark'] .alert-info {
 
 /* 响应式列 */
 @media (min-width: 576px) {
+    .col-sm-4 { flex: 0 0 33.333333%; max-width: 33.333333%; }
     .col-sm-6 { flex: 0 0 50%; max-width: 50%; }
     .col-sm-8 { flex: 0 0 66.666667%; max-width: 66.666667%; }
     .col-sm-10 { flex: 0 0 83.333333%; max-width: 83.333333%; }
@@ -967,6 +968,7 @@ html[data-theme='dark'] .alert-info {
 }
 
 @media (min-width: 768px) {
+    .col-md-4 { flex: 0 0 33.333333%; max-width: 33.333333%; }
     .col-md-6 { flex: 0 0 50%; max-width: 50%; }
     .col-md-8 { flex: 0 0 66.666667%; max-width: 66.666667%; }
     .col-md-10 { flex: 0 0 83.333333%; max-width: 83.333333%; }
@@ -974,6 +976,7 @@ html[data-theme='dark'] .alert-info {
 }
 
 @media (min-width: 992px) {
+    .col-lg-4 { flex: 0 0 33.333333%; max-width: 33.333333%; }
     .col-lg-6 { flex: 0 0 50%; max-width: 50%; }
     .col-lg-8 { flex: 0 0 66.666667%; max-width: 66.666667%; }
     .col-lg-10 { flex: 0 0 83.333333%; max-width: 83.333333%; }

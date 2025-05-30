@@ -23,7 +23,7 @@
     {% else %}
         <div class="row">
             {% for device in devices %}
-                <div class="col-md-6 mb-4">
+                <div class="col-md-4 mb-4">
                     <div class="card device-card shadow-sm h-100">
                         <div class="card-header d-flex justify-content-between align-items-center">
                             <h5 class="card-title mb-0">{{ device.name }}</h5>
@@ -41,12 +41,36 @@
                             </div>
                         </div>
                         <div class="card-body">
-                            <p class="card-text text-muted">设备ID: {{ device.device_id|truncatechars:12 }}...</p>
-                            {% if device.last_seen %}
-                                <p class="card-text"><small class="text-muted">最后上线: {{ device.last_seen|date:"Y-m-d H:i" }}</small></p>
-                            {% else %}
-                                <p class="card-text"><small class="text-muted">尚未上线</small></p>
-                            {% endif %}
+                            <p class="card-text text-muted">设备ID: {{ device.device_id }}</p>
+                            
+                            <div class="device-attributes">
+                                <!-- 创建时间 -->
+                                <div class="attribute-item border p-2 mb-2">
+                                    <i class="fas fa-calendar-plus"></i> <span class="attribute-label">创建时间：</span><span class="attribute-value">{{ device.created_at|date:"Y-m-d H:i" }}</span>
+                                </div>
+                                
+                                <!-- 最后上线/下线时间 -->
+                                <div class="attribute-item border p-2 mb-2">
+                                    <i class="fas fa-calendar-check"></i> <span class="attribute-label">{% if device.status == 'online' %}上线时间{% else %}下线时间{% endif %}：</span>
+                                    <span class="attribute-value">
+                                        {% if device.last_seen %}
+                                            {{ device.last_seen|date:"Y-m-d H:i:s" }}
+                                        {% else %}
+                                            尚未上线
+                                        {% endif %}
+                                    </span>
+                                </div>
+                                
+                                <!-- 传感器数量 -->
+                                <div class="attribute-item border p-2 mb-2">
+                                    <i class="fas fa-thermometer-half"></i> <span class="attribute-label">传感器数量：</span><span class="attribute-value">{{ device.sensor_count }}</span>
+                                </div>
+                                
+                                <!-- 执行器数量 -->
+                                <div class="attribute-item border p-2 mb-2">
+                                    <i class="fas fa-sliders-h"></i> <span class="attribute-label">执行器数量：</span><span class="attribute-value">{{ device.actuator_count }}</span>
+                                </div>
+                            </div>
                         </div>
                         <div class="card-footer bg-transparent border-0">
                             <div class="d-flex justify-content-end">
@@ -68,4 +92,45 @@
         </div>
     {% endif %}
 </div>
+
+<style>
+    .device-attributes {
+        margin-top: 15px;
+    }
+    
+    .attribute-item {
+        background-color: var(--background-muted);
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        border-radius: 10px !important;
+    }
+    
+    .attribute-item:hover {
+        background-color: var(--background-hover);
+        transform: translateY(-2px);
+        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    
+    .attribute-label {
+        font-size: 0.85rem;
+        color: var(--text-muted);
+        font-weight: 500;
+        margin-right: 5px;
+        display: inline-block;
+        width: 100px;
+    }
+    
+    .attribute-value {
+        font-size: 0.95rem;
+    }
+    
+    .attribute-item i {
+        width: 20px;
+        text-align: center;
+        margin-right: 8px;
+        color: var(--color-primary);
+    }
+</style>
 {% endblock %} 

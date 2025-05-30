@@ -14,12 +14,23 @@
         </div>
         <div class="card-body">
             <div class="row">
-                <div class="col-md-6">
+                <div class="col-md-4">
                     <div class="device-info mb-3">
                         <h5 class="text-muted">设备名称</h5>
                         <p class="lead">{{ device.name }}</p>
                     </div>
-                    
+                </div>
+
+                <div class="col-md-4">
+                    {% if device.device_identifier %}
+                        <div class="device-info mb-3">
+                            <h5 class="text-muted">设备物理标识</h5>
+                            <p>{{ device.device_identifier }}</p>
+                        </div>
+                    {% endif %}
+                </div>
+
+                <div class="col-md-4">
                     <div class="device-info mb-3">
                         <h5 class="text-muted">状态</h5>
                         <p>
@@ -32,50 +43,47 @@
                             {% endif %}
                         </p>
                     </div>
-                    
-                    {% if device.last_seen %}
-                        <div class="device-info mb-3">
-                            <h5 class="text-muted">最后上线时间</h5>
-                            <p>{{ device.last_seen|date:"Y-m-d H:i:s" }}</p>
-                        </div>
-                    {% endif %}
-                    
-                    <div class="device-info mb-3">
-                        <h5 class="text-muted">创建时间</h5>
-                        <p>{{ device.created_at|date:"Y-m-d H:i:s" }}</p>
-                    </div>
                 </div>
-                
+            </div>
+
+            <div class="row">
+                <div class="col-md-6">
+                    <h5 class="text-muted">创建时间</h5>
+                    <p>{{ device.created_at|date:"Y-m-d H:i:s" }}</p>
+                </div>
+
                 <div class="col-md-6">
                     <div class="device-info mb-3">
+                        <h5 class="text-muted">最后上线时间</h5>
+                        {% if device.last_seen %}
+                        <p>{{ device.last_seen|date:"Y-m-d H:i:s" }}</p>
+                        {% else %}
+                        <p>{{ "设备从未上线" }}</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <div class="device-info mb-3">
                         <h5 class="text-muted">设备ID</h5>
-                        <div class="input-group">
+                        <div class="device-id-container">
                             <input type="text" class="form-control" value="{{ device.device_id }}" id="device_id" readonly>
-                            <button class="btn btn-outline-secondary" type="button" onclick="copyToClipboard('device_id')">
-                                <i class="fas fa-copy"></i>
+                            <button class="btn btn-outline-primary copy-btn" type="button" onclick="copyToClipboard('device_id')">
+                                <i class="fas fa-copy"></i> 复制
                             </button>
                         </div>
                     </div>
-                    
-                    {% if device.device_identifier %}
-                        <div class="device-info mb-3">
-                            <h5 class="text-muted">设备物理标识</h5>
-                            <p>{{ device.device_identifier }}</p>
-                        </div>
-                    {% endif %}
-                    
-                    <div class="device-info mb-3">
+
+            <div class="device-info mb-3">
                         <h5 class="text-muted">设备密钥 <span class="text-danger">(重要，请妥善保管)</span></h5>
-                        <div class="input-group">
+                        <div class="device-id-container">
                             <input type="text" class="form-control" value="{{ device.device_key }}" id="device_key" readonly>
-                            <button class="btn btn-outline-secondary" type="button" onclick="copyToClipboard('device_key')">
-                                <i class="fas fa-copy"></i>
+                            <button class="btn btn-outline-primary copy-btn" type="button" onclick="copyToClipboard('device_key')">
+                                <i class="fas fa-copy"></i> 复制
                             </button>
                         </div>
                         <small class="form-text text-muted">此密钥用于设备连接认证，请妥善保管，避免泄露。</small>
                     </div>
-                </div>
-            </div>
         </div>
     </div>
 
@@ -194,6 +202,37 @@
         </div>
     </div>
 </div>
+
+<style>
+    /* 复制按钮样式，支持明暗主题 */
+    .copy-btn {
+        color: var(--color-primary);
+        border-color: var(--color-primary);
+        min-width: 80px;
+        margin-left: 10px;
+    }
+    
+    .copy-btn:hover {
+        background-color: var(--color-primary);
+        color: var(--text-on-primary);
+    }
+    
+    /* 设备ID/密钥容器 */
+    .device-id-container {
+        display: flex;
+        align-items: center;
+        width: 100%;
+    }
+    
+    .device-id-container .form-control {
+        flex: 1;
+    }
+    
+    /* 复制提示样式 */
+    .copy-tooltip {
+        box-shadow: 0 3px 10px rgba(0,0,0,0.2);
+    }
+</style>
 
 {% block extra_body_js %}
 <script>
