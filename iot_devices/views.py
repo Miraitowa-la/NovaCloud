@@ -146,8 +146,8 @@ def device_detail_view(request, project_id, device_id):
     device = get_object_or_404(Device, pk=device_id, project=project)
     
     # 获取设备的传感器和执行器（为后续功能实现做准备）
-    sensors = device.sensor_set.all()
-    actuators = device.actuator_set.all()
+    sensors = device.sensors.all()
+    actuators = device.actuators.all()
     
     return render(request, 'iot_devices/device_detail.html', {
         'device': device, 
