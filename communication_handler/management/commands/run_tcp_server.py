@@ -25,8 +25,8 @@ class Command(BaseCommand):
         parser.add_argument(
             '--port', 
             type=int, 
-            default=getattr(settings, 'NOVA_TCP_SERVER_PORT', 8888),
-            help='TCP服务器监听端口 (默认: settings.NOVA_TCP_SERVER_PORT 或 8888)'
+            default=getattr(settings, 'NOVA_TCP_SERVER_PORT', 8100),
+            help='TCP服务器监听端口 (默认: settings.NOVA_TCP_SERVER_PORT 或 8100)'
         )
 
     async def handle_client_connection(self, reader: asyncio.StreamReader, writer: asyncio.StreamWriter):

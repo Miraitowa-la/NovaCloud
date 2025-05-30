@@ -21,8 +21,8 @@ def parse_args():
     parser = argparse.ArgumentParser(description='NovaCloud TCP客户端测试工具')
     parser.add_argument('--host', type=str, default='127.0.0.1',
                         help='TCP服务器地址 (默认: 127.0.0.1)')
-    parser.add_argument('--port', type=int, default=8888,
-                        help='TCP服务器端口 (默认: 8888)')
+    parser.add_argument('--port', type=int, default=8100,
+                        help='TCP服务器端口 (默认: 8100)')
     parser.add_argument('--device_id', type=str, default=None,
                         help='设备ID (UUID格式)')
     parser.add_argument('--device_key', type=str, default=None,
