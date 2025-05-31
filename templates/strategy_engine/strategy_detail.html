@@ -75,6 +75,36 @@
         border-radius: var(--border-radius-sm);
         font-size: 0.875rem;
     }
+    
+    /* 动作样式 */
+    .action {
+        margin-bottom: 1.5rem;
+    }
+    
+    .action-body {
+        transition: all 0.3s ease;
+    }
+    
+    /* 动态显示/隐藏动作字段组 */
+    .action-field-group {
+        display: none;
+        padding: 1rem;
+        margin-top: 1rem;
+        background-color: var(--background-default);
+        border: 1px solid var(--border-color);
+        border-radius: var(--border-radius-md);
+    }
+    
+    .action-field-group h6 {
+        color: var(--color-primary);
+        font-weight: 600;
+    }
+    
+    /* 代码编辑器样式 */
+    .code-editor {
+        font-family: monospace;
+        font-size: 0.9rem;
+    }
 </style>
 {% endblock %}
 
@@ -374,12 +404,270 @@
                     <i class="fas fa-plus-circle me-2"></i> 添加条件组
                 </button>
                 
-                <!-- 提交按钮 -->
-                <div class="d-flex justify-content-end mt-4">
-                    <button type="submit" class="btn btn-primary">
-                        <i class="fas fa-save"></i> 保存条件配置
-                    </button>
+                <!-- 动作管理表单，用于处理动作表单集 -->
+                {{ action_formset.management_form }}
+            </div>
+        </div>
+    </div>
+    
+    <!-- 动作配置卡片 -->
+    <div class="card mb-4 shadow-sm">
+        <div class="card-header">
+            <h4 class="card-title mb-0">动作配置</h4>
+        </div>
+        <div class="card-body">
+            <p class="mb-4">配置当条件满足时要执行的动作。您可以添加多个动作，并设置它们的执行顺序。</p>
+            
+            <!-- 动作列表 -->
+            {% for action_form in action_formset %}
+                <div class="action" id="action-{{ forloop.counter0 }}">
+                    <!-- 动作隐藏字段 -->
+                    {% for hidden_field in action_form.hidden_fields %}
+                        {{ hidden_field }}
+                    {% endfor %}
+                    
+                    <!-- 动作主体内容 -->
+                    <div class="action-body bg-light p-4 mb-4 rounded border">
+                        <!-- 动作头部 -->
+                        <div class="action-header d-flex justify-content-between align-items-center mb-3">
+                            <h5 class="mb-0">动作 {{ forloop.counter }}</h5>
+                            <div class="form-check">
+                                {{ action_form.DELETE }}
+                                <label class="form-check-label text-danger" for="{{ action_form.DELETE.id_for_label }}">
+                                    删除此动作
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-3">
+                            <!-- 动作类型 -->
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ action_form.action_type.id_for_label }}" class="form-label">
+                                    动作类型
+                                </label>
+                                {{ action_form.action_type }}
+                                <div class="form-text text-muted">
+                                    选择要执行的动作类型
+                                </div>
+                                {% if action_form.action_type.errors %}
+                                    <div class="error-text">
+                                        {% for error in action_form.action_type.errors %}
+                                            {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            
+                            <!-- 执行顺序 -->
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ action_form.execution_order.id_for_label }}" class="form-label">
+                                    执行顺序
+                                </label>
+                                {{ action_form.execution_order }}
+                                <div class="form-text text-muted">
+                                    多个动作的执行顺序，数字越小越先执行
+                                </div>
+                                {% if action_form.execution_order.errors %}
+                                    <div class="error-text">
+                                        {% for error in action_form.execution_order.errors %}
+                                            {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <!-- 控制执行器相关字段组 -->
+                        <div class="action-fields action-field-group" data-action-type="control_actuator">
+                            <h6 class="mb-3">执行器控制参数</h6>
+                            
+                            <!-- 目标执行器 -->
+                            <div class="mb-3">
+                                <label for="{{ action_form.target_actuator.id_for_label }}" class="form-label">
+                                    目标执行器
+                                </label>
+                                {{ action_form.target_actuator }}
+                                <div class="form-text text-muted">
+                                    选择要控制的执行器
+                                </div>
+                                {% if action_form.target_actuator.errors %}
+                                    <div class="error-text">
+                                        {% for error in action_form.target_actuator.errors %}
+                                            {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            
+                            <!-- 命令内容模板 -->
+                            <div class="mb-3">
+                                <label for="{{ action_form.command_payload_template.id_for_label }}" class="form-label">
+                                    命令内容模板 (JSON)
+                                </label>
+                                {{ action_form.command_payload_template }}
+                                <div class="form-text text-muted">
+                                    JSON格式的命令内容，可以使用模板变量如 {{ '{{sensor.value}}' }}
+                                </div>
+                                {% if action_form.command_payload_template.errors %}
+                                    <div class="error-text">
+                                        {% for error in action_form.command_payload_template.errors %}
+                                            {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <!-- 发送通知相关字段组 -->
+                        <div class="action-fields action-field-group" data-action-type="send_notification">
+                            <h6 class="mb-3">通知参数</h6>
+                            
+                            <!-- 接收者类型 -->
+                            <div class="mb-3">
+                                <label for="{{ action_form.notification_recipient_type.id_for_label }}" class="form-label">
+                                    接收者类型
+                                </label>
+                                {{ action_form.notification_recipient_type }}
+                                <div class="form-text text-muted">
+                                    选择通知的接收者类型
+                                </div>
+                                {% if action_form.notification_recipient_type.errors %}
+                                    <div class="error-text">
+                                        {% for error in action_form.notification_recipient_type.errors %}
+                                            {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            
+                            <!-- 接收者值 -->
+                            <div class="mb-3">
+                                <label for="{{ action_form.notification_recipient_value.id_for_label }}" class="form-label">
+                                    接收者值
+                                </label>
+                                {{ action_form.notification_recipient_value }}
+                                <div class="form-text text-muted">
+                                    接收者的值，如邮箱地址、电话号码等
+                                </div>
+                                {% if action_form.notification_recipient_value.errors %}
+                                    <div class="error-text">
+                                        {% for error in action_form.notification_recipient_value.errors %}
+                                            {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            
+                            <!-- 通知内容模板 -->
+                            <div class="mb-3">
+                                <label for="{{ action_form.notification_message_template.id_for_label }}" class="form-label">
+                                    通知内容模板
+                                </label>
+                                {{ action_form.notification_message_template }}
+                                <div class="form-text text-muted">
+                                    通知内容，可以使用模板变量如 {{ '{{strategy.name}}' }}, {{ '{{sensor.name}}' }}, {{ '{{sensor.value}}' }}
+                                </div>
+                                {% if action_form.notification_message_template.errors %}
+                                    <div class="error-text">
+                                        {% for error in action_form.notification_message_template.errors %}
+                                            {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <!-- 调用Webhook相关字段组 -->
+                        <div class="action-fields action-field-group" data-action-type="call_webhook">
+                            <h6 class="mb-3">Webhook参数</h6>
+                            
+                            <!-- Webhook URL -->
+                            <div class="mb-3">
+                                <label for="{{ action_form.webhook_url.id_for_label }}" class="form-label">
+                                    Webhook URL
+                                </label>
+                                {{ action_form.webhook_url }}
+                                <div class="form-text text-muted">
+                                    要调用的Webhook URL
+                                </div>
+                                {% if action_form.webhook_url.errors %}
+                                    <div class="error-text">
+                                        {% for error in action_form.webhook_url.errors %}
+                                            {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            
+                            <!-- HTTP方法 -->
+                            <div class="mb-3">
+                                <label for="{{ action_form.webhook_method.id_for_label }}" class="form-label">
+                                    HTTP方法
+                                </label>
+                                {{ action_form.webhook_method }}
+                                <div class="form-text text-muted">
+                                    HTTP请求方法
+                                </div>
+                                {% if action_form.webhook_method.errors %}
+                                    <div class="error-text">
+                                        {% for error in action_form.webhook_method.errors %}
+                                            {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            
+                            <!-- 请求头部模板 -->
+                            <div class="mb-3">
+                                <label for="{{ action_form.webhook_headers_template.id_for_label }}" class="form-label">
+                                    请求头部模板 (JSON)
+                                </label>
+                                {{ action_form.webhook_headers_template }}
+                                <div class="form-text text-muted">
+                                    JSON格式的HTTP请求头，可以使用模板变量
+                                </div>
+                                {% if action_form.webhook_headers_template.errors %}
+                                    <div class="error-text">
+                                        {% for error in action_form.webhook_headers_template.errors %}
+                                            {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            
+                            <!-- 请求体模板 -->
+                            <div class="mb-3">
+                                <label for="{{ action_form.webhook_payload_template.id_for_label }}" class="form-label">
+                                    请求体模板 (JSON)
+                                </label>
+                                {{ action_form.webhook_payload_template }}
+                                <div class="form-text text-muted">
+                                    JSON格式的HTTP请求体，可以使用模板变量
+                                </div>
+                                {% if action_form.webhook_payload_template.errors %}
+                                    <div class="error-text">
+                                        {% for error in action_form.webhook_payload_template.errors %}
+                                            {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
                 </div>
+            {% endfor %}
+            
+            <!-- 添加动作按钮 -->
+            <button type="button" class="btn-add-item add-action">
+                <i class="fas fa-plus-circle me-2"></i> 添加动作
+            </button>
+            
+            <!-- 提交按钮 -->
+            <div class="d-flex justify-content-end mt-4">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save"></i> 保存条件和动作配置
+                </button>
+            </div>
             </form>
         </div>
     </div>
@@ -392,11 +680,14 @@
 document.addEventListener('DOMContentLoaded', function() {
     // 获取表单集前缀和初始计数
     const groupPrefix = 'conditiongroups';
+    const actionPrefix = 'actions';
     const TOTAL_FORMS = document.querySelector(`#id_${groupPrefix}-TOTAL_FORMS`);
+    const ACTION_TOTAL_FORMS = document.querySelector(`#id_${actionPrefix}-TOTAL_FORMS`);
     const conditionGroupsContainer = document.querySelector('.card-body form');
     
-    // 初始化条件表单的显示/隐藏
+    // 初始化条件表单和动作表单的显示/隐藏
     initializeFormDisplay();
+    initializeActionFormDisplay();
     
     // 添加条件组
     document.querySelector('.add-condition-group').addEventListener('click', function() {
@@ -438,6 +729,34 @@ document.addEventListener('DOMContentLoaded', function() {
         button.addEventListener('click', addCondition);
     });
     
+    // 添加动作
+    document.querySelector('.add-action').addEventListener('click', function() {
+        // 获取现有动作数量
+        const actionCount = parseInt(ACTION_TOTAL_FORMS.value);
+        
+        // 获取空白动作模板
+        let emptyActionForm = document.querySelector(`#${actionPrefix}-__prefix__`);
+        
+        if (!emptyActionForm) {
+            console.error('找不到动作模板');
+            return;
+        }
+        
+        // 创建新动作
+        const newActionHTML = emptyActionForm.outerHTML
+            .replace(/__prefix__/g, actionCount)
+            .replace('style="display: none;"', '');
+        
+        // 更新ACTION_TOTAL_FORMS值
+        ACTION_TOTAL_FORMS.value = actionCount + 1;
+        
+        // 在添加按钮前插入新动作
+        this.insertAdjacentHTML('beforebegin', newActionHTML);
+        
+        // 重新初始化动作表单显示
+        initializeActionFormDisplay();
+    });
+    
     // 添加条件函数
     function addCondition(event) {
         const groupId = this.dataset.groupId;
@@ -476,7 +795,7 @@ document.addEventListener('DOMContentLoaded', function() {
         initializeFormDisplay();
     }
     
-    // 初始化表单字段的显示和隐藏逻辑
+    // 初始化条件表单字段的显示和隐藏逻辑
     function initializeFormDisplay() {
         // 处理数据源类型的变化
         document.querySelectorAll('[id$=data_source_type]').forEach(select => {
@@ -497,6 +816,20 @@ document.addEventListener('DOMContentLoaded', function() {
             // 变化事件监听
             select.addEventListener('change', function() {
                 handleThresholdTypeChange(this);
+            });
+        });
+    }
+    
+    // 初始化动作表单字段的显示和隐藏逻辑
+    function initializeActionFormDisplay() {
+        // 处理动作类型的变化
+        document.querySelectorAll('[id$=action_type]').forEach(select => {
+            // 初始状态设置
+            handleActionTypeChange(select);
+            
+            // 变化事件监听
+            select.addEventListener('change', function() {
+                handleActionTypeChange(this);
             });
         });
     }
@@ -535,6 +868,25 @@ document.addEventListener('DOMContentLoaded', function() {
             const selectedField = conditionContainer.querySelector(`.threshold-field[data-threshold-type="${selectedValue}"]`);
             if (selectedField) {
                 selectedField.style.display = 'block';
+            }
+        }
+    }
+    
+    // 处理动作类型变化
+    function handleActionTypeChange(select) {
+        const selectedValue = select.value;
+        const actionContainer = select.closest('.action');
+        
+        if (actionContainer) {
+            // 隐藏所有动作字段组
+            actionContainer.querySelectorAll('.action-field-group').forEach(group => {
+                group.style.display = 'none';
+            });
+            
+            // 显示选中的动作类型对应的字段组
+            const selectedGroup = actionContainer.querySelector(`.action-field-group[data-action-type="${selectedValue}"]`);
+            if (selectedGroup) {
+                selectedGroup.style.display = 'block';
             }
         }
     }
