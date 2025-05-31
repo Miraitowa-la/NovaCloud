@@ -1,0 +1,543 @@
+{% extends 'base.html' %}
+
+{% block title %}配置策略：{{ strategy.name }} - NovaCloud{% endblock %}
+
+{% block extra_head_css %}
+<style>
+    /* 条件组样式 */
+    .condition-group {
+        background-color: var(--background-muted);
+        border-radius: var(--border-radius-lg);
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+        border: 2px solid var(--border-color);
+    }
+    
+    /* 条件样式 */
+    .condition {
+        background-color: var(--background-default);
+        border-radius: var(--border-radius-md);
+        padding: 1rem;
+        margin-bottom: 1rem;
+        border: 1px solid var(--border-color);
+    }
+    
+    /* 动态显示/隐藏字段 */
+    .field-container {
+        margin-bottom: 0.75rem;
+    }
+    
+    /* 表单错误消息 */
+    .error-text {
+        color: var(--color-danger);
+        font-size: 0.875rem;
+        margin-top: 0.25rem;
+    }
+    
+    /* 添加按钮样式 */
+    .btn-add-item {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+        margin: 1rem 0;
+        padding: 0.75rem;
+        background-color: var(--background-hover);
+        border: 1px dashed var(--border-color);
+        color: var(--text-muted);
+        border-radius: var(--border-radius-md);
+        transition: all 0.2s;
+    }
+    
+    .btn-add-item:hover {
+        background-color: var(--background-active);
+        color: var(--text-default);
+    }
+    
+    /* 删除按钮样式 */
+    .btn-remove {
+        color: var(--color-danger);
+    }
+    
+    .condition-header, .condition-group-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1rem;
+    }
+    
+    /* 逻辑运算符标签 */
+    .logic-operator-label {
+        font-weight: 600;
+        padding: 0.25rem 0.75rem;
+        background-color: var(--color-primary);
+        color: var(--text-on-primary);
+        border-radius: var(--border-radius-sm);
+        font-size: 0.875rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <!-- 页面头部 -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>配置策略：{{ strategy.name }}</h2>
+        <div>
+            <a href="{% url 'strategy_engine:strategy_update' strategy.id %}" class="btn btn-outline-secondary btn-sm me-2">
+                <i class="fas fa-edit"></i> 编辑基本信息
+            </a>
+            <a href="{% url 'strategy_engine:strategy_list' %}" class="btn btn-secondary btn-sm">
+                <i class="fas fa-arrow-left"></i> 返回策略列表
+            </a>
+        </div>
+    </div>
+    
+    <!-- 策略基本信息卡片 -->
+    <div class="card mb-4 shadow-sm">
+        <div class="card-header">
+            <h4 class="card-title mb-0">策略信息</h4>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <dl class="mb-0">
+                        <dt>策略名称</dt>
+                        <dd>{{ strategy.name }}</dd>
+                        
+                        <dt class="mt-3">所属项目</dt>
+                        <dd>{{ strategy.project.name }}</dd>
+                    </dl>
+                </div>
+                <div class="col-md-6">
+                    <dl class="mb-0">
+                        <dt>触发类型</dt>
+                        <dd>{{ strategy.get_trigger_type_display }}</dd>
+                        
+                        <dt class="mt-3">状态</dt>
+                        <dd>
+                            {% if strategy.is_enabled %}
+                            <span class="text-success"><i class="fas fa-check-circle"></i> 已启用</span>
+                            {% else %}
+                            <span class="text-secondary"><i class="fas fa-times-circle"></i> 已禁用</span>
+                            {% endif %}
+                        </dd>
+                    </dl>
+                </div>
+                {% if strategy.description %}
+                <div class="col-12 mt-3">
+                    <dt>描述</dt>
+                    <dd>{{ strategy.description }}</dd>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- 条件配置卡片 -->
+    <div class="card mb-4 shadow-sm">
+        <div class="card-header">
+            <h4 class="card-title mb-0">条件配置</h4>
+        </div>
+        <div class="card-body">
+            <p class="mb-4">配置触发此策略的条件。您可以添加多个条件组，每个条件组内可以有多个条件。</p>
+            
+            <form method="post">
+                {% csrf_token %}
+                
+                <!-- 管理表单，用于处理表单集 -->
+                {{ condition_group_formset.management_form }}
+                
+                <!-- 条件组列表 -->
+                {% for group_form in condition_group_formset %}
+                    <div class="condition-group" id="group-{{ forloop.counter0 }}">
+                        <!-- 条件组隐藏字段 -->
+                        {% for hidden_field in group_form.hidden_fields %}
+                            {{ hidden_field }}
+                        {% endfor %}
+                        
+                        <!-- 条件组头部 -->
+                        <div class="condition-group-header">
+                            <h5 class="mb-0">条件组 {{ forloop.counter }}</h5>
+                            <div class="form-check">
+                                {{ group_form.DELETE }}
+                                <label class="form-check-label text-danger" for="{{ group_form.DELETE.id_for_label }}">
+                                    删除此条件组
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-3">
+                            <!-- 逻辑运算符 -->
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ group_form.logical_operator.id_for_label }}" class="form-label">
+                                    逻辑运算符
+                                </label>
+                                {{ group_form.logical_operator }}
+                                <div class="form-text text-muted">
+                                    此组内多个条件之间的关系：全部满足(AND) 或 任一满足(OR)
+                                </div>
+                                {% if group_form.logical_operator.errors %}
+                                    <div class="error-text">
+                                        {% for error in group_form.logical_operator.errors %}
+                                            {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            
+                            <!-- 执行顺序 -->
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ group_form.execution_order.id_for_label }}" class="form-label">
+                                    执行顺序
+                                </label>
+                                {{ group_form.execution_order }}
+                                <div class="form-text text-muted">
+                                    多个条件组的评估顺序，数字越小越先评估
+                                </div>
+                                {% if group_form.execution_order.errors %}
+                                    <div class="error-text">
+                                        {% for error in group_form.execution_order.errors %}
+                                            {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <!-- 条件表单集 -->
+                        <div class="conditions-container">
+                            <!-- 条件表单集管理表单 -->
+                            {{ group_form.nested_condition_formset.management_form }}
+                            
+                            <h6 class="mb-3">条件列表：</h6>
+                            
+                            <!-- 条件列表 -->
+                            {% for condition_form in group_form.nested_condition_formset %}
+                                <div class="condition" id="condition-{{ forloop.parentloop.counter0 }}-{{ forloop.counter0 }}">
+                                    <!-- 条件隐藏字段 -->
+                                    {% for hidden_field in condition_form.hidden_fields %}
+                                        {{ hidden_field }}
+                                    {% endfor %}
+                                    
+                                    <!-- 条件头部 -->
+                                    <div class="condition-header">
+                                        <h6 class="mb-0">条件 {{ forloop.counter }}</h6>
+                                        <div class="form-check">
+                                            {{ condition_form.DELETE }}
+                                            <label class="form-check-label text-danger" for="{{ condition_form.DELETE.id_for_label }}">
+                                                删除此条件
+                                            </label>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- 数据源类型 -->
+                                    <div class="row mb-3">
+                                        <div class="col-12">
+                                            <label for="{{ condition_form.data_source_type.id_for_label }}" class="form-label">
+                                                数据源类型
+                                            </label>
+                                            {{ condition_form.data_source_type }}
+                                            {% if condition_form.data_source_type.errors %}
+                                                <div class="error-text">
+                                                    {% for error in condition_form.data_source_type.errors %}
+                                                        {{ error }}
+                                                    {% endfor %}
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- 数据源字段 - 会根据data_source_type动态显示/隐藏 -->
+                                    <div class="row mb-3">
+                                        <!-- 传感器选择字段 -->
+                                        <div class="col-md-6 field-container data-source-field" data-source-type="sensor">
+                                            <label for="{{ condition_form.sensor.id_for_label }}" class="form-label">
+                                                传感器
+                                            </label>
+                                            {{ condition_form.sensor }}
+                                            {% if condition_form.sensor.errors %}
+                                                <div class="error-text">
+                                                    {% for error in condition_form.sensor.errors %}
+                                                        {{ error }}
+                                                    {% endfor %}
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                        
+                                        <!-- 设备属性字段 -->
+                                        <div class="col-md-6 field-container data-source-field" data-source-type="device_attribute">
+                                            <label for="{{ condition_form.device_attribute.id_for_label }}" class="form-label">
+                                                设备属性
+                                            </label>
+                                            {{ condition_form.device_attribute }}
+                                            {% if condition_form.device_attribute.errors %}
+                                                <div class="error-text">
+                                                    {% for error in condition_form.device_attribute.errors %}
+                                                        {{ error }}
+                                                    {% endfor %}
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                        
+                                        <!-- 比较运算符 -->
+                                        <div class="col-md-6 mt-3">
+                                            <label for="{{ condition_form.operator.id_for_label }}" class="form-label">
+                                                比较运算符
+                                            </label>
+                                            {{ condition_form.operator }}
+                                            {% if condition_form.operator.errors %}
+                                                <div class="error-text">
+                                                    {% for error in condition_form.operator.errors %}
+                                                        {{ error }}
+                                                    {% endfor %}
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                        
+                                        <!-- 阈值类型 -->
+                                        <div class="col-md-6 mt-3">
+                                            <label for="{{ condition_form.threshold_value_type.id_for_label }}" class="form-label">
+                                                阈值类型
+                                            </label>
+                                            {{ condition_form.threshold_value_type }}
+                                            {% if condition_form.threshold_value_type.errors %}
+                                                <div class="error-text">
+                                                    {% for error in condition_form.threshold_value_type.errors %}
+                                                        {{ error }}
+                                                    {% endfor %}
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- 阈值字段 - 会根据threshold_value_type动态显示/隐藏 -->
+                                    <div class="row">
+                                        <!-- 静态阈值 -->
+                                        <div class="col-md-12 field-container threshold-field" data-threshold-type="static">
+                                            <label for="{{ condition_form.threshold_value_static.id_for_label }}" class="form-label">
+                                                静态阈值
+                                            </label>
+                                            {{ condition_form.threshold_value_static }}
+                                            {% if condition_form.threshold_value_static.errors %}
+                                                <div class="error-text">
+                                                    {% for error in condition_form.threshold_value_static.errors %}
+                                                        {{ error }}
+                                                    {% endfor %}
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                        
+                                        <!-- 传感器阈值 -->
+                                        <div class="col-md-12 field-container threshold-field" data-threshold-type="sensor_value">
+                                            <label for="{{ condition_form.threshold_value_sensor.id_for_label }}" class="form-label">
+                                                对比传感器
+                                            </label>
+                                            {{ condition_form.threshold_value_sensor }}
+                                            {% if condition_form.threshold_value_sensor.errors %}
+                                                <div class="error-text">
+                                                    {% for error in condition_form.threshold_value_sensor.errors %}
+                                                        {{ error }}
+                                                    {% endfor %}
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                        
+                                        <!-- 设备属性阈值 -->
+                                        <div class="col-md-12 field-container threshold-field" data-threshold-type="device_attribute_value">
+                                            <label for="{{ condition_form.threshold_value_device_attribute.id_for_label }}" class="form-label">
+                                                对比设备属性
+                                            </label>
+                                            {{ condition_form.threshold_value_device_attribute }}
+                                            {% if condition_form.threshold_value_device_attribute.errors %}
+                                                <div class="error-text">
+                                                    {% for error in condition_form.threshold_value_device_attribute.errors %}
+                                                        {{ error }}
+                                                    {% endfor %}
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                            
+                            <!-- 添加条件按钮 -->
+                            <button type="button" class="btn-add-item add-condition" data-group-id="{{ forloop.counter0 }}">
+                                <i class="fas fa-plus me-2"></i> 添加条件
+                            </button>
+                        </div>
+                    </div>
+                {% endfor %}
+                
+                <!-- 添加条件组按钮 -->
+                <button type="button" class="btn-add-item add-condition-group">
+                    <i class="fas fa-plus-circle me-2"></i> 添加条件组
+                </button>
+                
+                <!-- 提交按钮 -->
+                <div class="d-flex justify-content-end mt-4">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i> 保存条件配置
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_body_js %}
+<script>
+// 当文档加载完成时执行
+document.addEventListener('DOMContentLoaded', function() {
+    // 获取表单集前缀和初始计数
+    const groupPrefix = 'conditiongroups';
+    const TOTAL_FORMS = document.querySelector(`#id_${groupPrefix}-TOTAL_FORMS`);
+    const conditionGroupsContainer = document.querySelector('.card-body form');
+    
+    // 初始化条件表单的显示/隐藏
+    initializeFormDisplay();
+    
+    // 添加条件组
+    document.querySelector('.add-condition-group').addEventListener('click', function() {
+        // 获取现有条件组数量
+        const groupCount = parseInt(TOTAL_FORMS.value);
+        
+        // 获取空白条件组模板
+        let emptyGroupForm = document.querySelector(`#${groupPrefix}-__prefix__`);
+        
+        if (!emptyGroupForm) {
+            console.error('找不到条件组模板');
+            return;
+        }
+        
+        // 创建新条件组
+        const newGroupHTML = emptyGroupForm.outerHTML
+            .replace(/__prefix__/g, groupCount)
+            .replace('style="display: none;"', '');
+        
+        // 更新TOTAL_FORMS值
+        TOTAL_FORMS.value = groupCount + 1;
+        
+        // 在添加按钮前插入新条件组
+        this.insertAdjacentHTML('beforebegin', newGroupHTML);
+        
+        // 重新初始化新添加条件组的事件监听
+        initializeFormDisplay();
+        
+        // 为新添加的条件组绑定添加条件按钮事件
+        const newAddConditionButton = document.querySelector(`#group-${groupCount} .add-condition`);
+        if (newAddConditionButton) {
+            newAddConditionButton.setAttribute('data-group-id', groupCount);
+            newAddConditionButton.addEventListener('click', addCondition);
+        }
+    });
+    
+    // 为现有的添加条件按钮绑定事件
+    document.querySelectorAll('.add-condition').forEach(button => {
+        button.addEventListener('click', addCondition);
+    });
+    
+    // 添加条件函数
+    function addCondition(event) {
+        const groupId = this.dataset.groupId;
+        
+        // 获取该组的条件表单集
+        const conditionPrefix = `${groupPrefix}-${groupId}-conditions`;
+        const conditionTotalForms = document.querySelector(`#id_${conditionPrefix}-TOTAL_FORMS`);
+        
+        if (!conditionTotalForms) {
+            console.error(`找不到条件表单集 ${conditionPrefix} 的TOTAL_FORMS元素`);
+            return;
+        }
+        
+        const conditionCount = parseInt(conditionTotalForms.value);
+        
+        // 获取空白条件模板
+        let emptyConditionForm = document.querySelector(`#${conditionPrefix}-__prefix__`);
+        
+        if (!emptyConditionForm) {
+            console.error(`找不到条件模板 ${conditionPrefix}-__prefix__`);
+            return;
+        }
+        
+        // 创建新条件
+        const newConditionHTML = emptyConditionForm.outerHTML
+            .replace(/__prefix__/g, conditionCount)
+            .replace('style="display: none;"', '');
+        
+        // 更新TOTAL_FORMS值
+        conditionTotalForms.value = conditionCount + 1;
+        
+        // 在添加按钮前插入新条件
+        this.insertAdjacentHTML('beforebegin', newConditionHTML);
+        
+        // 重新初始化表单显示
+        initializeFormDisplay();
+    }
+    
+    // 初始化表单字段的显示和隐藏逻辑
+    function initializeFormDisplay() {
+        // 处理数据源类型的变化
+        document.querySelectorAll('[id$=data_source_type]').forEach(select => {
+            // 初始状态设置
+            handleDataSourceChange(select);
+            
+            // 变化事件监听
+            select.addEventListener('change', function() {
+                handleDataSourceChange(this);
+            });
+        });
+        
+        // 处理阈值类型的变化
+        document.querySelectorAll('[id$=threshold_value_type]').forEach(select => {
+            // 初始状态设置
+            handleThresholdTypeChange(select);
+            
+            // 变化事件监听
+            select.addEventListener('change', function() {
+                handleThresholdTypeChange(this);
+            });
+        });
+    }
+    
+    // 处理数据源类型变化
+    function handleDataSourceChange(select) {
+        const selectedValue = select.value;
+        const conditionContainer = select.closest('.condition');
+        
+        if (conditionContainer) {
+            // 隐藏所有数据源字段
+            conditionContainer.querySelectorAll('.data-source-field').forEach(field => {
+                field.style.display = 'none';
+            });
+            
+            // 显示选中的数据源对应的字段
+            const selectedField = conditionContainer.querySelector(`.data-source-field[data-source-type="${selectedValue}"]`);
+            if (selectedField) {
+                selectedField.style.display = 'block';
+            }
+        }
+    }
+    
+    // 处理阈值类型变化
+    function handleThresholdTypeChange(select) {
+        const selectedValue = select.value;
+        const conditionContainer = select.closest('.condition');
+        
+        if (conditionContainer) {
+            // 隐藏所有阈值字段
+            conditionContainer.querySelectorAll('.threshold-field').forEach(field => {
+                field.style.display = 'none';
+            });
+            
+            // 显示选中的阈值类型对应的字段
+            const selectedField = conditionContainer.querySelector(`.threshold-field[data-threshold-type="${selectedValue}"]`);
+            if (selectedField) {
+                selectedField.style.display = 'block';
+            }
+        }
+    }
+});
+</script>
+{% endblock %} 

@@ -2,8 +2,8 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 
-from .models import Strategy
-from .forms import StrategyForm
+from .models import Strategy, ConditionGroup, Condition
+from .forms import StrategyForm, ConditionGroupFormSet
 
 @login_required
 def strategy_list_view(request):
@@ -28,9 +28,8 @@ def strategy_create_view(request):
             strategy.owner = request.user
             strategy.save()
             messages.success(request, f'策略 "{strategy.name}" 已成功创建！现在请为其添加条件和动作。')
-            # 创建成功后重定向到策略详情页，后续将实现该页面
-            # 暂时重定向到策略列表页
-            return redirect('strategy_engine:strategy_list')
+            # 创建成功后重定向到策略配置页
+            return redirect('strategy_engine:strategy_detail', strategy_id=strategy.id)
     else:
         form = StrategyForm(user=request.user)
     
@@ -50,9 +49,8 @@ def strategy_update_view(request, strategy_id):
         if form.is_valid():
             form.save()
             messages.success(request, f'策略 "{strategy.name}" 的基本信息已成功更新！')
-            # 更新成功后重定向到策略详情页，后续将实现该页面
-            # 暂时重定向到策略列表页
-            return redirect('strategy_engine:strategy_list')
+            # 更新成功后重定向到策略配置页
+            return redirect('strategy_engine:strategy_detail', strategy_id=strategy.id)
     else:
         form = StrategyForm(instance=strategy, user=request.user)
     
@@ -78,4 +76,66 @@ def strategy_delete_view(request, strategy_id):
         'strategy': strategy
     })
 
-# 后续步骤将实现 strategy_detail_view 用于配置条件和动作
+@login_required
+def strategy_detail_view(request, strategy_id):
+    """
+    策略详情页，用于配置条件组和条件
+    """
+    strategy = get_object_or_404(Strategy, pk=strategy_id, owner=request.user)
+    
+    if request.method == 'POST':
+        # 实例化条件组表单集
+        condition_group_formset = ConditionGroupFormSet(
+            request.POST, 
+            instance=strategy,
+            prefix='conditiongroups'
+        )
+        
+        # 检查条件组表单集是否有效
+        if condition_group_formset.is_valid():
+            try:
+                # 保存条件组
+                condition_groups = condition_group_formset.save(commit=True)
+                
+                # 处理嵌套的条件表单集
+                for form in condition_group_formset.forms:
+                    # 如果表单未被删除且有附加的条件表单集
+                    if not condition_group_formset._should_delete_form(form) and hasattr(form, 'nested_condition_formset'):
+                        # 重新获取保存后的条件组实例
+                        if form.instance.pk:
+                            # 检查嵌套的条件表单集是否有效
+                            if form.nested_condition_formset.is_valid():
+                                # 保存条件
+                                form.nested_condition_formset.save()
+                            else:
+                                # 如果条件表单集无效，添加错误并重新渲染
+                                for condition_form in form.nested_condition_formset.forms:
+                                    for field, errors in condition_form.errors.items():
+                                        for error in errors:
+                                            messages.error(request, f"条件错误 ({field}): {error}")
+                                raise ValueError("条件表单验证失败")
+                
+                messages.success(request, '策略条件已成功保存！')
+                # 刷新页面以获取最新数据
+                return redirect('strategy_engine:strategy_detail', strategy_id=strategy.id)
+            
+            except ValueError as e:
+                # 如果有任何错误，保留表单数据，显示错误消息
+                messages.error(request, f"保存失败: {str(e)}")
+        else:
+            # 显示条件组表单集的错误
+            for form in condition_group_formset:
+                for field, errors in form.errors.items():
+                    for error in errors:
+                        messages.error(request, f"条件组错误 ({field}): {error}")
+    else:
+        # GET请求，初始化表单集
+        condition_group_formset = ConditionGroupFormSet(
+            instance=strategy,
+            prefix='conditiongroups'
+        )
+    
+    return render(request, 'strategy_engine/strategy_detail.html', {
+        'strategy': strategy,
+        'condition_group_formset': condition_group_formset,
+    })
