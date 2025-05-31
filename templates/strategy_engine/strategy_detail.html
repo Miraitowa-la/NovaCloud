@@ -506,7 +506,7 @@
                                 </label>
                                 {{ action_form.command_payload_template }}
                                 <div class="form-text text-muted">
-                                    JSON格式的命令内容，可以使用模板变量如 {{ '{{sensor.value}}' }}
+                                    JSON格式的命令内容，可以使用模板变量如 {% templatetag openvariable %}sensor.value{% templatetag closevariable %}
                                 </div>
                                 {% if action_form.command_payload_template.errors %}
                                     <div class="error-text">
@@ -565,7 +565,7 @@
                                 </label>
                                 {{ action_form.notification_message_template }}
                                 <div class="form-text text-muted">
-                                    通知内容，可以使用模板变量如 {{ '{{strategy.name}}' }}, {{ '{{sensor.name}}' }}, {{ '{{sensor.value}}' }}
+                                    通知内容，可以使用模板变量如 {% templatetag openvariable %}strategy.name{% templatetag closevariable %}, {% templatetag openvariable %}sensor.name{% templatetag closevariable %}, {% templatetag openvariable %}sensor.value{% templatetag closevariable %}
                                 </div>
                                 {% if action_form.notification_message_template.errors %}
                                     <div class="error-text">
@@ -624,7 +624,7 @@
                                 </label>
                                 {{ action_form.webhook_headers_template }}
                                 <div class="form-text text-muted">
-                                    JSON格式的HTTP请求头，可以使用模板变量
+                                    JSON格式的HTTP请求头，可以使用模板变量如 {% templatetag openvariable %}strategy.id{% templatetag closevariable %}
                                 </div>
                                 {% if action_form.webhook_headers_template.errors %}
                                     <div class="error-text">
@@ -642,7 +642,7 @@
                                 </label>
                                 {{ action_form.webhook_payload_template }}
                                 <div class="form-text text-muted">
-                                    JSON格式的HTTP请求体，可以使用模板变量
+                                    JSON格式的HTTP请求体，可以使用模板变量如 {% templatetag openvariable %}sensor.value{% templatetag closevariable %}
                                 </div>
                                 {% if action_form.webhook_payload_template.errors %}
                                     <div class="error-text">
