@@ -35,9 +35,7 @@ def strategy_create_view(request):
         form = StrategyForm(user=request.user)
     
     return render(request, 'strategy_engine/strategy_form.html', {
-        'form': form,
-        'title': '创建新策略',
-        'submit_text': '创建策略'
+        'form': form
     })
 
 @login_required
@@ -60,9 +58,7 @@ def strategy_update_view(request, strategy_id):
     
     return render(request, 'strategy_engine/strategy_form.html', {
         'form': form,
-        'strategy': strategy,
-        'title': f'编辑策略：{strategy.name}',
-        'submit_text': '保存更改'
+        'strategy': strategy
     })
 
 @login_required

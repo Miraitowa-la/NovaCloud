@@ -14,8 +14,15 @@ def project_list_view(request):
     
     # 为每个项目添加设备数量信息
     for project in projects:
+        # 获取项目下的所有设备总数
         project.device_count = Device.objects.filter(project=project).count()
         
+        # 获取项目下在线设备的数量
+        project.online_device_count = Device.objects.filter(
+            project=project, 
+            status='online'
+        ).count()
+    
     return render(request, 'iot_devices/project_list.html', {'projects': projects})
 
 @login_required

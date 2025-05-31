@@ -1,125 +1,116 @@
 {% extends 'base.html' %}
 
-{% block title %}{{ title }} - NovaCloud{% endblock %}
+{% block title %}
+    {% if strategy %}编辑策略：{{ strategy.name }}{% else %}创建新策略{% endif %} - NovaCloud
+{% endblock %}
 
 {% block content %}
 <div class="container">
-    <!-- 页面标题和返回按钮 -->
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h1>{{ title }}</h1>
-        <a href="{% url 'strategy_engine:strategy_list' %}" class="btn btn-outline-secondary">
-            <i class="fas fa-arrow-left"></i> 返回策略列表
-        </a>
-    </div>
-    
-    <!-- 策略表单 -->
-    <div class="card shadow-sm">
-        <div class="card-body">
-            <form method="post">
-                {% csrf_token %}
-                
-                <!-- 表单错误提示 -->
-                {% if form.non_field_errors %}
-                    <div class="alert alert-danger">
-                        {% for error in form.non_field_errors %}
-                            {{ error }}
-                        {% endfor %}
-                    </div>
-                {% endif %}
-                
-                <!-- 策略名称 -->
-                <div class="form-group mb-3">
-                    <label for="{{ form.name.id_for_label }}" class="form-label">
-                        策略名称 <span class="text-danger">*</span>
-                    </label>
-                    {{ form.name }}
-                    {% if form.name.errors %}
-                        <div class="text-danger">
-                            {% for error in form.name.errors %}
-                                {{ error }}
-                            {% endfor %}
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow-sm">
+                <div class="card-header">
+                    <h4 class="card-title mb-0">
+                        {% if strategy %}编辑策略：{{ strategy.name }}{% else %}创建新策略{% endif %}
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        {% if form.non_field_errors %}
+                            <div class="alert alert-danger">
+                                {% for error in form.non_field_errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                        
+                        <!-- 策略名称 -->
+                        <div class="form-group mb-3">
+                            <label for="{{ form.name.id_for_label }}" class="form-label">策略名称</label>
+                            {{ form.name }}
+                            {% if form.name.errors %}
+                                <div class="text-danger">
+                                    {% for error in form.name.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                            <div class="form-text text-muted">为策略起一个描述性的名称，例如"客厅温度过高自动开空调"</div>
                         </div>
-                    {% endif %}
-                    <div class="form-text text-muted">为策略起一个描述性的名称，例如"客厅温度过高自动开空调"</div>
-                </div>
-                
-                <!-- 策略描述 -->
-                <div class="form-group mb-3">
-                    <label for="{{ form.description.id_for_label }}" class="form-label">策略描述</label>
-                    {{ form.description }}
-                    {% if form.description.errors %}
-                        <div class="text-danger">
-                            {% for error in form.description.errors %}
-                                {{ error }}
-                            {% endfor %}
+                        
+                        <!-- 策略描述 -->
+                        <div class="form-group mb-3">
+                            <label for="{{ form.description.id_for_label }}" class="form-label">策略描述</label>
+                            {{ form.description }}
+                            {% if form.description.errors %}
+                                <div class="text-danger">
+                                    {% for error in form.description.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                            <div class="form-text text-muted">可选，详细描述此策略的功能和目的</div>
                         </div>
-                    {% endif %}
-                    <div class="form-text text-muted">可选，详细描述此策略的功能和目的</div>
-                </div>
-                
-                <!-- 所属项目 -->
-                <div class="form-group mb-3">
-                    <label for="{{ form.project.id_for_label }}" class="form-label">
-                        所属项目 <span class="text-danger">*</span>
-                    </label>
-                    {{ form.project }}
-                    {% if form.project.errors %}
-                        <div class="text-danger">
-                            {% for error in form.project.errors %}
-                                {{ error }}
-                            {% endfor %}
+                        
+                        <!-- 所属项目 -->
+                        <div class="form-group mb-3">
+                            <label for="{{ form.project.id_for_label }}" class="form-label">所属项目</label>
+                            {{ form.project }}
+                            {% if form.project.errors %}
+                                <div class="text-danger">
+                                    {% for error in form.project.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                            <div class="form-text text-muted">选择此策略所属的项目，将限定可用的设备、传感器和执行器范围</div>
                         </div>
-                    {% endif %}
-                    <div class="form-text text-muted">选择此策略所属的项目，将限定可用的设备、传感器和执行器范围</div>
-                </div>
-                
-                <!-- 触发类型 -->
-                <div class="form-group mb-3">
-                    <label for="{{ form.trigger_type.id_for_label }}" class="form-label">
-                        触发类型 <span class="text-danger">*</span>
-                    </label>
-                    {{ form.trigger_type }}
-                    {% if form.trigger_type.errors %}
-                        <div class="text-danger">
-                            {% for error in form.trigger_type.errors %}
-                                {{ error }}
-                            {% endfor %}
+                        
+                        <!-- 触发类型 -->
+                        <div class="form-group mb-3">
+                            <label for="{{ form.trigger_type.id_for_label }}" class="form-label">触发类型</label>
+                            {{ form.trigger_type }}
+                            {% if form.trigger_type.errors %}
+                                <div class="text-danger">
+                                    {% for error in form.trigger_type.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                            <div class="form-text text-muted">选择触发此策略的方式</div>
                         </div>
-                    {% endif %}
-                    <div class="form-text text-muted">
-                        选择触发此策略的方式：
-                        <ul>
-                            <li>传感器数据：当传感器值达到特定条件时触发</li>
-                            <li>定时触发：按照设定的时间计划触发</li>
-                            <li>设备状态变化：当设备上线、离线等状态变化时触发</li>
-                        </ul>
-                    </div>
-                </div>
-                
-                <!-- 是否启用 -->
-                <div class="form-check mb-3">
-                    {{ form.is_enabled }}
-                    <label class="form-check-label" for="{{ form.is_enabled.id_for_label }}">
-                        启用此策略
-                    </label>
-                    {% if form.is_enabled.errors %}
-                        <div class="text-danger">
-                            {% for error in form.is_enabled.errors %}
-                                {{ error }}
-                            {% endfor %}
+                        
+                        <!-- 是否启用 -->
+                        <div class="form-check mb-3">
+                            {{ form.is_enabled }}
+                            <label class="form-check-label" for="{{ form.is_enabled.id_for_label }}">
+                                启用此策略
+                            </label>
+                            {% if form.is_enabled.errors %}
+                                <div class="text-danger">
+                                    {% for error in form.is_enabled.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                            <div class="form-text text-muted">取消勾选可暂时禁用此策略，而无需删除它</div>
                         </div>
-                    {% endif %}
-                    <div class="form-text text-muted">取消勾选可暂时禁用此策略，而无需删除它</div>
+                        
+                        <!-- 提交按钮 -->
+                        <div class="d-flex justify-content-between mt-4">
+                            <a href="{% url 'strategy_engine:strategy_list' %}" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left"></i> 返回
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i> 
+                                {% if strategy %}保存修改{% else %}创建策略{% endif %}
+                            </button>
+                        </div>
+                    </form>
                 </div>
-                
-                <!-- 提交按钮 -->
-                <div class="d-flex justify-content-end mt-4">
-                    <a href="{% url 'strategy_engine:strategy_list' %}" class="btn btn-secondary me-2">取消</a>
-                    <button type="submit" class="btn btn-primary">
-                        <i class="fas fa-save"></i> {{ submit_text|default:"保存" }}
-                    </button>
-                </div>
-            </form>
+            </div>
         </div>
     </div>
 </div>

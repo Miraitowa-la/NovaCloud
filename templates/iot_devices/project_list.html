@@ -25,8 +25,15 @@
             {% for project in projects %}
                 <div class="col-md-4 mb-4">
                     <div class="card project-card shadow-sm h-100">
-                        <div class="card-header">
+                        <div class="card-header d-flex justify-content-between align-items-center">
                             <h5 class="card-title mb-0">{{ project.name }}</h5>
+                            {% if project.device_count == 0 %}
+                            <span class="badge badge-secondary"><span class="status-dot status-dot-offline"></span> 无设备</span>
+                            {% elif project.online_device_count > 0 %}
+                            <span class="badge badge-success"><span class="status-dot status-dot-success"></span> 有设备在线</span>
+                            {% else %}
+                            <span class="badge badge-warning"><span class="status-dot status-dot-warning"></span> 全部离线</span>
+                            {% endif %}
                         </div>
                         <div class="card-body">
                             <p class="card-text text-muted">{{ project.description|default:"暂无描述" }}</p>
