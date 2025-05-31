@@ -22,12 +22,14 @@
                 </div>
 
                 <div class="col-md-4">
-                    {% if device.device_identifier %}
-                        <div class="device-info mb-3">
-                            <h5 class="text-muted">设备物理标识</h5>
+                    <div class="device-info mb-3">
+                        <h5 class="text-muted">设备物理标识</h5>
+                        {% if device.device_identifier %}
                             <p>{{ device.device_identifier }}</p>
-                        </div>
-                    {% endif %}
+                        {% else %}
+                            <p>{{ "无设备物理标识" }}</p>
+                        {% endif %}
+                    </div>
                 </div>
 
                 <div class="col-md-4">
