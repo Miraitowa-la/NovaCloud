@@ -1,0 +1,73 @@
+{% extends 'base.html' %}
+
+{% block title %}我的自动化策略 - NovaCloud{% endblock %}
+
+{% block content %}
+<div class="container">
+    <!-- 页面标题和创建按钮 -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>我的自动化策略</h1>
+        <a href="{% url 'strategy_engine:strategy_create' %}" class="btn btn-primary">
+            <i class="fas fa-plus"></i> 创建新策略
+        </a>
+    </div>
+    
+    <!-- 策略列表 -->
+    {% if strategies %}
+        <div class="row">
+            {% for strategy in strategies %}
+            <div class="col-md-6 mb-4">
+                <div class="card strategy-card shadow-sm">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="card-title mb-0">{{ strategy.name }}</h5>
+                        {% if strategy.is_enabled %}
+                        <span class="badge badge-success"><span class="status-dot status-dot-success"></span> 已启用</span>
+                        {% else %}
+                        <span class="badge badge-secondary"><span class="status-dot status-dot-offline"></span> 已禁用</span>
+                        {% endif %}
+                    </div>
+                    <div class="card-body">
+                        <p class="mb-2"><strong>所属项目:</strong> {{ strategy.project.name }}</p>
+                        <p class="mb-2"><strong>触发类型:</strong> {{ strategy.get_trigger_type_display }}</p>
+                        {% if strategy.description %}
+                        <p class="mb-2"><strong>描述:</strong> {{ strategy.description|truncatechars:100 }}</p>
+                        {% endif %}
+                        <p class="text-muted mb-2 small">最后更新于: {{ strategy.updated_at|date:"Y-m-d H:i" }}</p>
+                    </div>
+                    <div class="card-footer">
+                        <div class="btn-group w-100">
+                            <!-- 配置条件和动作按钮 (后续将链接到策略详情页) -->
+                            <a href="#" class="btn btn-outline-primary btn-sm">
+                                <i class="fas fa-sitemap"></i> 配置条件/动作
+                            </a>
+                            
+                            <!-- 编辑基本信息按钮 -->
+                            <a href="{% url 'strategy_engine:strategy_update' strategy.id %}" class="btn btn-outline-secondary btn-sm">
+                                <i class="fas fa-edit"></i> 编辑基本信息
+                            </a>
+                            
+                            <!-- 删除按钮 -->
+                            <a href="{% url 'strategy_engine:strategy_delete' strategy.id %}" class="btn btn-outline-danger btn-sm"
+                               onclick="return confirm('确定要删除策略「{{ strategy.name }}」吗？此操作不可撤销！')">
+                                <i class="fas fa-trash"></i> 删除
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="card shadow-sm">
+            <div class="card-body text-center py-5">
+                <i class="fas fa-sitemap fa-3x mb-3 text-muted"></i>
+                <h3>暂无自动化策略</h3>
+                <p class="text-muted mb-4">您还没有创建任何自动化策略，点击下方按钮开始创建吧！</p>
+                <a href="{% url 'strategy_engine:strategy_create' %}" class="btn btn-primary">
+                    <i class="fas fa-plus"></i> 创建首个策略
+                </a>
+            </div>
+        </div>
+    {% endif %}
+</div>
+{% endblock %} 
