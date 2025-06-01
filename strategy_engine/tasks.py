@@ -6,8 +6,9 @@ import logging
 import asyncio
 from celery import shared_task
 from django.utils import timezone
+from asgiref.sync import sync_to_async
 
-from .models import Strategy
+from .models import Strategy, ExecutionLog
 from .execution import trigger_strategy_execution
 
 # 配置日志记录器
@@ -22,21 +23,30 @@ def check_scheduled_strategies():
     """
     logger.info("开始检查定时触发策略")
     
+    # 使用asyncio.run运行异步主函数
+    asyncio.run(_check_scheduled_strategies_async())
+    
+    logger.info("定时触发策略检查完成")
+
+async def _check_scheduled_strategies_async():
+    """
+    异步版本的定时策略检查函数
+    """
     now = timezone.localtime()
     current_time_str = f"{now.hour:02d}:{now.minute:02d}"
     current_day_of_week = now.weekday()  # 0-6表示周一到周日
     
     # 获取所有启用的、触发类型为'schedule'的策略
-    strategies = Strategy.objects.filter(
+    strategies = await sync_to_async(list, thread_sensitive=False)(Strategy.objects.filter(
         is_enabled=True,
         trigger_type='schedule'
-    )
+    ))
     
     if not strategies:
         logger.debug("没有找到定时触发策略")
         return
     
-    logger.info(f"找到 {strategies.count()} 个定时触发策略")
+    logger.info(f"找到 {len(strategies)} 个定时触发策略")
     
     # 准备触发上下文
     trigger_context = {
@@ -54,18 +64,10 @@ def check_scheduled_strategies():
     # 检查每个策略
     for strategy in strategies:
         try:
-            # 在这里，我们需要进一步检查策略的具体计划时间条件
-            # 例如，策略可能只在特定的时间、日期或星期几触发
-            
-            # 注意：这里假设策略中的'time_of_day'类型条件存储了计划时间
-            # 实际实现可能需要根据具体的数据模型进行调整
-            
             # 异步触发策略执行
-            asyncio.run(trigger_strategy_execution(strategy, trigger_context))
+            await trigger_strategy_execution(strategy, trigger_context)
         except Exception as e:
             logger.error(f"检查定时策略时出错: 策略ID={strategy.id}, 错误={str(e)}")
-    
-    logger.info("定时触发策略检查完成")
 
 
 @shared_task
@@ -77,8 +79,6 @@ def cleanup_old_execution_logs(days=30):
         days: 保留日志的天数，默认30天
     """
     try:
-        from .models import ExecutionLog
-        
         # 计算截止时间
         cutoff_date = timezone.now() - timezone.timedelta(days=days)
         

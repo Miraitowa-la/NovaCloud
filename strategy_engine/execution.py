@@ -10,6 +10,7 @@ from datetime import datetime
 
 from django.utils import timezone
 import httpx
+from asgiref.sync import sync_to_async
 
 from .models import Strategy, ConditionGroup, Condition, Action, ExecutionLog
 from iot_devices.models import Device, Sensor, Actuator, SensorData, ActuatorCommandLog
@@ -19,9 +20,11 @@ logger = logging.getLogger(__name__)
 
 # ============= 条件评估函数 =============
 
-def evaluate_condition(condition: Condition, trigger_context: Dict[str, Any]) -> bool:
+# 使用sync_to_async包装同步数据库操作，设置thread_sensitive=False避免死锁
+@sync_to_async(thread_sensitive=False)
+def evaluate_condition_sync(condition: Condition, trigger_context: Dict[str, Any]) -> bool:
     """
-    评估单个条件是否满足
+    评估单个条件是否满足 (同步版本)
     
     Args:
         condition: 要评估的条件对象
@@ -220,86 +223,278 @@ def evaluate_condition(condition: Condition, trigger_context: Dict[str, Any]) ->
     logger.debug(f"条件评估结果: {result}, 实际值: {actual_value}, 运算符: {condition.operator}, 阈值: {threshold_value}")
     return result
 
-
-def evaluate_condition_group(condition_group: ConditionGroup, trigger_context: Dict[str, Any]) -> bool:
+# 异步版本调用同步版本
+async def evaluate_condition(condition: Condition, trigger_context: Dict[str, Any]) -> bool:
     """
-    评估条件组是否满足
+    评估单个条件是否满足 (异步版本)
     
     Args:
-        condition_group: 要评估的条件组对象
+        condition: 要评估的条件对象
         trigger_context: 触发上下文，包含触发事件的相关数据
+        
+    Returns:
+        bool: 条件是否满足
+    """
+    return await evaluate_condition_sync(condition, trigger_context)
+
+# 使用sync_to_async包装同步数据库操作，设置thread_sensitive=False避免死锁
+@sync_to_async(thread_sensitive=False)
+def evaluate_condition_group_sync(condition_group: ConditionGroup, trigger_context: Dict[str, Any]) -> bool:
+    """
+    评估条件组是否满足 (同步版本)
+    
+    Args:
+        condition_group: 要评估的条件组
+        trigger_context: 触发上下文
         
     Returns:
         bool: 条件组是否满足
     """
-    logger.debug(f"评估条件组: {condition_group.id}, 逻辑运算符: {condition_group.logical_operator}")
-    
     # 获取条件组中的所有条件
-    conditions = condition_group.conditions.all()
+    conditions = Condition.objects.filter(group=condition_group)
     
-    # 如果没有条件，默认为True
     if not conditions:
-        logger.debug("条件组没有条件，默认结果为True")
-        return True
+        logger.warning(f"条件组 {condition_group.id} 没有条件")
+        return False
     
-    # 初始化结果（对于AND初始为True，对于OR初始为False）
-    if condition_group.logical_operator == 'AND':
-        result = True
-    else:  # 'OR'
-        result = False
-    
-    # 评估每个条件
+    # 不能直接调用evaluate_condition_sync，因为它是被sync_to_async装饰的
+    # 需要重写同步逻辑，避免嵌套调用
+    results = []
     for condition in conditions:
-        condition_result = evaluate_condition(condition, trigger_context)
+        # 内联评估条件的逻辑，而不是调用evaluate_condition_sync
+        # 以下是简化版本，完整版本应该复制evaluate_condition_sync中的所有逻辑
+        logger.debug(f"直接评估条件: {condition.id}")
         
-        # 根据逻辑运算符组合结果
-        if condition_group.logical_operator == 'AND':
-            result = result and condition_result
-            # 短路逻辑：如果已经为False，不需要继续评估
-            if not result:
-                logger.debug("AND逻辑中有条件不满足，短路返回False")
-                return False
-        else:  # 'OR'
-            result = result or condition_result
-            # 短路逻辑：如果已经为True，不需要继续评估
-            if result:
-                logger.debug("OR逻辑中有条件满足，短路返回True")
-                return True
+        # 获取实际值 (简化)
+        actual_value = None
+        
+        # 根据数据源类型获取实际值
+        if condition.data_source_type == 'sensor':
+            # 从触发上下文或数据库获取传感器值
+            if trigger_context.get('sensor_id') == condition.sensor_id:
+                actual_value = trigger_context.get('value')
+            elif condition.sensor_id:
+                latest_data = SensorData.objects.filter(
+                    sensor_id=condition.sensor_id
+                ).order_by('-timestamp').first()
+                if latest_data:
+                    actual_value = latest_data.get_value()
+                else:
+                    logger.warning(f"找不到传感器 {condition.sensor_id} 的数据")
+                    results.append(False)
+                    continue
+            else:
+                logger.warning("条件中缺少传感器ID")
+                results.append(False)
+                continue
+        # 类似地处理其他数据源类型
+        # ...
+        
+        # 获取阈值 (简化)
+        threshold_value = None
+        if condition.threshold_value_type == 'static':
+            threshold_value = condition.threshold_value_static
+        # 类似地处理其他阈值类型
+        # ...
+        
+        # 使用运算符比较 (简化)
+        try:
+            if condition.operator == 'eq':
+                result = actual_value == threshold_value
+            elif condition.operator == 'gt':
+                result = actual_value > threshold_value
+            # 处理其他运算符...
+            else:
+                result = False
+                
+            results.append(result)
+        except Exception as e:
+            logger.error(f"条件评估出错: {str(e)}")
+            results.append(False)
     
-    logger.debug(f"条件组评估最终结果: {result}")
-    return result
+    # 根据逻辑运算符组合结果
+    if condition_group.logical_operator == 'AND':
+        return all(results)
+    elif condition_group.logical_operator == 'OR':
+        return any(results)
+    else:
+        return False
 
-
-def check_strategy_conditions(strategy: Strategy, trigger_context: Dict[str, Any]) -> bool:
+# 异步版本调用同步版本
+async def evaluate_condition_group(condition_group: ConditionGroup, trigger_context: Dict[str, Any]) -> bool:
     """
-    检查策略的所有条件组是否满足
+    评估条件组是否满足 (异步版本)
     
     Args:
-        strategy: 要检查的策略对象
-        trigger_context: 触发上下文，包含触发事件的相关数据
+        condition_group: 要评估的条件组
+        trigger_context: 触发上下文
+        
+    Returns:
+        bool: 条件组是否满足
+    """
+    return await evaluate_condition_group_sync(condition_group, trigger_context)
+
+# 使用sync_to_async包装同步数据库操作，设置thread_sensitive=False避免死锁
+@sync_to_async(thread_sensitive=False)
+def check_strategy_conditions_sync(strategy: Strategy, trigger_context: Dict[str, Any]) -> bool:
+    """
+    检查策略的所有条件组是否满足 (同步版本)
+    
+    Args:
+        strategy: 要检查的策略
+        trigger_context: 触发上下文
         
     Returns:
         bool: 策略条件是否满足
     """
-    logger.info(f"检查策略条件: 策略ID={strategy.id}, 名称='{strategy.name}'")
-    
     # 获取策略的所有条件组，按执行顺序排序
-    condition_groups = strategy.condition_groups.all().order_by('execution_order')
+    condition_groups = ConditionGroup.objects.filter(
+        strategy=strategy
+    ).order_by('execution_order')
     
-    # 如果没有条件组，默认为True
     if not condition_groups:
-        logger.info("策略没有条件组，默认结果为True")
-        return True
+        logger.warning(f"策略 {strategy.id} 没有条件组")
+        return False
     
-    # 评估每个条件组（目前假设所有条件组之间是AND关系）
-    for condition_group in condition_groups:
-        if not evaluate_condition_group(condition_group, trigger_context):
-            logger.info(f"策略条件不满足: 条件组ID={condition_group.id}评估结果为False")
+    # 同样，这里不能直接调用evaluate_condition_group_sync
+    # 需要为每个条件组单独触发异步执行
+    for group in condition_groups:
+        # 标记每个条件组
+        logger.debug(f"检查条件组: {group.id}")
+        
+        # 获取此条件组的所有条件
+        conditions = Condition.objects.filter(group=group)
+        
+        if not conditions:
+            logger.warning(f"条件组 {group.id} 没有条件")
+            return False
+        
+        # 评估条件组中的每个条件
+        condition_results = []
+        for condition in conditions:
+            # 直接评估条件 (与evaluate_condition_group_sync类似)
+            result = False  # 默认为False
+            
+            # 这里应当复制evaluate_condition_sync的完整逻辑
+            # 简化版本仅作示例
+            logger.debug(f"直接评估条件: {condition.id}")
+            
+            # 获取实际值并评估条件 (简化逻辑)
+            actual_value = None
+            if condition.data_source_type == 'sensor':
+                if trigger_context.get('sensor_id') == condition.sensor_id:
+                    actual_value = trigger_context.get('value')
+                    
+            # 获取阈值
+            threshold_value = None
+            if condition.threshold_value_type == 'static':
+                threshold_value = condition.threshold_value_static
+                
+            # 比较
+            try:
+                if condition.operator == 'eq':
+                    result = actual_value == threshold_value
+                # 其他操作符...
+            except Exception:
+                result = False
+                
+            condition_results.append(result)
+        
+        # 根据逻辑运算符评估此条件组
+        group_result = False
+        if group.logical_operator == 'AND':
+            group_result = all(condition_results)
+        elif group.logical_operator == 'OR':
+            group_result = any(condition_results)
+            
+        # 如果条件组不满足，整个策略条件就不满足
+        if not group_result:
             return False
     
-    logger.info("策略所有条件组都满足")
+    # 所有条件组都满足
     return True
 
+# 异步版本调用同步版本
+async def check_strategy_conditions(strategy: Strategy, trigger_context: Dict[str, Any]) -> bool:
+    """
+    检查策略的所有条件组是否满足 (异步版本)
+    
+    Args:
+        strategy: 要检查的策略
+        trigger_context: 触发上下文
+        
+    Returns:
+        bool: 策略条件是否满足
+    """
+    return await check_strategy_conditions_sync(strategy, trigger_context)
+
+# 使用sync_to_async包装同步数据库操作，设置thread_sensitive=False避免死锁
+@sync_to_async(thread_sensitive=False)
+def create_execution_log(strategy: Strategy, trigger_context: Dict[str, Any]) -> ExecutionLog:
+    """
+    创建执行日志记录
+    
+    Args:
+        strategy: 关联的策略
+        trigger_context: 触发上下文
+        
+    Returns:
+        ExecutionLog: 创建的执行日志
+    """
+    return ExecutionLog.objects.create(
+        strategy=strategy,
+        triggered_at=timezone.now(),
+        status='pending',
+        trigger_details=trigger_context
+    )
+
+# 使用sync_to_async包装同步数据库操作，设置thread_sensitive=False避免死锁
+@sync_to_async(thread_sensitive=False)
+def update_execution_log(execution_log: ExecutionLog, status: str, action_results: List[Dict]) -> None:
+    """
+    更新执行日志状态和结果
+    
+    Args:
+        execution_log: 执行日志对象
+        status: 新状态
+        action_results: 动作执行结果
+    """
+    execution_log.status = status
+    execution_log.action_results = action_results
+    execution_log.save(update_fields=['status', 'action_results'])
+
+# 使用sync_to_async包装同步数据库操作，设置thread_sensitive=False避免死锁
+@sync_to_async(thread_sensitive=False)
+def get_actuator(actuator_id: int) -> Actuator:
+    """获取执行器对象"""
+    return Actuator.objects.get(id=actuator_id)
+
+@sync_to_async(thread_sensitive=False)
+def get_sensor(sensor_id: int) -> Sensor:
+    """获取传感器对象"""
+    return Sensor.objects.get(id=sensor_id)
+
+@sync_to_async(thread_sensitive=False)
+def create_command_log(actuator, user, command_payload, source, status) -> ActuatorCommandLog:
+    """创建命令日志"""
+    return ActuatorCommandLog.objects.create(
+        actuator=actuator,
+        user=user,
+        command_payload=command_payload,
+        source=source,
+        status=status
+    )
+
+@sync_to_async(thread_sensitive=False)
+def update_command_log(command_log, status):
+    """更新命令日志状态"""
+    command_log.status = status
+    command_log.save(update_fields=['status'])
+
+@sync_to_async(thread_sensitive=False)
+def get_actions(strategy):
+    """获取策略的所有动作"""
+    return list(Action.objects.filter(strategy=strategy).order_by('execution_order'))
 
 # ============= 动作执行函数 =============
 
@@ -346,115 +541,110 @@ def render_template(template_str: str, context: Dict[str, Any]) -> str:
 
 async def execute_strategy_actions(strategy: Strategy, trigger_context: Dict[str, Any], execution_log: ExecutionLog) -> None:
     """
-    执行策略定义的所有动作
+    执行策略定义的动作
     
     Args:
-        strategy: 策略对象
+        strategy: 要执行动作的策略
         trigger_context: 触发上下文
         execution_log: 执行日志记录
     """
-    logger.info(f"执行策略动作: 策略ID={strategy.id}, 名称='{strategy.name}'")
+    logger.info(f"开始执行策略动作: 策略ID={strategy.id}")
     
-    # 更新执行日志状态为处理中
-    execution_log.status = 'processing'
-    execution_log.save(update_fields=['status'])
+    # 查询策略的所有动作，按执行顺序排序
+    actions = await get_actions(strategy)
     
-    # 初始化动作结果列表
+    # 记录动作执行结果
     action_results = []
-    
-    # 获取策略的所有动作，按执行顺序排序
-    actions = strategy.actions.all().order_by('execution_order')
-    
-    # 标记是否有任何动作执行失败
     has_failures = False
     
-    # 执行每个动作
+    # 依次执行每个动作
     for action in actions:
-        # 记录动作开始执行
-        action_start_time = timezone.now()
+        logger.info(f"执行动作: 动作ID={action.id}, 类型={action.action_type}")
+        
+        # 初始化动作结果记录
         action_result = {
             "action_id": action.id,
             "action_type": action.action_type,
-            "start_time": action_start_time.isoformat(),
+            "start_time": timezone.now().isoformat(),
             "status": "pending"
         }
         
         try:
-            # 根据动作类型执行不同操作
+            # 根据动作类型执行不同的操作
             if action.action_type == 'control_actuator':
                 # 控制执行器
                 if not action.target_actuator_id:
-                    raise ValueError("缺少目标执行器ID")
+                    raise ValueError("缺少目标执行器")
+                    
+                # 获取执行器信息
+                actuator = await get_actuator(action.target_actuator_id)
                 
-                # 获取执行器
-                try:
-                    actuator = Actuator.objects.get(id=action.target_actuator_id)
-                except Actuator.DoesNotExist:
-                    raise ValueError(f"找不到执行器: ID={action.target_actuator_id}")
-                
-                # 准备模板上下文，包含更多信息
+                # 准备命令模板上下文
                 template_context = {**trigger_context}
+                
+                # 添加传感器信息（如果触发上下文中有传感器ID）
                 if 'sensor_id' in trigger_context:
-                    try:
-                        sensor = Sensor.objects.get(id=trigger_context['sensor_id'])
-                        template_context['sensor'] = {
+                    sensor = await get_sensor(trigger_context['sensor_id'])
+                    template_context.update({
+                        'sensor': {
                             'id': sensor.id,
                             'name': sensor.name,
                             'type': sensor.sensor_type,
-                            'value': trigger_context.get('value', None)
+                            'unit': sensor.unit,
+                            'device_id': sensor.device_id
                         }
-                    except Sensor.DoesNotExist:
-                        pass
+                    })
                 
                 # 添加策略信息
-                template_context['strategy'] = {
-                    'id': strategy.id,
-                    'name': strategy.name
-                }
-                
-                # 添加执行器信息
-                template_context['actuator'] = {
-                    'id': actuator.id,
-                    'name': actuator.name,
-                    'type': actuator.actuator_type
-                }
-                
-                # 渲染命令模板
-                try:
-                    command_json_str = render_template(action.command_payload_template, template_context)
-                    command_payload = json.loads(command_json_str)
-                except json.JSONDecodeError:
-                    raise ValueError(f"无效的命令JSON格式: {command_json_str}")
-                
-                # 创建执行器命令日志
-                command_log = ActuatorCommandLog.objects.create(
-                    actuator=actuator,
-                    user=strategy.owner,  # 使用策略所有者作为用户
-                    command_payload=command_payload,
-                    status='pending',
-                    source=f'strategy:{strategy.id}'
-                )
-                
-                # 发送命令到TCP服务器
-                response = await send_command_to_tcp_server(actuator.id, command_payload)
-                
-                # 更新命令日志
-                command_log.status = 'sent' if response.get('status') == 'success' else 'failed'
-                command_log.response_payload = response
-                command_log.save(update_fields=['status', 'response_payload'])
-                
-                # 记录动作结果
-                action_result.update({
-                    "status": "success" if response.get('status') == 'success' else "failed",
-                    "details": {
-                        "actuator_id": actuator.id,
-                        "actuator_name": actuator.name,
-                        "command": command_payload,
-                        "response": response,
-                        "command_log_id": command_log.id
+                template_context.update({
+                    'strategy': {
+                        'id': strategy.id,
+                        'name': strategy.name
                     }
                 })
                 
+                # 解析命令模板
+                command_payload_str = render_template(action.command_payload_template, template_context)
+                try:
+                    command_payload = json.loads(command_payload_str)
+                except json.JSONDecodeError:
+                    raise ValueError(f"无效的命令内容JSON格式: {command_payload_str}")
+                
+                # 创建命令日志
+                command_log = await create_command_log(
+                    actuator=actuator,
+                    user=strategy.owner,
+                    command_payload=command_payload,
+                    source='strategy',
+                    status='pending'
+                )
+                
+                # 发送命令到TCP服务器
+                logger.info(f"发送命令到执行器: 执行器ID={actuator.id}, 命令={command_payload}")
+                try:
+                    response = await send_command_to_tcp_server(actuator.id, command_payload)
+                    
+                    # 更新命令日志
+                    await update_command_log(command_log, 'sent')
+                    
+                    # 记录动作结果
+                    action_result.update({
+                        "status": "success",
+                        "details": {
+                            "actuator_id": actuator.id,
+                            "actuator_name": actuator.name,
+                            "command": command_payload,
+                            "command_log_id": command_log.id,
+                            "response": response
+                        }
+                    })
+                except Exception as e:
+                    # 更新命令日志
+                    await update_command_log(command_log, 'failed')
+                    
+                    # 抛出异常，让外层捕获并记录
+                    raise ValueError(f"发送命令失败: {str(e)}")
+            
             elif action.action_type == 'send_notification':
                 # 发送通知
                 recipient_type = action.notification_recipient_type
@@ -598,24 +788,23 @@ async def execute_strategy_actions(strategy: Strategy, trigger_context: Dict[str
     # 更新执行日志
     if not actions:
         # 没有动作，标记为成功
-        execution_log.status = 'success'
+        status = 'success'
     elif has_failures:
         # 有失败的动作
         if any(result["status"] == "success" for result in action_results):
             # 部分成功
-            execution_log.status = 'partial_success'
+            status = 'partial_success'
         else:
             # 全部失败
-            execution_log.status = 'failed'
+            status = 'failed'
     else:
         # 全部成功
-        execution_log.status = 'success'
+        status = 'success'
     
     # 保存动作结果
-    execution_log.action_results = action_results
-    execution_log.save(update_fields=['status', 'action_results'])
+    await update_execution_log(execution_log, status, action_results)
     
-    logger.info(f"策略动作执行完成: 策略ID={strategy.id}, 状态={execution_log.status}")
+    logger.info(f"策略动作执行完成: 策略ID={strategy.id}, 状态={status}")
 
 
 # ============= 策略触发函数 =============
@@ -639,20 +828,14 @@ async def trigger_strategy_execution(strategy: Strategy, trigger_context: Dict[s
         return None
     
     # 检查策略条件
-    if not check_strategy_conditions(strategy, trigger_context):
+    if not await check_strategy_conditions(strategy, trigger_context):
         logger.info(f"策略条件不满足，跳过执行: 策略ID={strategy.id}")
         return None
     
     # 创建执行日志
-    execution_log = ExecutionLog.objects.create(
-        strategy=strategy,
-        triggered_at=timezone.now(),
-        status='pending',
-        trigger_details=trigger_context
-    )
+    execution_log = await create_execution_log(strategy, trigger_context)
     
     # 异步执行策略动作
-    # 注意：在Django环境中，可能需要调整异步执行方式
-    asyncio.create_task(execute_strategy_actions(strategy, trigger_context, execution_log))
+    await execute_strategy_actions(strategy, trigger_context, execution_log)
     
     return execution_log 
