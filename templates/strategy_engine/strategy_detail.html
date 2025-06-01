@@ -88,11 +88,12 @@
     /* 动态显示/隐藏动作字段组 */
     .action-field-group {
         display: none;
-        padding: 1rem;
+        padding: 1.5rem;
         margin-top: 1rem;
-        background-color: var(--background-default);
-        border: 1px solid var(--border-color);
-        border-radius: var(--border-radius-md);
+        background-color: var(--background-muted);
+        border: 2px solid var(--border-color);
+        border-radius: var(--border-radius-lg);
+        box-shadow: var(--shadow-sm);
     }
     
     .action-field-group h6 {
@@ -164,16 +165,16 @@
         </div>
     </div>
     
-    <!-- 条件配置卡片 -->
-    <div class="card mb-4 shadow-sm">
-        <div class="card-header">
-            <h4 class="card-title mb-0">条件配置</h4>
-        </div>
-        <div class="card-body">
-            <p class="mb-4">配置触发此策略的条件。您可以添加多个条件组，每个条件组内可以有多个条件。</p>
-            
-            <form method="post">
-                {% csrf_token %}
+    <form method="post">
+        {% csrf_token %}
+        
+        <!-- 条件配置卡片 -->
+        <div class="card mb-4 shadow-sm">
+            <div class="card-header">
+                <h4 class="card-title mb-0">条件配置</h4>
+            </div>
+            <div class="card-body">
+                <p class="mb-4">配置触发此策略的条件。您可以添加多个条件组，每个条件组内可以有多个条件。</p>
                 
                 <!-- 管理表单，用于处理表单集 -->
                 {{ condition_group_formset.management_form }}
@@ -403,274 +404,273 @@
                 <button type="button" class="btn-add-item add-condition-group">
                     <i class="fas fa-plus-circle me-2"></i> 添加条件组
                 </button>
+            </div>
+        </div>
+        
+        <!-- 动作配置卡片 -->
+        <div class="card mb-4 shadow-sm">
+            <div class="card-header">
+                <h4 class="card-title mb-0">动作配置</h4>
+            </div>
+            <div class="card-body">
+                <p class="mb-4">配置当条件满足时要执行的动作。您可以添加多个动作，并设置它们的执行顺序。</p>
                 
                 <!-- 动作管理表单，用于处理动作表单集 -->
                 {{ action_formset.management_form }}
-            </div>
-        </div>
-    </div>
-    
-    <!-- 动作配置卡片 -->
-    <div class="card mb-4 shadow-sm">
-        <div class="card-header">
-            <h4 class="card-title mb-0">动作配置</h4>
-        </div>
-        <div class="card-body">
-            <p class="mb-4">配置当条件满足时要执行的动作。您可以添加多个动作，并设置它们的执行顺序。</p>
-            
-            <!-- 动作列表 -->
-            {% for action_form in action_formset %}
-                <div class="action" id="action-{{ forloop.counter0 }}">
-                    <!-- 动作隐藏字段 -->
-                    {% for hidden_field in action_form.hidden_fields %}
-                        {{ hidden_field }}
-                    {% endfor %}
-                    
-                    <!-- 动作主体内容 -->
-                    <div class="action-body bg-light p-4 mb-4 rounded border">
-                        <!-- 动作头部 -->
-                        <div class="action-header d-flex justify-content-between align-items-center mb-3">
-                            <h5 class="mb-0">动作 {{ forloop.counter }}</h5>
-                            <div class="form-check">
-                                {{ action_form.DELETE }}
-                                <label class="form-check-label text-danger" for="{{ action_form.DELETE.id_for_label }}">
-                                    删除此动作
-                                </label>
-                            </div>
-                        </div>
+                
+                <!-- 动作列表 -->
+                {% for action_form in action_formset %}
+                    <div class="action" id="action-{{ forloop.counter0 }}">
+                        <!-- 动作隐藏字段 -->
+                        {% for hidden_field in action_form.hidden_fields %}
+                            {{ hidden_field }}
+                        {% endfor %}
                         
-                        <div class="row mb-3">
-                            <!-- 动作类型 -->
-                            <div class="col-md-6 mb-3">
-                                <label for="{{ action_form.action_type.id_for_label }}" class="form-label">
-                                    动作类型
-                                </label>
-                                {{ action_form.action_type }}
-                                <div class="form-text text-muted">
-                                    选择要执行的动作类型
+                        <!-- 动作主体内容 -->
+                        <div class="action-body bg-light p-4 mb-4 rounded border">
+                            <!-- 动作头部 -->
+                            <div class="action-header d-flex justify-content-between align-items-center mb-3">
+                                <h5 class="mb-0">动作 {{ forloop.counter }}</h5>
+                                <div class="form-check">
+                                    {{ action_form.DELETE }}
+                                    <label class="form-check-label text-danger" for="{{ action_form.DELETE.id_for_label }}">
+                                        删除此动作
+                                    </label>
                                 </div>
-                                {% if action_form.action_type.errors %}
-                                    <div class="error-text">
-                                        {% for error in action_form.action_type.errors %}
-                                            {{ error }}
-                                        {% endfor %}
-                                    </div>
-                                {% endif %}
                             </div>
                             
-                            <!-- 执行顺序 -->
-                            <div class="col-md-6 mb-3">
-                                <label for="{{ action_form.execution_order.id_for_label }}" class="form-label">
-                                    执行顺序
-                                </label>
-                                {{ action_form.execution_order }}
-                                <div class="form-text text-muted">
-                                    多个动作的执行顺序，数字越小越先执行
-                                </div>
-                                {% if action_form.execution_order.errors %}
-                                    <div class="error-text">
-                                        {% for error in action_form.execution_order.errors %}
-                                            {{ error }}
-                                        {% endfor %}
+                            <div class="row mb-3">
+                                <!-- 动作类型 -->
+                                <div class="col-md-6 mb-3">
+                                    <label for="{{ action_form.action_type.id_for_label }}" class="form-label">
+                                        动作类型
+                                    </label>
+                                    {{ action_form.action_type }}
+                                    <div class="form-text text-muted">
+                                        选择要执行的动作类型
                                     </div>
-                                {% endif %}
-                            </div>
-                        </div>
-                        
-                        <!-- 控制执行器相关字段组 -->
-                        <div class="action-fields action-field-group" data-action-type="control_actuator">
-                            <h6 class="mb-3">执行器控制参数</h6>
-                            
-                            <!-- 目标执行器 -->
-                            <div class="mb-3">
-                                <label for="{{ action_form.target_actuator.id_for_label }}" class="form-label">
-                                    目标执行器
-                                </label>
-                                {{ action_form.target_actuator }}
-                                <div class="form-text text-muted">
-                                    选择要控制的执行器
+                                    {% if action_form.action_type.errors %}
+                                        <div class="error-text">
+                                            {% for error in action_form.action_type.errors %}
+                                                {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
                                 </div>
-                                {% if action_form.target_actuator.errors %}
-                                    <div class="error-text">
-                                        {% for error in action_form.target_actuator.errors %}
-                                            {{ error }}
-                                        {% endfor %}
+                                
+                                <!-- 执行顺序 -->
+                                <div class="col-md-6 mb-3">
+                                    <label for="{{ action_form.execution_order.id_for_label }}" class="form-label">
+                                        执行顺序
+                                    </label>
+                                    {{ action_form.execution_order }}
+                                    <div class="form-text text-muted">
+                                        多个动作的执行顺序，数字越小越先执行
                                     </div>
-                                {% endif %}
+                                    {% if action_form.execution_order.errors %}
+                                        <div class="error-text">
+                                            {% for error in action_form.execution_order.errors %}
+                                                {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
                             </div>
                             
-                            <!-- 命令内容模板 -->
-                            <div class="mb-3">
-                                <label for="{{ action_form.command_payload_template.id_for_label }}" class="form-label">
-                                    命令内容模板 (JSON)
-                                </label>
-                                {{ action_form.command_payload_template }}
-                                <div class="form-text text-muted">
-                                    JSON格式的命令内容，可以使用模板变量如 {% templatetag openvariable %}sensor.value{% templatetag closevariable %}
-                                </div>
-                                {% if action_form.command_payload_template.errors %}
-                                    <div class="error-text">
-                                        {% for error in action_form.command_payload_template.errors %}
-                                            {{ error }}
-                                        {% endfor %}
+                            <!-- 控制执行器相关字段组 -->
+                            <div class="action-fields action-field-group" data-action-type="control_actuator">
+                                <h6 class="mb-3">执行器控制参数</h6>
+                                
+                                <!-- 目标执行器 -->
+                                <div class="mb-3">
+                                    <label for="{{ action_form.target_actuator.id_for_label }}" class="form-label">
+                                        目标执行器
+                                    </label>
+                                    {{ action_form.target_actuator }}
+                                    <div class="form-text text-muted">
+                                        选择要控制的执行器
                                     </div>
-                                {% endif %}
-                            </div>
-                        </div>
-                        
-                        <!-- 发送通知相关字段组 -->
-                        <div class="action-fields action-field-group" data-action-type="send_notification">
-                            <h6 class="mb-3">通知参数</h6>
-                            
-                            <!-- 接收者类型 -->
-                            <div class="mb-3">
-                                <label for="{{ action_form.notification_recipient_type.id_for_label }}" class="form-label">
-                                    接收者类型
-                                </label>
-                                {{ action_form.notification_recipient_type }}
-                                <div class="form-text text-muted">
-                                    选择通知的接收者类型
+                                    {% if action_form.target_actuator.errors %}
+                                        <div class="error-text">
+                                            {% for error in action_form.target_actuator.errors %}
+                                                {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
                                 </div>
-                                {% if action_form.notification_recipient_type.errors %}
-                                    <div class="error-text">
-                                        {% for error in action_form.notification_recipient_type.errors %}
-                                            {{ error }}
-                                        {% endfor %}
+                                
+                                <!-- 命令内容模板 -->
+                                <div class="mb-3">
+                                    <label for="{{ action_form.command_payload_template.id_for_label }}" class="form-label">
+                                        命令内容模板 (JSON)
+                                    </label>
+                                    {{ action_form.command_payload_template }}
+                                    <div class="form-text text-muted">
+                                        JSON格式的命令内容，可以使用模板变量如 {% templatetag openvariable %}sensor.value{% templatetag closevariable %}
                                     </div>
-                                {% endif %}
-                            </div>
-                            
-                            <!-- 接收者值 -->
-                            <div class="mb-3">
-                                <label for="{{ action_form.notification_recipient_value.id_for_label }}" class="form-label">
-                                    接收者值
-                                </label>
-                                {{ action_form.notification_recipient_value }}
-                                <div class="form-text text-muted">
-                                    接收者的值，如邮箱地址、电话号码等
+                                    {% if action_form.command_payload_template.errors %}
+                                        <div class="error-text">
+                                            {% for error in action_form.command_payload_template.errors %}
+                                                {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
                                 </div>
-                                {% if action_form.notification_recipient_value.errors %}
-                                    <div class="error-text">
-                                        {% for error in action_form.notification_recipient_value.errors %}
-                                            {{ error }}
-                                        {% endfor %}
-                                    </div>
-                                {% endif %}
                             </div>
                             
-                            <!-- 通知内容模板 -->
-                            <div class="mb-3">
-                                <label for="{{ action_form.notification_message_template.id_for_label }}" class="form-label">
-                                    通知内容模板
-                                </label>
-                                {{ action_form.notification_message_template }}
-                                <div class="form-text text-muted">
-                                    通知内容，可以使用模板变量如 {% templatetag openvariable %}strategy.name{% templatetag closevariable %}, {% templatetag openvariable %}sensor.name{% templatetag closevariable %}, {% templatetag openvariable %}sensor.value{% templatetag closevariable %}
-                                </div>
-                                {% if action_form.notification_message_template.errors %}
-                                    <div class="error-text">
-                                        {% for error in action_form.notification_message_template.errors %}
-                                            {{ error }}
-                                        {% endfor %}
+                            <!-- 发送通知相关字段组 -->
+                            <div class="action-fields action-field-group" data-action-type="send_notification">
+                                <h6 class="mb-3">通知参数</h6>
+                                
+                                <!-- 接收者类型 -->
+                                <div class="mb-3">
+                                    <label for="{{ action_form.notification_recipient_type.id_for_label }}" class="form-label">
+                                        接收者类型
+                                    </label>
+                                    {{ action_form.notification_recipient_type }}
+                                    <div class="form-text text-muted">
+                                        选择通知的接收者类型
                                     </div>
-                                {% endif %}
-                            </div>
-                        </div>
-                        
-                        <!-- 调用Webhook相关字段组 -->
-                        <div class="action-fields action-field-group" data-action-type="call_webhook">
-                            <h6 class="mb-3">Webhook参数</h6>
-                            
-                            <!-- Webhook URL -->
-                            <div class="mb-3">
-                                <label for="{{ action_form.webhook_url.id_for_label }}" class="form-label">
-                                    Webhook URL
-                                </label>
-                                {{ action_form.webhook_url }}
-                                <div class="form-text text-muted">
-                                    要调用的Webhook URL
+                                    {% if action_form.notification_recipient_type.errors %}
+                                        <div class="error-text">
+                                            {% for error in action_form.notification_recipient_type.errors %}
+                                                {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
                                 </div>
-                                {% if action_form.webhook_url.errors %}
-                                    <div class="error-text">
-                                        {% for error in action_form.webhook_url.errors %}
-                                            {{ error }}
-                                        {% endfor %}
+                                
+                                <!-- 接收者值 -->
+                                <div class="mb-3">
+                                    <label for="{{ action_form.notification_recipient_value.id_for_label }}" class="form-label">
+                                        接收者值
+                                    </label>
+                                    {{ action_form.notification_recipient_value }}
+                                    <div class="form-text text-muted">
+                                        接收者的值，如邮箱地址、电话号码等
                                     </div>
-                                {% endif %}
-                            </div>
-                            
-                            <!-- HTTP方法 -->
-                            <div class="mb-3">
-                                <label for="{{ action_form.webhook_method.id_for_label }}" class="form-label">
-                                    HTTP方法
-                                </label>
-                                {{ action_form.webhook_method }}
-                                <div class="form-text text-muted">
-                                    HTTP请求方法
+                                    {% if action_form.notification_recipient_value.errors %}
+                                        <div class="error-text">
+                                            {% for error in action_form.notification_recipient_value.errors %}
+                                                {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
                                 </div>
-                                {% if action_form.webhook_method.errors %}
-                                    <div class="error-text">
-                                        {% for error in action_form.webhook_method.errors %}
-                                            {{ error }}
-                                        {% endfor %}
+                                
+                                <!-- 通知内容模板 -->
+                                <div class="mb-3">
+                                    <label for="{{ action_form.notification_message_template.id_for_label }}" class="form-label">
+                                        通知内容模板
+                                    </label>
+                                    {{ action_form.notification_message_template }}
+                                    <div class="form-text text-muted">
+                                        通知内容，可以使用模板变量如 {% templatetag openvariable %}strategy.name{% templatetag closevariable %}, {% templatetag openvariable %}sensor.name{% templatetag closevariable %}, {% templatetag openvariable %}sensor.value{% templatetag closevariable %}
                                     </div>
-                                {% endif %}
-                            </div>
-                            
-                            <!-- 请求头部模板 -->
-                            <div class="mb-3">
-                                <label for="{{ action_form.webhook_headers_template.id_for_label }}" class="form-label">
-                                    请求头部模板 (JSON)
-                                </label>
-                                {{ action_form.webhook_headers_template }}
-                                <div class="form-text text-muted">
-                                    JSON格式的HTTP请求头，可以使用模板变量如 {% templatetag openvariable %}strategy.id{% templatetag closevariable %}
+                                    {% if action_form.notification_message_template.errors %}
+                                        <div class="error-text">
+                                            {% for error in action_form.notification_message_template.errors %}
+                                                {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
                                 </div>
-                                {% if action_form.webhook_headers_template.errors %}
-                                    <div class="error-text">
-                                        {% for error in action_form.webhook_headers_template.errors %}
-                                            {{ error }}
-                                        {% endfor %}
-                                    </div>
-                                {% endif %}
                             </div>
                             
-                            <!-- 请求体模板 -->
-                            <div class="mb-3">
-                                <label for="{{ action_form.webhook_payload_template.id_for_label }}" class="form-label">
-                                    请求体模板 (JSON)
-                                </label>
-                                {{ action_form.webhook_payload_template }}
-                                <div class="form-text text-muted">
-                                    JSON格式的HTTP请求体，可以使用模板变量如 {% templatetag openvariable %}sensor.value{% templatetag closevariable %}
-                                </div>
-                                {% if action_form.webhook_payload_template.errors %}
-                                    <div class="error-text">
-                                        {% for error in action_form.webhook_payload_template.errors %}
-                                            {{ error }}
-                                        {% endfor %}
+                            <!-- 调用Webhook相关字段组 -->
+                            <div class="action-fields action-field-group" data-action-type="call_webhook">
+                                <h6 class="mb-3">Webhook参数</h6>
+                                
+                                <!-- Webhook URL -->
+                                <div class="mb-3">
+                                    <label for="{{ action_form.webhook_url.id_for_label }}" class="form-label">
+                                        Webhook URL
+                                    </label>
+                                    {{ action_form.webhook_url }}
+                                    <div class="form-text text-muted">
+                                        要调用的Webhook URL
                                     </div>
-                                {% endif %}
+                                    {% if action_form.webhook_url.errors %}
+                                        <div class="error-text">
+                                            {% for error in action_form.webhook_url.errors %}
+                                                {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                
+                                <!-- HTTP方法 -->
+                                <div class="mb-3">
+                                    <label for="{{ action_form.webhook_method.id_for_label }}" class="form-label">
+                                        HTTP方法
+                                    </label>
+                                    {{ action_form.webhook_method }}
+                                    <div class="form-text text-muted">
+                                        HTTP请求方法
+                                    </div>
+                                    {% if action_form.webhook_method.errors %}
+                                        <div class="error-text">
+                                            {% for error in action_form.webhook_method.errors %}
+                                                {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                
+                                <!-- 请求头部模板 -->
+                                <div class="mb-3">
+                                    <label for="{{ action_form.webhook_headers_template.id_for_label }}" class="form-label">
+                                        请求头部模板 (JSON)
+                                    </label>
+                                    {{ action_form.webhook_headers_template }}
+                                    <div class="form-text text-muted">
+                                        JSON格式的HTTP请求头，可以使用模板变量如 {% templatetag openvariable %}strategy.id{% templatetag closevariable %}
+                                    </div>
+                                    {% if action_form.webhook_headers_template.errors %}
+                                        <div class="error-text">
+                                            {% for error in action_form.webhook_headers_template.errors %}
+                                                {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                
+                                <!-- 请求体模板 -->
+                                <div class="mb-3">
+                                    <label for="{{ action_form.webhook_payload_template.id_for_label }}" class="form-label">
+                                        请求体模板 (JSON)
+                                    </label>
+                                    {{ action_form.webhook_payload_template }}
+                                    <div class="form-text text-muted">
+                                        JSON格式的HTTP请求体，可以使用模板变量如 {% templatetag openvariable %}sensor.value{% templatetag closevariable %}
+                                    </div>
+                                    {% if action_form.webhook_payload_template.errors %}
+                                        <div class="error-text">
+                                            {% for error in action_form.webhook_payload_template.errors %}
+                                                {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
                             </div>
                         </div>
                     </div>
-                </div>
-            {% endfor %}
-            
-            <!-- 添加动作按钮 -->
-            <button type="button" class="btn-add-item add-action">
-                <i class="fas fa-plus-circle me-2"></i> 添加动作
-            </button>
-            
-            <!-- 提交按钮 -->
-            <div class="d-flex justify-content-end mt-4">
-                <button type="submit" class="btn btn-primary">
-                    <i class="fas fa-save"></i> 保存条件和动作配置
+                {% endfor %}
+                
+                <!-- 添加动作按钮 -->
+                <button type="button" class="btn-add-item add-action">
+                    <i class="fas fa-plus-circle me-2"></i> 添加动作
                 </button>
+                
+                <!-- 提交按钮 -->
+                <div class="d-flex justify-content-end mt-4">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i> 保存条件和动作配置
+                    </button>
+                </div>
             </div>
-            </form>
         </div>
-    </div>
+    </form>
 </div>
 {% endblock %}
 
