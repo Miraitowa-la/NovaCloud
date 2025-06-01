@@ -12,4 +12,7 @@ urlpatterns = [
     
     # 策略详情和配置URL
     path('strategies/<int:strategy_id>/', views.strategy_detail_view, name='strategy_detail'),
+    
+    # 策略执行日志URL
+    path('strategies/logs/', views.execution_log_list_view, name='execution_log_list'),
 ] 

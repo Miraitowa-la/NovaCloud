@@ -1,0 +1,231 @@
+{% extends 'base.html' %}
+{% load strategy_extras %}
+
+{% block title %}策略执行日志 - NovaCloud{% endblock %}
+
+{% block content %}
+<div class="container">
+    <!-- 页面标题 -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>策略执行日志</h2>
+        <div>
+            <a href="{% url 'strategy_engine:strategy_list' %}" class="btn btn-secondary btn-sm">
+                <i class="fas fa-list"></i> 返回策略列表
+            </a>
+        </div>
+    </div>
+    
+    <!-- 筛选区域 -->
+    <div class="card mb-4 shadow-sm">
+        <div class="card-body">
+            <form method="get" action="{% url 'strategy_engine:execution_log_list' %}" class="row g-3 align-items-end">
+                <div class="col-md-6">
+                    <label for="strategy-filter" class="form-label">按策略筛选</label>
+                    <select name="strategy_id" id="strategy-filter" class="form-control">
+                        <option value="" {% if not selected_strategy_id %}selected{% endif %}>所有策略</option>
+                        {% for strategy in user_strategies %}
+                            <option value="{{ strategy.id }}" {% if selected_strategy_id == strategy.id %}selected{% endif %}>
+                                {{ strategy.name }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="fas fa-filter"></i> 筛选
+                    </button>
+                </div>
+                {% if selected_strategy_id %}
+                <div class="col-md-2">
+                    <a href="{% url 'strategy_engine:execution_log_list' %}" class="btn btn-outline-secondary w-100">
+                        <i class="fas fa-times"></i> 清除筛选
+                    </a>
+                </div>
+                {% endif %}
+            </form>
+        </div>
+    </div>
+    
+    <!-- 日志表格 -->
+    {% if logs %}
+    <div class="card shadow-sm">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-striped table-hover mb-0 table-rounded">
+                    <thead class="bg-light">
+                        <tr>
+                            <th>策略名称</th>
+                            <th>触发时间</th>
+                            <th>状态</th>
+                            <th>触发详情</th>
+                            <th>动作结果</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for log in logs %}
+                        <tr>
+                            <td>{{ log.strategy.name|default:"N/A (策略已删除)" }}</td>
+                            <td>{{ log.triggered_at|date:"Y-m-d H:i:s" }}</td>
+                            <td>
+                                {% if log.status == 'success' %}
+                                    <span class="badge bg-success">成功</span>
+                                {% elif log.status == 'failed' %}
+                                    <span class="badge bg-danger">失败</span>
+                                {% elif log.status == 'partial' %}
+                                    <span class="badge bg-warning">部分成功</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">{{ log.status }}</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <pre class="small mb-0" style="max-height: 100px; overflow: auto;">{{ log.trigger_details|pprint_json|truncatechars:100 }}</pre>
+                            </td>
+                            <td>
+                                <pre class="small mb-0" style="max-height: 100px; overflow: auto;">{{ log.action_results|pprint_json|truncatechars:150 }}</pre>
+                            </td>
+                            <td>
+                                <!-- 查看详情按钮，触发模态框 -->
+                                <button type="button" class="btn btn-sm btn-outline-primary view-details-btn" 
+                                        data-bs-toggle="modal" data-bs-target="#logDetailModal{{ log.id }}">
+                                    <i class="fas fa-eye"></i> 详情
+                                </button>
+                                
+                                <!-- 日志详情模态框 -->
+                                <div class="modal fade" id="logDetailModal{{ log.id }}" tabindex="-1" aria-labelledby="logDetailModalLabel{{ log.id }}" aria-hidden="true">
+                                    <div class="modal-dialog modal-lg">
+                                        <div class="modal-content">
+                                            <div class="modal-header">
+                                                <h5 class="modal-title" id="logDetailModalLabel{{ log.id }}">执行日志详情</h5>
+                                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="关闭"></button>
+                                            </div>
+                                            <div class="modal-body">
+                                                <h6>策略信息</h6>
+                                                <p>
+                                                    <strong>策略名称:</strong> {{ log.strategy.name|default:"N/A (策略已删除)" }}<br>
+                                                    <strong>触发时间:</strong> {{ log.triggered_at|date:"Y-m-d H:i:s" }}<br>
+                                                    <strong>状态:</strong> 
+                                                    {% if log.status == 'success' %}
+                                                        <span class="badge bg-success">成功</span>
+                                                    {% elif log.status == 'failed' %}
+                                                        <span class="badge bg-danger">失败</span>
+                                                    {% elif log.status == 'partial' %}
+                                                        <span class="badge bg-warning">部分成功</span>
+                                                    {% else %}
+                                                        <span class="badge bg-secondary">{{ log.status }}</span>
+                                                    {% endif %}
+                                                </p>
+                                                
+                                                <h6 class="mt-4">触发详情</h6>
+                                                <div class="bg-light p-3 rounded">
+                                                    <pre class="mb-0" style="max-height: 200px; overflow: auto;">{{ log.trigger_details|pprint_json }}</pre>
+                                                </div>
+                                                
+                                                <h6 class="mt-4">动作结果</h6>
+                                                <div class="bg-light p-3 rounded">
+                                                    <pre class="mb-0" style="max-height: 200px; overflow: auto;">{{ log.action_results|pprint_json }}</pre>
+                                                </div>
+                                            </div>
+                                            <div class="modal-footer">
+                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">关闭</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 分页导航 -->
+    {% if logs.paginator.num_pages > 1 %}
+    <nav aria-label="策略执行日志分页" class="mt-4">
+        <ul class="pagination justify-content-center">
+            {% if logs.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?{% if selected_strategy_id %}strategy_id={{ selected_strategy_id }}&{% endif %}page=1" aria-label="首页">
+                        <span aria-hidden="true">&laquo;&laquo;</span>
+                    </a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="?{% if selected_strategy_id %}strategy_id={{ selected_strategy_id }}&{% endif %}page={{ logs.previous_page_number }}" aria-label="上一页">
+                        <span aria-hidden="true">&laquo;</span>
+                    </a>
+                </li>
+            {% else %}
+                <li class="page-item disabled">
+                    <a class="page-link" href="#" aria-label="首页">
+                        <span aria-hidden="true">&laquo;&laquo;</span>
+                    </a>
+                </li>
+                <li class="page-item disabled">
+                    <a class="page-link" href="#" aria-label="上一页">
+                        <span aria-hidden="true">&laquo;</span>
+                    </a>
+                </li>
+            {% endif %}
+            
+            {% for i in logs.paginator.page_range %}
+                {% if logs.number == i %}
+                    <li class="page-item active"><span class="page-link">{{ i }}</span></li>
+                {% elif i > logs.number|add:"-3" and i < logs.number|add:"3" %}
+                    <li class="page-item">
+                        <a class="page-link" href="?{% if selected_strategy_id %}strategy_id={{ selected_strategy_id }}&{% endif %}page={{ i }}">{{ i }}</a>
+                    </li>
+                {% endif %}
+            {% endfor %}
+            
+            {% if logs.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?{% if selected_strategy_id %}strategy_id={{ selected_strategy_id }}&{% endif %}page={{ logs.next_page_number }}" aria-label="下一页">
+                        <span aria-hidden="true">&raquo;</span>
+                    </a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="?{% if selected_strategy_id %}strategy_id={{ selected_strategy_id }}&{% endif %}page={{ logs.paginator.num_pages }}" aria-label="末页">
+                        <span aria-hidden="true">&raquo;&raquo;</span>
+                    </a>
+                </li>
+            {% else %}
+                <li class="page-item disabled">
+                    <a class="page-link" href="#" aria-label="下一页">
+                        <span aria-hidden="true">&raquo;</span>
+                    </a>
+                </li>
+                <li class="page-item disabled">
+                    <a class="page-link" href="#" aria-label="末页">
+                        <span aria-hidden="true">&raquo;&raquo;</span>
+                    </a>
+                </li>
+            {% endif %}
+        </ul>
+    </nav>
+    {% endif %}
+    
+    {% else %}
+    <!-- 无数据提示 -->
+    <div class="card shadow-sm">
+        <div class="card-body text-center py-5">
+            <i class="fas fa-clipboard-list fa-3x text-muted mb-3"></i>
+            <h4 class="text-muted">暂无执行日志</h4>
+            <p class="text-muted">
+                {% if selected_strategy_id %}
+                当前筛选条件下没有找到任何执行日志记录。
+                {% else %}
+                还没有任何策略执行的记录，策略触发后会自动记录执行日志。
+                {% endif %}
+            </p>
+            {% if selected_strategy_id %}
+            <a href="{% url 'strategy_engine:execution_log_list' %}" class="btn btn-outline-primary mt-2">
+                <i class="fas fa-list"></i> 查看所有日志
+            </a>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %} 

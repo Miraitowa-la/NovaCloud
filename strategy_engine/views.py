@@ -1,8 +1,9 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 
-from .models import Strategy, ConditionGroup, Condition, Action
+from .models import Strategy, ConditionGroup, Condition, Action, ExecutionLog
 from .forms import StrategyForm, ConditionGroupFormSet, ActionFormSet
 
 @login_required
@@ -177,4 +178,53 @@ def strategy_detail_view(request, strategy_id):
         'strategy': strategy,
         'condition_group_formset': condition_group_formset,
         'action_formset': action_formset,
+    })
+
+@login_required
+def execution_log_list_view(request):
+    """
+    显示策略执行日志列表，支持按策略筛选和分页
+    """
+    # 获取筛选参数
+    strategy_id = request.GET.get('strategy_id')
+    
+    # 基础查询：只查询用户自己的策略日志
+    logs_query = ExecutionLog.objects.filter(
+        strategy__owner=request.user
+    ).select_related('strategy').order_by('-triggered_at')
+    
+    # 如果提供了策略ID，进一步筛选
+    if strategy_id:
+        try:
+            # 确保该策略属于当前用户
+            strategy = get_object_or_404(Strategy, id=strategy_id, owner=request.user)
+            logs_query = logs_query.filter(strategy_id=strategy_id)
+            selected_strategy_id = int(strategy_id)
+        except (ValueError, Strategy.DoesNotExist):
+            # 如果策略ID无效，忽略筛选
+            selected_strategy_id = None
+    else:
+        selected_strategy_id = None
+    
+    # 获取用户的所有策略，用于筛选下拉框
+    user_strategies = Strategy.objects.filter(owner=request.user).order_by('name')
+    
+    # 实现分页
+    paginator = Paginator(logs_query, 10)  # 每页10条日志
+    page = request.GET.get('page')
+    
+    try:
+        logs = paginator.page(page)
+    except PageNotAnInteger:
+        # 如果page不是整数，返回第一页
+        logs = paginator.page(1)
+    except EmptyPage:
+        # 如果page超出范围，返回最后一页
+        logs = paginator.page(paginator.num_pages)
+    
+    return render(request, 'strategy_engine/execution_log_list.html', {
+        'logs': logs,
+        'user_strategies': user_strategies,
+        'selected_strategy_id': selected_strategy_id,
+        'active_nav': 'strategy_logs'  # 用于导航栏高亮
     })

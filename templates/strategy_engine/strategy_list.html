@@ -4,12 +4,17 @@
 
 {% block content %}
 <div class="container">
-    <!-- 页面标题和创建按钮 -->
+    <!-- 页面标题和按钮组 -->
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h2>我的策略</h2>
-        <a href="{% url 'strategy_engine:strategy_create' %}" class="btn btn-primary">
-            <i class="fas fa-plus"></i> 创建新策略
-        </a>
+        <div>
+            <a href="{% url 'strategy_engine:execution_log_list' %}" class="btn btn-outline-secondary me-2">
+                <i class="fas fa-clipboard-list"></i> 查看执行日志
+            </a>
+            <a href="{% url 'strategy_engine:strategy_create' %}" class="btn btn-primary">
+                <i class="fas fa-plus"></i> 创建新策略
+            </a>
+        </div>
     </div>
     
     <!-- 策略列表 -->
