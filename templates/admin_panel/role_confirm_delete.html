@@ -1,0 +1,32 @@
+{% extends "admin_panel/base_admin.html" %}
+{% load static %}
+
+{% block admin_page_title %}确认删除角色{% endblock %}
+
+{% block admin_content_main %}
+<div class="container">
+    <div class="card shadow-sm">
+        <div class="card-header">
+            <h5 class="card-title mb-0"><i class="fas fa-trash-alt text-danger mr-2"></i>确认删除角色</h5>
+        </div>
+        <div class="card-body">
+            <div class="alert alert-warning">
+                <i class="fas fa-exclamation-triangle mr-2"></i>
+                您确定要删除角色 <strong>{{ role.name }}</strong> 吗？此操作无法撤销。
+            </div>
+            
+            <form method="post" action="{% url 'admin_panel:role_delete' role.id %}">
+                {% csrf_token %}
+                <div class="d-flex justify-content-between mt-4">
+                    <a href="{% url 'admin_panel:role_list' %}" class="btn btn-outline-secondary">
+                        <i class="fas fa-arrow-left mr-1"></i> 返回
+                    </a>
+                    <button type="submit" class="btn btn-danger">
+                        <i class="fas fa-trash-alt mr-1"></i> 确认删除
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock admin_content_main %} 

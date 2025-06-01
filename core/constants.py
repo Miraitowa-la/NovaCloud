@@ -107,7 +107,7 @@ AUDIT_ACTION_CHOICES = [
     (ACTION_SYSTEM_STARTUP, '系统启动'),
     (ACTION_SYSTEM_SHUTDOWN, '系统关闭'),
     (ACTION_SYSTEM_CONFIG_CHANGE, '系统配置变更'),
-]
+] 
 
 # 定义AuditActionType类，使引用常量更加清晰
 class AuditActionType:

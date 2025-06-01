@@ -1,0 +1,232 @@
+{% extends "admin_panel/base_admin.html" %}
+{% load static %}
+
+{% block admin_page_title %}{{ admin_page_title }}{% endblock %}
+
+{% block admin_content_main %}
+<div class="container">
+    <div class="card shadow-sm">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="card-title mb-0">
+                {% if is_create %}
+                <i class="fas fa-plus-circle text-primary mr-2"></i>创建角色
+                {% else %}
+                <i class="fas fa-edit text-primary mr-2"></i>编辑角色
+                {% endif %}
+            </h5>
+            {% if not is_create and user_count > 0 %}
+            <span class="badge badge-info">{{ user_count }} 个用户使用此角色</span>
+            {% endif %}
+        </div>
+        <div class="card-body">
+            <form method="post" action="{% if is_create %}{% url 'admin_panel:role_create' %}{% else %}{% url 'admin_panel:role_update' role.id %}{% endif %}">
+                {% csrf_token %}
+                
+                <!-- 表单错误提示 -->
+                {% if form.non_field_errors %}
+                <div class="alert alert-danger">
+                    <i class="fas fa-exclamation-circle mr-2"></i>
+                    {% for error in form.non_field_errors %}
+                    {{ error }}
+                    {% endfor %}
+                </div>
+                {% endif %}
+                
+                <!-- 基本信息部分 -->
+                <div class="card mb-4">
+                    <div class="card-header bg-light">
+                        <h6 class="mb-0">基本信息</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <!-- 角色名称字段 -->
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="{{ form.name.id_for_label }}">角色名称</label>
+                                    {{ form.name }}
+                                    {% if form.name.errors %}
+                                    <div class="text-danger">
+                                        {% for error in form.name.errors %}
+                                        <small>{{ error }}</small>
+                                        {% endfor %}
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            
+                            <!-- 角色代码字段 -->
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="{{ form.codename.id_for_label }}">角色代码</label>
+                                    {{ form.codename }}
+                                    {% if form.codename.errors %}
+                                    <div class="text-danger">
+                                        {% for error in form.codename.errors %}
+                                        <small>{{ error }}</small>
+                                        {% endfor %}
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- 角色描述字段 -->
+                        <div class="form-group">
+                            <label for="{{ form.description.id_for_label }}">角色描述</label>
+                            {{ form.description }}
+                            {% if form.description.errors %}
+                            <div class="text-danger">
+                                {% for error in form.description.errors %}
+                                <small>{{ error }}</small>
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 权限分配部分 -->
+                <div class="card mb-4">
+                    <div class="card-header bg-light">
+                        <h6 class="mb-0">权限分配</h6>
+                    </div>
+                    <div class="card-body">
+                        {% if form.permissions.errors %}
+                        <div class="alert alert-danger">
+                            {% for error in form.permissions.errors %}
+                            {{ error }}
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                        
+                        <div class="form-group">
+                            <div class="d-flex justify-content-between mb-3">
+                                <span class="text-muted">{{ form.permissions.help_text }}</span>
+                                <div>
+                                    <button type="button" class="btn btn-sm btn-outline-primary" id="selectAllBtn">全选</button>
+                                    <button type="button" class="btn btn-sm btn-outline-secondary ml-2" id="deselectAllBtn">取消全选</button>
+                                </div>
+                            </div>
+                            
+                            <!-- 权限列表分组显示 -->
+                            <div class="permissions-container">
+                                {% regroup form.permissions.field.queryset|dictsort:"content_type.app_label" by content_type.app_label as permissions_by_app %}
+                                {% for app_group in permissions_by_app %}
+                                <div class="permission-group mb-4">
+                                    <div class="permission-group-header">
+                                        <h5 class="app-name">
+                                            <i class="fas fa-folder text-primary mr-2"></i>
+                                            {{ app_group.grouper|title }}
+                                        </h5>
+                                    </div>
+                                    
+                                    {% regroup app_group.list|dictsort:"content_type.model" by content_type.model as permissions_by_model %}
+                                    {% for model_group in permissions_by_model %}
+                                    <div class="permission-model-group ml-4 mb-3">
+                                        <h6 class="model-name">
+                                            <i class="fas fa-table text-secondary mr-2"></i>
+                                            {{ model_group.grouper|title }}
+                                        </h6>
+                                        
+                                        <div class="permission-items ml-4">
+                                            <div class="row">
+                                                {% for permission in model_group.list %}
+                                                <div class="col-md-6 col-lg-4 mb-2">
+                                                    <div class="form-check">
+                                                        <input 
+                                                            type="checkbox" 
+                                                            name="permissions" 
+                                                            value="{{ permission.pk }}" 
+                                                            id="id_permissions_{{ permission.pk }}" 
+                                                            class="form-check-input permission-checkbox"
+                                                            {% if permission in form.permissions.initial|default:'' %}checked{% endif %}
+                                                        >
+                                                        <label class="form-check-label" for="id_permissions_{{ permission.pk }}">
+                                                            {{ permission.name }}
+                                                        </label>
+                                                    </div>
+                                                </div>
+                                                {% endfor %}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 按钮组 -->
+                <div class="form-group d-flex justify-content-between">
+                    <a href="{% url 'admin_panel:role_list' %}" class="btn btn-outline-secondary">
+                        <i class="fas fa-times mr-1"></i> 取消
+                    </a>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas {% if is_create %}fa-plus-circle{% else %}fa-save{% endif %} mr-1"></i>
+                        {% if is_create %}创建角色{% else %}保存更改{% endif %}
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* 权限列表样式 */
+    .permissions-container {
+        max-height: 600px;
+        overflow-y: auto;
+        border: 1px solid var(--border-color);
+        border-radius: 0.25rem;
+        padding: 1rem;
+    }
+    
+    .permission-group-header {
+        border-bottom: 1px solid var(--border-color);
+        padding-bottom: 0.5rem;
+        margin-bottom: 1rem;
+    }
+    
+    .app-name {
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: var(--color-primary);
+    }
+    
+    .model-name {
+        font-size: 1rem;
+        font-weight: 500;
+    }
+    
+    .permission-items {
+        margin-bottom: 1rem;
+    }
+    
+    /* 复选框样式 */
+    .form-check-input.permission-checkbox {
+        margin-top: 0.3rem;
+    }
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // 全选按钮
+    document.getElementById('selectAllBtn').addEventListener('click', function() {
+        var checkboxes = document.querySelectorAll('.permission-checkbox');
+        checkboxes.forEach(function(checkbox) {
+            checkbox.checked = true;
+        });
+    });
+    
+    // 取消全选按钮
+    document.getElementById('deselectAllBtn').addEventListener('click', function() {
+        var checkboxes = document.querySelectorAll('.permission-checkbox');
+        checkboxes.forEach(function(checkbox) {
+            checkbox.checked = false;
+        });
+    });
+});
+</script>
+{% endblock admin_content_main %} 

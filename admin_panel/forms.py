@@ -1,6 +1,6 @@
 from django import forms
 from django.contrib.auth.forms import UserCreationForm, UserChangeForm
-from django.contrib.auth.models import User
+from django.contrib.auth.models import User, Permission
 from accounts.models import UserProfile, Role
 
 class AdminUserCreationForm(UserCreationForm):
@@ -118,4 +118,43 @@ class AdminUserChangeForm(UserChangeForm):
         if commit:
             profile.save()
             
-        return user 
+        return user
+
+class RoleForm(forms.ModelForm):
+    """
+    角色管理表单
+    """
+    name = forms.CharField(
+        required=True,
+        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': '请输入角色名称'})
+    )
+    
+    codename = forms.CharField(
+        required=True,
+        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': '请输入角色代码'})
+    )
+    
+    description = forms.CharField(
+        required=False,
+        widget=forms.Textarea(attrs={'class': 'form-control', 'placeholder': '请输入角色描述', 'rows': 3})
+    )
+    
+    permissions = forms.ModelMultipleChoiceField(
+        queryset=Permission.objects.all(),
+        required=False,
+        widget=forms.CheckboxSelectMultiple(attrs={'class': 'permission-checkbox'}),
+        help_text="选择该角色拥有的权限"
+    )
+    
+    class Meta:
+        model = Role
+        fields = ('name', 'codename', 'description', 'permissions')
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # 按内容类型和模型名排序权限，使其更有组织性
+        self.fields['permissions'].queryset = Permission.objects.all().order_by(
+            'content_type__app_label', 
+            'content_type__model', 
+            'name'
+        ) 
