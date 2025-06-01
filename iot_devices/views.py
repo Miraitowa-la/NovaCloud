@@ -2,8 +2,15 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.db.models import Q
-from .models import Project, Device, Sensor, Actuator, SensorData
+from django.http import JsonResponse
+from django.views.decorators.http import require_POST
+import json
+import logging
+from .models import Project, Device, Sensor, Actuator, SensorData, ActuatorCommandLog
 from .forms import ProjectForm, DeviceForm, SensorForm, ActuatorForm
+
+# 创建logger
+logger = logging.getLogger(__name__)
 
 # Create your views here.
 
@@ -364,3 +371,107 @@ def actuator_delete_view(request, project_id, device_id, actuator_id):
     
     return render(request, 'iot_devices/actuator_confirm_delete.html', 
                  {'actuator': actuator, 'device': device, 'project': project})
+
+def send_command_to_device_via_tcp(actuator_command):
+    """
+    向TCP服务器发送执行器命令
+    
+    Args:
+        actuator_command: ActuatorCommandLog实例
+    
+    Returns:
+        bool: 是否成功将命令发送到TCP服务器
+    """
+    # 当前仅打印日志，未来将实现与TCP服务器的实际通信
+    logger.info(
+        f"命令已准备发送 - ActuatorCommandLog ID: {actuator_command.id}, "
+        f"设备: {actuator_command.actuator.device.name}, "
+        f"执行器: {actuator_command.actuator.name}, "
+        f"命令: {actuator_command.command_payload}"
+    )
+    
+    # 模拟成功发送
+    return True
+
+@login_required
+@require_POST
+def actuator_command_api_view(request, project_id, device_id, actuator_id):
+    """
+    接收和处理执行器命令的API视图
+    
+    Args:
+        request: HTTP请求
+        project_id: 项目ID
+        device_id: 设备ID
+        actuator_id: 执行器ID
+    
+    Returns:
+        JsonResponse: API响应
+    """
+    # 获取对象并验证权限
+    try:
+        project = get_object_or_404(Project, pk=project_id, owner=request.user)
+        device = get_object_or_404(Device, pk=device_id, project=project)
+        actuator = get_object_or_404(Actuator, pk=actuator_id, device=device)
+    except Exception as e:
+        return JsonResponse({"status": "error", "message": f"权限验证失败: {str(e)}"}, status=403)
+    
+    # 解析请求数据
+    try:
+        data = json.loads(request.body)
+        command_value = data.get('value')
+        
+        # 验证命令值
+        if command_value is None:
+            return JsonResponse({"status": "error", "message": "命令值不能为空"}, status=400)
+        
+    except json.JSONDecodeError:
+        return JsonResponse({"status": "error", "message": "无效的JSON数据"}, status=400)
+    except Exception as e:
+        return JsonResponse({"status": "error", "message": f"请求解析错误: {str(e)}"}, status=400)
+    
+    # 构建命令载荷
+    command_payload = {actuator.command_key: command_value}
+    
+    # 创建命令日志记录
+    try:
+        actuator_command = ActuatorCommandLog.objects.create(
+            actuator=actuator,
+            user=request.user,
+            command_payload=command_payload,
+            status='pending_send',
+            source='user_ui'
+        )
+    except Exception as e:
+        return JsonResponse({"status": "error", "message": f"创建命令记录失败: {str(e)}"}, status=500)
+    
+    # 尝试发送命令到TCP服务器
+    try:
+        send_success = send_command_to_device_via_tcp(actuator_command)
+        
+        # 根据发送结果更新状态
+        if send_success:
+            actuator_command.status = 'sent'
+            actuator_command.save()
+            return JsonResponse({
+                "status": "success", 
+                "message": "命令已发送处理", 
+                "command_id": actuator_command.id
+            })
+        else:
+            actuator_command.status = 'failed'
+            actuator_command.save()
+            return JsonResponse({
+                "status": "error", 
+                "message": "命令发送失败，请稍后重试", 
+                "command_id": actuator_command.id
+            }, status=500)
+            
+    except Exception as e:
+        actuator_command.status = 'failed'
+        actuator_command.save()
+        return JsonResponse({
+            "status": "error", 
+            "message": f"命令处理过程中发生错误: {str(e)}", 
+            "command_id": actuator_command.id
+        }, status=500)

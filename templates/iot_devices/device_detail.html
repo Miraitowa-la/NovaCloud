@@ -3,6 +3,9 @@
 {% block title %}设备详情 - {{ device.name }} - NovaCloud{% endblock %}
 
 {% block content %}
+<!-- 添加CSRF token以支持AJAX POST请求 -->
+{% csrf_token %}
+
 <div class="container">
     <!-- 设备信息卡片 -->
     <div class="card shadow-sm mb-4">
@@ -170,6 +173,7 @@
                                 <th>类型</th>
                                 <th>命令键名</th>
                                 <th>当前状态</th>
+                                <th style="min-width: 220px;">控制</th>
                                 <th>操作</th>
                             </tr>
                         </thead>
@@ -186,10 +190,53 @@
                                             <span class="text-muted">未知</span>
                                         {% endif %}
                                     </td>
+                                    <td class="actuator-control-cell">
+                                        <!-- 根据执行器类型显示不同的控制界面 -->
+                                        {% if actuator.actuator_type == 'switch' %}
+                                            <!-- 开关类型控制 -->
+                                            <div class="btn-group">
+                                                <button class="btn btn-success btn-sm actuator-control-btn me-1" 
+                                                        data-actuator-id="{{ actuator.id }}" 
+                                                        data-command-value="ON"
+                                                        data-api-url="{% url 'iot_devices:actuator_command_api' project_id=device.project.project_id device_id=device.device_id actuator_id=actuator.id %}">
+                                                    <i class="fas fa-power-off"></i> 开
+                                                </button>
+                                                <button class="btn btn-danger btn-sm actuator-control-btn" 
+                                                        data-actuator-id="{{ actuator.id }}" 
+                                                        data-command-value="OFF"
+                                                        data-api-url="{% url 'iot_devices:actuator_command_api' project_id=device.project.project_id device_id=device.device_id actuator_id=actuator.id %}">
+                                                    <i class="fas fa-power-off"></i> 关
+                                                </button>
+                                            </div>
+                                        {% elif actuator.actuator_type == 'dimmer' %}
+                                            <!-- 调光器类型控制 -->
+                                            <div class="input-group input-group-sm actuator-input-group">
+                                                <input type="number" class="form-control form-control-sm" 
+                                                       id="dimmer-value-{{ actuator.id }}" 
+                                                       min="0" max="100" value="50" placeholder="0-100">
+                                                <button class="btn btn-primary btn-sm actuator-control-btn" 
+                                                        data-actuator-id="{{ actuator.id }}" 
+                                                        data-command-target-input-id="dimmer-value-{{ actuator.id }}"
+                                                        data-api-url="{% url 'iot_devices:actuator_command_api' project_id=device.project.project_id device_id=device.device_id actuator_id=actuator.id %}">
+                                                    <i class="fas fa-check"></i> 设置
+                                                </button>
+                                            </div>
+                                        {% else %}
+                                            <!-- 通用控制 -->
+                                            <div class="input-group input-group-sm actuator-input-group">
+                                                <input type="text" class="form-control form-control-sm" 
+                                                       id="generic-value-{{ actuator.id }}" 
+                                                       placeholder="输入命令值">
+                                                <button class="btn btn-primary btn-sm actuator-control-btn" 
+                                                        data-actuator-id="{{ actuator.id }}" 
+                                                        data-command-target-input-id="generic-value-{{ actuator.id }}"
+                                                        data-api-url="{% url 'iot_devices:actuator_command_api' project_id=device.project.project_id device_id=device.device_id actuator_id=actuator.id %}">
+                                                    <i class="fas fa-paper-plane"></i> 发送
+                                                </button>
+                                            </div>
+                                        {% endif %}
+                                    </td>
                                     <td>
-                                        <a href="#" class="btn btn-outline-primary btn-sm me-1" title="控制">
-                                            <i class="fas fa-gamepad"></i>
-                                        </a>
                                         <a href="{% url 'iot_devices:actuator_update' project.project_id device.device_id actuator.id %}" class="btn btn-outline-secondary btn-sm me-1" title="编辑">
                                             <i class="fas fa-edit"></i>
                                         </a>
@@ -244,6 +291,64 @@
     .copy-tooltip {
         box-shadow: 0 3px 10px rgba(0,0,0,0.2);
     }
+    
+    /* 执行器控制相关样式 */
+    .input-group-sm .form-control-sm {
+        height: calc(1.5em + 0.5rem + 2px);
+        padding: 0.25rem 0.5rem;
+        font-size: 0.875rem;
+    }
+    
+    /* 执行器输入组样式 - 确保不换行 */
+    .actuator-input-group {
+        display: flex;
+        flex-wrap: nowrap !important;
+        width: 100%;
+    }
+    
+    .actuator-input-group .form-control {
+        min-width: 80px;
+        max-width: 120px;
+        flex-shrink: 1;
+    }
+    
+    .actuator-input-group .btn {
+        flex-shrink: 0;
+        white-space: nowrap;
+    }
+    
+    .actuator-control-cell {
+        min-width: 220px;
+        width: 220px;
+    }
+    
+    /* 命令反馈提示样式 */
+    .command-feedback {
+        position: fixed;
+        top: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 9999;
+        box-shadow: 0 3px 10px rgba(0,0,0,0.2);
+        padding: 8px 16px;
+        border-radius: 4px;
+        font-size: 14px;
+    }
+    
+    .command-feedback.success {
+        background-color: var(--color-success, #28a745);
+        color: white;
+    }
+    
+    .command-feedback.error {
+        background-color: var(--color-danger, #dc3545);
+        color: white;
+    }
+    
+    /* 操作按钮中的图标与文本间隔 */
+    .btn i {
+        margin-right: 4px;
+    }
 </style>
 
 {% block extra_body_js %}
@@ -270,6 +375,92 @@
             document.body.removeChild(tooltip);
         }, 2000);
     }
+    
+    // 执行器控制相关脚本
+    document.addEventListener('DOMContentLoaded', function() {
+        // 获取所有执行器控制按钮
+        const controlButtons = document.querySelectorAll('.actuator-control-btn');
+        
+        // 为每个按钮添加点击事件监听器
+        controlButtons.forEach(button => {
+            button.addEventListener('click', function(event) {
+                event.preventDefault();
+                
+                // 禁用按钮，显示加载状态
+                this.disabled = true;
+                const originalHtml = this.innerHTML;
+                this.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 发送中...';
+                
+                // 获取必要的数据
+                const actuatorId = this.getAttribute('data-actuator-id');
+                const apiUrl = this.getAttribute('data-api-url');
+                const targetInputId = this.getAttribute('data-command-target-input-id');
+                
+                // 确定命令值
+                let commandValue;
+                if (targetInputId) {
+                    // 从关联的输入框获取值
+                    const inputElement = document.getElementById(targetInputId);
+                    if (!inputElement || !inputElement.value.trim()) {
+                        showFeedback('请输入有效的命令值', 'error');
+                        this.disabled = false;
+                        this.innerHTML = originalHtml;
+                        return;
+                    }
+                    commandValue = inputElement.value.trim();
+                } else {
+                    // 直接从按钮属性获取值
+                    commandValue = this.getAttribute('data-command-value');
+                }
+                
+                // 准备CSRF Token
+                const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value || 
+                                 '{{ csrf_token }}';
+                
+                // 发送AJAX请求
+                fetch(apiUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrfToken
+                    },
+                    body: JSON.stringify({ value: commandValue })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        showFeedback('命令已发送处理', 'success');
+                    } else {
+                        showFeedback(data.message || '命令发送失败', 'error');
+                    }
+                })
+                .catch(error => {
+                    console.error('发送命令时出错:', error);
+                    showFeedback('发送命令时发生错误', 'error');
+                })
+                .finally(() => {
+                    // 恢复按钮状态
+                    this.disabled = false;
+                    this.innerHTML = originalHtml;
+                });
+            });
+        });
+        
+        // 显示反馈提示
+        function showFeedback(message, type) {
+            const feedback = document.createElement('div');
+            feedback.className = `command-feedback ${type}`;
+            feedback.textContent = message;
+            document.body.appendChild(feedback);
+            
+            // 2秒后移除提示
+            setTimeout(() => {
+                feedback.style.opacity = '0';
+                feedback.style.transition = 'opacity 0.5s';
+                setTimeout(() => document.body.removeChild(feedback), 500);
+            }, 2000);
+        }
+    });
 </script>
 {% endblock %}
 {% endblock %} 

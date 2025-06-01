@@ -26,4 +26,8 @@ urlpatterns = [
     path('projects/<uuid:project_id>/devices/<uuid:device_id>/actuators/add/', views.actuator_add_view, name='actuator_add'),
     path('projects/<uuid:project_id>/devices/<uuid:device_id>/actuators/<int:actuator_id>/update/', views.actuator_update_view, name='actuator_update'),
     path('projects/<uuid:project_id>/devices/<uuid:device_id>/actuators/<int:actuator_id>/delete/', views.actuator_delete_view, name='actuator_delete'),
+    
+    # API URLs
+    path('api/projects/<uuid:project_id>/devices/<uuid:device_id>/actuators/<int:actuator_id>/command/', 
+         views.actuator_command_api_view, name='actuator_command_api'),
 ] 
