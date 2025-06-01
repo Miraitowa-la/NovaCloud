@@ -22,7 +22,7 @@ def project_list_view(request):
             project=project, 
             status='online'
         ).count()
-    
+        
     return render(request, 'iot_devices/project_list.html', {'projects': projects})
 
 @login_required

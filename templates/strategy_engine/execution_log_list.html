@@ -18,30 +18,30 @@
     <!-- 筛选区域 -->
     <div class="card mb-4 shadow-sm">
         <div class="card-body">
-            <form method="get" action="{% url 'strategy_engine:execution_log_list' %}" class="row g-3 align-items-end">
-                <div class="col-md-6">
-                    <label for="strategy-filter" class="form-label">按策略筛选</label>
-                    <select name="strategy_id" id="strategy-filter" class="form-control">
-                        <option value="" {% if not selected_strategy_id %}selected{% endif %}>所有策略</option>
-                        {% for strategy in user_strategies %}
-                            <option value="{{ strategy.id }}" {% if selected_strategy_id == strategy.id %}selected{% endif %}>
-                                {{ strategy.name }}
-                            </option>
-                        {% endfor %}
-                    </select>
+            <form method="get" action="{% url 'strategy_engine:execution_log_list' %}" class="row align-items-end">
+                <div class="col-md-8">
+                    <div class="d-flex align-items-end">
+                        <div class="flex-grow-1 me-2">
+                            <label for="strategy-filter" class="form-label">按策略筛选</label>
+                            <select name="strategy_id" id="strategy-filter" class="form-control">
+                                <option value="" {% if not selected_strategy_id %}selected{% endif %}>所有策略</option>
+                                {% for strategy in user_strategies %}
+                                    <option value="{{ strategy.id }}" {% if selected_strategy_id == strategy.id %}selected{% endif %}>
+                                        {{ strategy.name }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <button type="submit" class="btn btn-primary me-2" style="height: 38px;">
+                            <i class="fas fa-filter"></i> 筛选
+                        </button>
+                        {% if selected_strategy_id %}
+                        <a href="{% url 'strategy_engine:execution_log_list' %}" class="btn btn-outline-secondary" style="height: 38px;">
+                            <i class="fas fa-times"></i> 清除筛选
+                        </a>
+                        {% endif %}
+                    </div>
                 </div>
-                <div class="col-md-2">
-                    <button type="submit" class="btn btn-primary w-100">
-                        <i class="fas fa-filter"></i> 筛选
-                    </button>
-                </div>
-                {% if selected_strategy_id %}
-                <div class="col-md-2">
-                    <a href="{% url 'strategy_engine:execution_log_list' %}" class="btn btn-outline-secondary w-100">
-                        <i class="fas fa-times"></i> 清除筛选
-                    </a>
-                </div>
-                {% endif %}
             </form>
         </div>
     </div>
