@@ -2,6 +2,8 @@
  * NovaCloud 全局 JavaScript
  */
 
+console.log('NovaCloud 全局脚本已加载');
+
 // 全局变量
 let toastContainer;
 const defaultToastDuration = 3000;

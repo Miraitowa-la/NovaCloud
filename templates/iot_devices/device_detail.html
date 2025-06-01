@@ -516,11 +516,11 @@
 
 <script>
 // 用于复制设备ID和密钥的函数
-function copyToClipboard(elementId) {
+    function copyToClipboard(elementId) {
     var copyText = document.getElementById(elementId);
     copyText.select();
     copyText.setSelectionRange(0, 99999); /* For mobile devices */
-    document.execCommand("copy");
+        document.execCommand("copy");
     
     // 复制成功提示
     var btn = document.querySelector(`#${elementId}`).nextElementSibling;
@@ -811,9 +811,9 @@ document.addEventListener('DOMContentLoaded', function() {
             setButtonLoading(this, true);
             
             // 发送控制命令
-            fetch(apiUrl, {
-                method: 'POST',
-                headers: {
+                fetch(apiUrl, {
+                    method: 'POST',
+                    headers: {
                     'X-CSRFToken': csrfToken,
                     'Content-Type': 'application/json'
                 },
@@ -827,22 +827,22 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
                 return response.json();
             })
-            .then(data => {
-                if (data.status === 'success') {
+                .then(data => {
+                    if (data.status === 'success') {
                     // 显示成功通知
                     showToast(`命令已发送: ${commandValue}`, 'success');
-                } else {
+                    } else {
                     // 显示错误通知
                     showToast(data.message || '命令发送失败', 'error');
-                }
-            })
-            .catch(error => {
+                    }
+                })
+                .catch(error => {
                 console.error('控制命令发送失败:', error);
                 // 显示错误通知
                 showToast('命令发送失败，请稍后重试', 'error');
-            })
-            .finally(() => {
-                // 恢复按钮状态
+                })
+                .finally(() => {
+                    // 恢复按钮状态
                 setButtonLoading(this, false);
                 
                 // 如果是输入框，清空输入

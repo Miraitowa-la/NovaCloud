@@ -127,6 +127,107 @@
         {% endblock navbar %}
     </header>
 
+    {% if user.is_authenticated and user.is_staff %}
+    <!-- Toast测试按钮 - 仅管理员可见 -->
+    <div class="container mt-4 text-center">
+        <div class="card p-3">
+            <h5>Toast通知测试</h5>
+            <div class="d-flex justify-content-center">
+                <button onclick="testShowToast('操作成功完成！', 'success')" class="btn btn-success mr-2">成功通知</button>
+                <button onclick="testShowToast('请注意，有一些警告需要处理', 'warning')" class="btn btn-warning mr-2">警告通知</button>
+                <button onclick="testShowToast('操作过程中发生错误，请重试', 'error')" class="btn btn-danger mr-2">错误通知</button>
+                <button onclick="testShowToast('这是一条信息通知', 'info')" class="btn btn-info">信息通知</button>
+            </div>
+            <script>
+                // 确保Toast容器存在
+                function ensureToastContainer() {
+                    if (!document.querySelector('.toast-container')) {
+                        const container = document.createElement('div');
+                        container.className = 'toast-container';
+                        document.body.appendChild(container);
+                        console.log('Toast容器已创建');
+                        return container;
+                    }
+                    return document.querySelector('.toast-container');
+                }
+
+                // 测试Toast通知
+                function testShowToast(message, type) {
+                    console.log('测试Toast:', message, type);
+                    
+                    // 确保全局函数存在
+                    if (typeof showToast === 'function') {
+                        showToast(message, type);
+                        console.log('使用全局showToast函数');
+                    } else {
+                        console.warn('全局showToast函数不可用，使用内联函数');
+                        // 获取Toast容器
+                        const container = ensureToastContainer();
+                        
+                        // 设置图标
+                        let icon;
+                        switch (type) {
+                            case 'success': icon = '<i class="fas fa-check-circle"></i>'; break;
+                            case 'error': icon = '<i class="fas fa-exclamation-circle"></i>'; break;
+                            case 'warning': icon = '<i class="fas fa-exclamation-triangle"></i>'; break;
+                            case 'info': default: icon = '<i class="fas fa-info-circle"></i>'; break;
+                        }
+                        
+                        // 创建Toast
+                        const toast = document.createElement('div');
+                        toast.className = `toast toast-${type}`;
+                        toast.innerHTML = `
+                            <div class="toast-icon">${icon}</div>
+                            <div class="toast-content">
+                                <p class="toast-message">${message}</p>
+                            </div>
+                            <button type="button" class="toast-close">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        `;
+                        
+                        // 添加关闭功能
+                        const closeBtn = toast.querySelector('.toast-close');
+                        if (closeBtn) {
+                            closeBtn.addEventListener('click', function() {
+                                toast.classList.add('hiding');
+                                toast.classList.remove('show');
+                                setTimeout(() => {
+                                    if (toast.parentNode) {
+                                        toast.parentNode.removeChild(toast);
+                                    }
+                                }, 300);
+                            });
+                        }
+                        
+                        // 添加Toast到容器
+                        container.appendChild(toast);
+                        
+                        // 显示Toast
+                        setTimeout(() => {
+                            toast.classList.add('show');
+                        }, 10);
+                        
+                        // 3秒后自动关闭
+                        setTimeout(() => {
+                            toast.classList.add('hiding');
+                            toast.classList.remove('show');
+                            setTimeout(() => {
+                                if (toast.parentNode) {
+                                    toast.parentNode.removeChild(toast);
+                                }
+                            }, 300);
+                        }, 3000);
+                    }
+                }
+                
+                // 打印调试信息
+                console.log('Toast测试区域脚本已加载');
+            </script>
+        </div>
+    </div>
+    {% endif %}
+
     <!-- 主内容区域 -->
     <main class="container py-4" id="main-content">
         {% if messages %}
@@ -189,21 +290,6 @@
         {% endblock content %}
     </main>
 
-    {% if user.is_authenticated and user.is_staff %}
-    <!-- Toast测试按钮 - 仅管理员可见 -->
-    <div class="container mb-4 text-center">
-        <div class="card p-3">
-            <h5>Toast通知测试</h5>
-            <div class="d-flex justify-content-center gap-2">
-                <button onclick="showToast('操作成功完成！', 'success')" class="btn btn-success">成功通知</button>
-                <button onclick="showToast('请注意，有一些警告需要处理', 'warning')" class="btn btn-warning">警告通知</button>
-                <button onclick="showToast('操作过程中发生错误，请重试', 'error')" class="btn btn-danger">错误通知</button>
-                <button onclick="showToast('这是一条信息通知', 'info')" class="btn btn-info">信息通知</button>
-            </div>
-        </div>
-    </div>
-    {% endif %}
-    
     <!-- 底部区域 -->
     <footer class="footer">
         {% block footer %}
