@@ -1,0 +1,124 @@
+{% extends "admin_panel/base_admin.html" %}
+{% load static %}
+
+{% block admin_page_title %}{{ admin_page_title }}{% endblock %}
+
+{% block admin_content_main %}
+<div class="container">
+    <!-- 页面标题和返回按钮 -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>审计日志详情</h2>
+        <a href="{{ back_url }}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left mr-1"></i> 返回日志列表
+        </a>
+    </div>
+
+    <!-- 详情卡片 -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-primary text-white">
+            <h5 class="card-title mb-0">
+                <i class="fas fa-info-circle mr-2"></i>基本信息
+            </h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <div class="d-flex">
+                        <span class="text-muted mr-2 font-weight-bold">日志ID:</span>
+                        <span>{{ log.id }}</span>
+                    </div>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <div class="d-flex">
+                        <span class="text-muted mr-2 font-weight-bold">时间戳:</span>
+                        <span>{{ log.timestamp|date:"Y-m-d H:i:s" }}</span>
+                    </div>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <div class="d-flex">
+                        <span class="text-muted mr-2 font-weight-bold">用户:</span>
+                        <span>
+                            {% if log.user %}
+                            <span class="text-primary">{{ log.user.username }}</span>
+                            {% else %}
+                            <span class="text-muted">系统</span>
+                            {% endif %}
+                        </span>
+                    </div>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <div class="d-flex">
+                        <span class="text-muted mr-2 font-weight-bold">IP地址:</span>
+                        <span>{{ log.ip_address|default:"-" }}</span>
+                    </div>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <div class="d-flex">
+                        <span class="text-muted mr-2 font-weight-bold">操作类型:</span>
+                        <span class="badge badge-info">{{ log.get_action_type_display }}</span>
+                    </div>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <div class="d-flex">
+                        <span class="text-muted mr-2 font-weight-bold">操作对象:</span>
+                        <span>{{ log.target_object_repr|default:"-" }}</span>
+                    </div>
+                </div>
+                <div class="col-md-12">
+                    <div class="d-flex">
+                        <span class="text-muted mr-2 font-weight-bold">内容类型:</span>
+                        <span>
+                            {% if log.target_content_type %}
+                            {{ log.target_content_type.app_label }}.{{ log.target_content_type.model }}
+                            {% else %}
+                            -
+                            {% endif %}
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 详情内容卡片 -->
+    <div class="card shadow-sm">
+        <div class="card-header bg-info text-white">
+            <h5 class="card-title mb-0">
+                <i class="fas fa-file-alt mr-2"></i>详细内容
+            </h5>
+        </div>
+        <div class="card-body">
+            {% if log.details %}
+            <pre class="bg-light p-4 rounded">{{ log.details }}</pre>
+            {% else %}
+            <div class="alert alert-secondary">
+                <i class="fas fa-info-circle mr-2"></i>无详细信息
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<style>
+    /* 预格式化文本样式 */
+    pre {
+        white-space: pre-wrap;
+        word-wrap: break-word;
+        font-family: 'Consolas', 'Monaco', monospace;
+        font-size: 0.9rem;
+        line-height: 1.5;
+        color: var(--text-default);
+        border-left: 4px solid var(--color-primary);
+    }
+    
+    /* 响应式调整 */
+    @media (max-width: 768px) {
+        .d-flex {
+            flex-direction: column;
+        }
+        .text-muted.mr-2 {
+            margin-bottom: 0.25rem;
+        }
+    }
+</style>
+{% endblock admin_content_main %} 

@@ -14,4 +14,5 @@ urlpatterns = [
     path('roles/<int:role_id>/update/', views.role_update_view, name='role_update'),
     path('roles/<int:role_id>/delete/', views.role_delete_view, name='role_delete'),
     path('audit-logs/', views.audit_log_list_view, name='audit_log_list'),
+    path('audit-logs/<int:log_id>/', views.audit_log_detail_view, name='audit_log_detail'),
 ] 

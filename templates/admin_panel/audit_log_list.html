@@ -76,7 +76,7 @@
         </div>
         <div class="card-body">
             {% if page_obj %}
-            <div class="table-responsive">
+            <div class="table-container">
                 <table class="table table-striped table-hover table-rounded">
                     <thead>
                         <tr>
@@ -85,7 +85,7 @@
                             <th>操作类型</th>
                             <th>操作对象</th>
                             <th>IP地址</th>
-                            <th>详情</th>
+                            <th width="100">详情</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -103,33 +103,9 @@
                             <td>{{ log.target_object_repr|default:"-" }}</td>
                             <td>{{ log.ip_address|default:"-" }}</td>
                             <td>
-                                {% if log.details %}
-                                <button class="btn btn-sm btn-outline-info" data-toggle="modal" data-target="#detailsModal{{ log.id }}">
-                                    <i class="fas fa-info-circle"></i> 查看
-                                </button>
-                                
-                                <!-- 详情模态框 -->
-                                <div class="modal fade" id="detailsModal{{ log.id }}" tabindex="-1" aria-labelledby="detailsModalLabel{{ log.id }}" aria-hidden="true">
-                                    <div class="modal-dialog modal-dialog-centered">
-                                        <div class="modal-content">
-                                            <div class="modal-header">
-                                                <h5 class="modal-title" id="detailsModalLabel{{ log.id }}">操作详情</h5>
-                                                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                                                    <span aria-hidden="true">&times;</span>
-                                                </button>
-                                            </div>
-                                            <div class="modal-body">
-                                                <pre class="bg-light p-3 rounded">{{ log.details }}</pre>
-                                            </div>
-                                            <div class="modal-footer">
-                                                <button type="button" class="btn btn-secondary" data-dismiss="modal">关闭</button>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                                {% else %}
-                                <span class="text-muted">-</span>
-                                {% endif %}
+                                <a href="{% url 'admin_panel:audit_log_detail' log.id %}{% if filter_params_encoded %}?{{ filter_params_encoded }}{% endif %}" class="btn btn-sm btn-info">
+                                    <i class="fas fa-eye"></i> 详情
+                                </a>
                             </td>
                         </tr>
                         {% endfor %}
@@ -139,61 +115,74 @@
             
             <!-- 分页 -->
             {% if page_obj.has_other_pages %}
-            <nav aria-label="日志列表分页" class="mt-4">
-                <ul class="pagination justify-content-center">
-                    {% if page_obj.has_previous %}
-                    <li class="page-item">
-                        <a class="page-link" href="?page=1{% if filter_params %}&{{ filter_params }}{% endif %}" aria-label="首页">
-                            <span aria-hidden="true">&laquo;&laquo;</span>
-                        </a>
-                    </li>
-                    <li class="page-item">
-                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if filter_params %}&{{ filter_params }}{% endif %}" aria-label="上一页">
-                            <span aria-hidden="true">&laquo;</span>
-                        </a>
-                    </li>
-                    {% else %}
-                    <li class="page-item disabled">
-                        <span class="page-link">&laquo;&laquo;</span>
-                    </li>
-                    <li class="page-item disabled">
-                        <span class="page-link">&laquo;</span>
-                    </li>
-                    {% endif %}
-                    
-                    {% for num in page_obj.paginator.page_range %}
-                        {% if page_obj.number == num %}
-                        <li class="page-item active">
-                            <span class="page-link">{{ num }}</span>
-                        </li>
-                        {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+            <div class="pagination-container mt-4">
+                <nav aria-label="日志列表分页">
+                    <ul class="pagination pagination-horizontal justify-content-center">
+                        {% if page_obj.has_previous %}
                         <li class="page-item">
-                            <a class="page-link" href="?page={{ num }}{% if filter_params %}&{{ filter_params }}{% endif %}">{{ num }}</a>
+                            <a class="page-link" href="{% url 'admin_panel:audit_log_list' %}?page=1{{ filter_params_with_amp }}" aria-label="首页" title="首页">
+                                <i class="fas fa-angle-double-left"></i>
+                            </a>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link" href="{% url 'admin_panel:audit_log_list' %}?page={{ page_obj.previous_page_number }}{{ filter_params_with_amp }}" aria-label="上一页" title="上一页">
+                                <i class="fas fa-angle-left"></i>
+                            </a>
+                        </li>
+                        {% else %}
+                        <li class="page-item disabled">
+                            <span class="page-link">
+                                <i class="fas fa-angle-double-left"></i>
+                            </span>
+                        </li>
+                        <li class="page-item disabled">
+                            <span class="page-link">
+                                <i class="fas fa-angle-left"></i>
+                            </span>
                         </li>
                         {% endif %}
-                    {% endfor %}
-                    
-                    {% if page_obj.has_next %}
-                    <li class="page-item">
-                        <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if filter_params %}&{{ filter_params }}{% endif %}" aria-label="下一页">
-                            <span aria-hidden="true">&raquo;</span>
-                        </a>
-                    </li>
-                    <li class="page-item">
-                        <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if filter_params %}&{{ filter_params }}{% endif %}" aria-label="末页">
-                            <span aria-hidden="true">&raquo;&raquo;</span>
-                        </a>
-                    </li>
-                    {% else %}
-                    <li class="page-item disabled">
-                        <span class="page-link">&raquo;</span>
-                    </li>
-                    <li class="page-item disabled">
-                        <span class="page-link">&raquo;&raquo;</span>
-                    </li>
-                    {% endif %}
-                </ul>
-            </nav>
+                        
+                        {% for num in page_obj.paginator.page_range %}
+                            {% if page_obj.number == num %}
+                            <li class="page-item active">
+                                <span class="page-link">{{ num }}</span>
+                            </li>
+                            {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                            <li class="page-item">
+                                <a class="page-link" href="{% url 'admin_panel:audit_log_list' %}?page={{ num }}{{ filter_params_with_amp }}">{{ num }}</a>
+                            </li>
+                            {% endif %}
+                        {% endfor %}
+                        
+                        {% if page_obj.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="{% url 'admin_panel:audit_log_list' %}?page={{ page_obj.next_page_number }}{{ filter_params_with_amp }}" aria-label="下一页" title="下一页">
+                                <i class="fas fa-angle-right"></i>
+                            </a>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link" href="{% url 'admin_panel:audit_log_list' %}?page={{ page_obj.paginator.num_pages }}{{ filter_params_with_amp }}" aria-label="末页" title="末页">
+                                <i class="fas fa-angle-double-right"></i>
+                            </a>
+                        </li>
+                        {% else %}
+                        <li class="page-item disabled">
+                            <span class="page-link">
+                                <i class="fas fa-angle-right"></i>
+                            </span>
+                        </li>
+                        <li class="page-item disabled">
+                            <span class="page-link">
+                                <i class="fas fa-angle-double-right"></i>
+                            </span>
+                        </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+                <div class="text-center text-muted mt-2">
+                    <small>共 {{ page_obj.paginator.num_pages }} 页，{{ page_obj.paginator.count }} 条记录</small>
+                </div>
+            </div>
             {% endif %}
             
             {% else %}
@@ -211,29 +200,72 @@
 </div>
 
 <style>
+    /* 表格容器样式 */
+    .table-container {
+        width: 100%;
+    }
+    
     /* 表格圆角样式 */
     .table-rounded {
         border-collapse: separate;
         border-spacing: 0;
+        width: 100%;
     }
     
-    /* 表格内部滚动样式 */
-    .table-responsive {
-        max-height: 70vh;
-        overflow-y: auto;
+    /* 分页样式优化 */
+    .pagination {
+        display: flex;
+        flex-wrap: wrap;
+        padding-left: 0;
+        list-style: none;
+        border-radius: 0.25rem;
     }
     
-    /* 确保下拉选项框宽度适中 */
-    .form-control {
-        min-width: 100%;
+    .pagination-horizontal {
+        flex-direction: row !important;
     }
     
-    /* 详情预格式化文本 */
-    pre {
-        white-space: pre-wrap;
-        word-wrap: break-word;
-        max-height: 300px;
-        overflow-y: auto;
+    .pagination .page-item {
+        margin: 0 3px;
+    }
+    
+    .pagination .page-link {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 36px;
+        height: 36px;
+        padding: 0;
+        border-radius: 4px;
+        color: var(--color-primary);
+        transition: all 0.2s;
+    }
+    
+    .pagination .page-item.active .page-link {
+        background-color: var(--color-primary);
+        border-color: var(--color-primary);
+        color: white;
+    }
+    
+    .pagination .page-link:hover {
+        background-color: var(--background-hover);
+        z-index: 1;
+    }
+    
+    .pagination .page-item.disabled .page-link {
+        color: var(--text-muted);
+    }
+    
+    /* 详情按钮样式 */
+    .btn-info {
+        background-color: var(--color-info);
+        border-color: var(--color-info);
+        color: white;
+    }
+    
+    .btn-info:hover {
+        background-color: var(--color-info-hover, #17a2b8);
+        border-color: var(--color-info-hover, #17a2b8);
     }
     
     @media (max-width: 768px) {
@@ -251,6 +283,16 @@
         .form-control {
             width: 100%;
             min-width: auto;
+        }
+        
+        /* 移动设备上的表格滚动 */
+        .table-container {
+            overflow-x: auto;
+        }
+        
+        /* 确保移动设备上分页仍然保持水平 */
+        .pagination-horizontal {
+            justify-content: center;
         }
     }
 </style>

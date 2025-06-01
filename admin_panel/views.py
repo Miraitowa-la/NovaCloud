@@ -38,6 +38,12 @@ def user_list_view(request):
     role_filter = request.GET.get('role', '')
     status_filter = request.GET.get('status', '')
     
+    # 处理URL参数，为分页准备
+    filter_params = request.GET.copy()
+    if 'page' in filter_params:
+        filter_params.pop('page')
+    filter_params_encoded = filter_params.urlencode()
+    
     # 查询用户列表
     users = User.objects.select_related('profile').all()
     
@@ -76,6 +82,8 @@ def user_list_view(request):
         'role_filter': role_filter,
         'status_filter': status_filter,
         'admin_page_title': '用户管理',
+        'filter_params_encoded': filter_params_encoded,
+        'filter_params_with_amp': f'&{filter_params_encoded}' if filter_params_encoded else ''
     }
     return render(request, 'admin_panel/user_list.html', context)
 
@@ -303,6 +311,12 @@ def audit_log_list_view(request):
     # 获取基础查询集
     logs_query = AuditLog.objects.select_related('user', 'target_content_type').order_by('-timestamp')
     
+    # 处理URL参数，为分页准备
+    filter_params = request.GET.copy()
+    if 'page' in filter_params:
+        filter_params.pop('page')
+    filter_params_encoded = filter_params.urlencode()
+    
     # 应用筛选条件
     if form.is_valid():
         # 用户筛选
@@ -351,7 +365,28 @@ def audit_log_list_view(request):
         'page_obj': page_obj,
         'action_choices': AUDIT_ACTION_CHOICES,
         # 构建分页URL时保留筛选参数
-        'filter_params': request.GET.urlencode()
+        'filter_params_encoded': filter_params_encoded,
+        'filter_params_with_amp': f'&{filter_params_encoded}' if filter_params_encoded else ''
     }
     
     return render(request, 'admin_panel/audit_log_list.html', context)
+
+@admin_required
+def audit_log_detail_view(request, log_id):
+    """
+    审计日志详情页面
+    """
+    # 获取指定ID的审计日志记录
+    log = get_object_or_404(AuditLog, id=log_id)
+    
+    # 构建返回列表页的URL，保留筛选参数
+    back_url = f"{reverse('admin_panel:audit_log_list')}?{request.GET.urlencode()}" if request.GET else reverse('admin_panel:audit_log_list')
+    
+    # 构建上下文
+    context = {
+        'admin_page_title': '审计日志详情',
+        'log': log,
+        'back_url': back_url
+    }
+    
+    return render(request, 'admin_panel/audit_log_detail.html', context)

@@ -23,7 +23,7 @@
                 <!-- 角色和状态筛选行 -->
                 <div class="row mb-3">
                     <!-- 角色筛选 -->
-                    <div class="col-md-6">
+                    <div class="col-md-6 mb-3 mb-md-0">
                         <select name="role" class="form-control" onchange="this.form.submit()">
                             <option value="">所有角色</option>
                             {% for role in roles %}
@@ -44,18 +44,19 @@
                     </div>
                 </div>
                 
-                <!-- 搜索行，修改按钮样式，增加宽度 -->
+                <!-- 搜索行，优化按钮布局 -->
                 <div class="row">
-                    <!-- 搜索框和按钮 -->
                     <div class="col">
-                        <div class="d-flex">
-                            <input type="text" name="search" class="form-control flex-grow-1" placeholder="搜索用户名或邮箱..." value="{{ search_query }}">
-                            <button class="btn btn-outline-primary ml-2 search-action-btn" type="submit">
-                                <i class="fas fa-search mr-1"></i> 搜索
-                            </button>
-                            <a href="{% url 'admin_panel:user_list' %}" class="btn btn-outline-secondary ml-2 search-action-btn">
-                                <i class="fas fa-redo-alt mr-1"></i> 重置
-                            </a>
+                        <div class="input-group">
+                            <input type="text" name="search" class="form-control" placeholder="搜索用户名或邮箱..." value="{{ search_query }}">
+                            <div class="input-group-append">
+                                <button class="btn btn-primary search-action-btn" type="submit">
+                                    <i class="fas fa-search mr-1"></i> 搜索
+                                </button>
+                                <a href="{% url 'admin_panel:user_list' %}" class="btn btn-secondary search-action-btn">
+                                    <i class="fas fa-redo-alt mr-1"></i> 重置
+                                </a>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -70,7 +71,7 @@
         </div>
         <div class="card-body">
             {% if page_obj %}
-            <div class="table-responsive">
+            <div class="table-container">
                 <table class="table table-striped table-hover table-rounded">
                     <thead>
                         <tr>
@@ -80,7 +81,7 @@
                             <th>上级用户</th>
                             <th>状态</th>
                             <th>注册日期</th>
-                            <th>操作</th>
+                            <th width="180">操作</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -116,16 +117,16 @@
                             </td>
                             <td>{{ user_obj.date_joined|date:"Y-m-d H:i" }}</td>
                             <td>
-                                <div class="d-flex">
-                                    <a href="{% url 'admin_panel:user_update' user_obj.id %}" class="btn btn-sm btn-outline-primary mr-2" title="编辑">
+                                <div class="btn-group">
+                                    <a href="{% url 'admin_panel:user_update' user_obj.id %}" class="btn btn-sm btn-primary" title="编辑用户">
                                         <i class="fas fa-edit"></i> 编辑
                                     </a>
                                     
                                     {% if user_obj != request.user %}
-                                    <form method="post" action="{% url 'admin_panel:user_toggle_active' user_obj.id %}" class="d-inline" onsubmit="return confirm('确定要{% if user_obj.is_active %}禁用{% else %}启用{% endif %}此用户吗？');">
+                                    <form method="post" action="{% url 'admin_panel:user_toggle_active' user_obj.id %}" class="d-inline ml-1" onsubmit="return confirm('确定要{% if user_obj.is_active %}禁用{% else %}启用{% endif %}此用户吗？');">
                                         {% csrf_token %}
-                                        <button type="submit" class="btn btn-sm {% if user_obj.is_active %}btn-outline-danger{% else %}btn-outline-success{% endif %}" title="{% if user_obj.is_active %}禁用{% else %}启用{% endif %}">
-                                            <i class="fas {% if user_obj.is_active %}fa-user-slash{% else %}fa-user-check{% endif %} mr-1"></i> 
+                                        <button type="submit" class="btn btn-sm {% if user_obj.is_active %}btn-danger{% else %}btn-success{% endif %}" title="{% if user_obj.is_active %}禁用{% else %}启用{% endif %}用户">
+                                            <i class="fas {% if user_obj.is_active %}fa-user-slash{% else %}fa-user-check{% endif %}"></i> 
                                             {% if user_obj.is_active %}禁用{% else %}启用{% endif %}
                                         </button>
                                     </form>
@@ -140,61 +141,74 @@
             
             <!-- 分页 -->
             {% if page_obj.has_other_pages %}
-            <nav aria-label="用户列表分页" class="mt-4">
-                <ul class="pagination justify-content-center">
-                    {% if page_obj.has_previous %}
-                    <li class="page-item">
-                        <a class="page-link" href="?page=1{% if search_query %}&search={{ search_query }}{% endif %}{% if role_filter %}&role={{ role_filter }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}" aria-label="首页">
-                            <span aria-hidden="true">&laquo;&laquo;</span>
-                        </a>
-                    </li>
-                    <li class="page-item">
-                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if role_filter %}&role={{ role_filter }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}" aria-label="上一页">
-                            <span aria-hidden="true">&laquo;</span>
-                        </a>
-                    </li>
-                    {% else %}
-                    <li class="page-item disabled">
-                        <span class="page-link">&laquo;&laquo;</span>
-                    </li>
-                    <li class="page-item disabled">
-                        <span class="page-link">&laquo;</span>
-                    </li>
-                    {% endif %}
-                    
-                    {% for num in page_obj.paginator.page_range %}
-                        {% if page_obj.number == num %}
-                        <li class="page-item active">
-                            <span class="page-link">{{ num }}</span>
-                        </li>
-                        {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+            <div class="pagination-container mt-4">
+                <nav aria-label="用户列表分页">
+                    <ul class="pagination pagination-horizontal justify-content-center">
+                        {% if page_obj.has_previous %}
                         <li class="page-item">
-                            <a class="page-link" href="?page={{ num }}{% if search_query %}&search={{ search_query }}{% endif %}{% if role_filter %}&role={{ role_filter }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}">{{ num }}</a>
+                            <a class="page-link" href="{% url 'admin_panel:user_list' %}?page=1{{ filter_params_with_amp }}" aria-label="首页" title="首页">
+                                <i class="fas fa-angle-double-left"></i>
+                            </a>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link" href="{% url 'admin_panel:user_list' %}?page={{ page_obj.previous_page_number }}{{ filter_params_with_amp }}" aria-label="上一页" title="上一页">
+                                <i class="fas fa-angle-left"></i>
+                            </a>
+                        </li>
+                        {% else %}
+                        <li class="page-item disabled">
+                            <span class="page-link">
+                                <i class="fas fa-angle-double-left"></i>
+                            </span>
+                        </li>
+                        <li class="page-item disabled">
+                            <span class="page-link">
+                                <i class="fas fa-angle-left"></i>
+                            </span>
                         </li>
                         {% endif %}
-                    {% endfor %}
-                    
-                    {% if page_obj.has_next %}
-                    <li class="page-item">
-                        <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if role_filter %}&role={{ role_filter }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}" aria-label="下一页">
-                            <span aria-hidden="true">&raquo;</span>
-                        </a>
-                    </li>
-                    <li class="page-item">
-                        <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if search_query %}&search={{ search_query }}{% endif %}{% if role_filter %}&role={{ role_filter }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}" aria-label="末页">
-                            <span aria-hidden="true">&raquo;&raquo;</span>
-                        </a>
-                    </li>
-                    {% else %}
-                    <li class="page-item disabled">
-                        <span class="page-link">&raquo;</span>
-                    </li>
-                    <li class="page-item disabled">
-                        <span class="page-link">&raquo;&raquo;</span>
-                    </li>
-                    {% endif %}
-                </ul>
-            </nav>
+                        
+                        {% for num in page_obj.paginator.page_range %}
+                            {% if page_obj.number == num %}
+                            <li class="page-item active">
+                                <span class="page-link">{{ num }}</span>
+                            </li>
+                            {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                            <li class="page-item">
+                                <a class="page-link" href="{% url 'admin_panel:user_list' %}?page={{ num }}{{ filter_params_with_amp }}">{{ num }}</a>
+                            </li>
+                            {% endif %}
+                        {% endfor %}
+                        
+                        {% if page_obj.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="{% url 'admin_panel:user_list' %}?page={{ page_obj.next_page_number }}{{ filter_params_with_amp }}" aria-label="下一页" title="下一页">
+                                <i class="fas fa-angle-right"></i>
+                            </a>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link" href="{% url 'admin_panel:user_list' %}?page={{ page_obj.paginator.num_pages }}{{ filter_params_with_amp }}" aria-label="末页" title="末页">
+                                <i class="fas fa-angle-double-right"></i>
+                            </a>
+                        </li>
+                        {% else %}
+                        <li class="page-item disabled">
+                            <span class="page-link">
+                                <i class="fas fa-angle-right"></i>
+                            </span>
+                        </li>
+                        <li class="page-item disabled">
+                            <span class="page-link">
+                                <i class="fas fa-angle-double-right"></i>
+                            </span>
+                        </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+                <div class="text-center text-muted mt-2">
+                    <small>共 {{ page_obj.paginator.num_pages }} 页，{{ page_obj.paginator.count }} 条记录</small>
+                </div>
+            </div>
             {% endif %}
             
             {% else %}
@@ -212,23 +226,92 @@
 </div>
 
 <style>
-    /* 表格圆角样式 */
+    /* 表格样式 */
+    .table-container {
+        width: 100%;
+    }
+    
     .table-rounded {
         border-collapse: separate;
         border-spacing: 0;
-    }
-    
-    /* 表格内部滚动样式 */
-    .table-responsive {
-        max-height: 70vh;
-        overflow-y: auto;
+        width: 100%;
     }
     
     /* 搜索和重置按钮样式 */
     .search-action-btn {
-        min-width: 90px;
+        min-width: 100px;
         padding-left: 1rem;
         padding-right: 1rem;
+    }
+    
+    /* 分页样式优化 */
+    .pagination {
+        display: flex;
+        flex-wrap: wrap;
+        padding-left: 0;
+        list-style: none;
+        border-radius: 0.25rem;
+    }
+    
+    .pagination-horizontal {
+        flex-direction: row !important;
+    }
+    
+    .pagination .page-item {
+        margin: 0 3px;
+    }
+    
+    .pagination .page-link {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 36px;
+        height: 36px;
+        padding: 0;
+        border-radius: 4px;
+        color: var(--color-primary);
+        transition: all 0.2s;
+    }
+    
+    .pagination .page-item.active .page-link {
+        background-color: var(--color-primary);
+        border-color: var(--color-primary);
+        color: white;
+    }
+    
+    .pagination .page-link:hover {
+        background-color: var(--background-hover);
+        z-index: 1;
+    }
+    
+    .pagination .page-item.disabled .page-link {
+        color: var(--text-muted);
+    }
+    
+    /* 操作按钮间距 */
+    .btn-group .btn {
+        margin-right: 4px;
+    }
+    
+    /* 响应式调整 */
+    @media (max-width: 768px) {
+        .table-container {
+            overflow-x: auto;
+        }
+        
+        .btn-group {
+            display: flex;
+            flex-wrap: wrap;
+        }
+        
+        .btn-group .btn {
+            margin-bottom: 4px;
+        }
+        
+        /* 确保移动设备上分页仍然保持水平 */
+        .pagination-horizontal {
+            justify-content: center;
+        }
     }
 </style>
 {% endblock admin_content_main %} 
