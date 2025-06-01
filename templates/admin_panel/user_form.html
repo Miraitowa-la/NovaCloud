@@ -1,0 +1,211 @@
+{% extends "admin_panel/base_admin.html" %}
+{% load static %}
+
+{% block admin_page_title %}{{ admin_page_title }}{% endblock %}
+
+{% block admin_content_main %}
+<div class="container">
+    <!-- 页面标题和返回按钮 -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>{% if is_create %}创建用户{% else %}编辑用户 - {{ user_obj.username }}{% endif %}</h2>
+        <a href="{% url 'admin_panel:user_list' %}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left mr-1"></i> 返回用户列表
+        </a>
+    </div>
+
+    <!-- 表单卡片 -->
+    <div class="card shadow-sm">
+        <div class="card-header">
+            <h5 class="card-title mb-0">
+                <i class="fas {% if is_create %}fa-user-plus{% else %}fa-user-edit{% endif %} text-primary mr-2"></i>
+                {% if is_create %}用户信息{% else %}编辑用户信息{% endif %}
+            </h5>
+        </div>
+        <div class="card-body">
+            <form method="post" action="{% if is_create %}{% url 'admin_panel:user_create' %}{% else %}{% url 'admin_panel:user_update' user_obj.id %}{% endif %}">
+                {% csrf_token %}
+                
+                <!-- 表单错误提示 -->
+                {% if form.non_field_errors %}
+                <div class="alert alert-danger">
+                    <i class="fas fa-exclamation-circle mr-2"></i>
+                    {% for error in form.non_field_errors %}
+                    {{ error }}
+                    {% endfor %}
+                </div>
+                {% endif %}
+                
+                <!-- 基本信息部分 -->
+                <div class="card mb-4">
+                    <div class="card-header bg-light">
+                        <h6 class="mb-0">基本信息</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <!-- 用户名字段 -->
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="{{ form.username.id_for_label }}">用户名</label>
+                                    {{ form.username }}
+                                    {% if form.username.errors %}
+                                    <div class="text-danger">
+                                        {% for error in form.username.errors %}
+                                        <small>{{ error }}</small>
+                                        {% endfor %}
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            
+                            <!-- 邮箱字段 -->
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="{{ form.email.id_for_label }}">邮箱</label>
+                                    {{ form.email }}
+                                    {% if form.email.errors %}
+                                    <div class="text-danger">
+                                        {% for error in form.email.errors %}
+                                        <small>{{ error }}</small>
+                                        {% endfor %}
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        {% if is_create %}
+                        <div class="row">
+                            <!-- 密码字段 -->
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="{{ form.password1.id_for_label }}">密码</label>
+                                    {{ form.password1 }}
+                                    {% if form.password1.errors %}
+                                    <div class="text-danger">
+                                        {% for error in form.password1.errors %}
+                                        <small>{{ error }}</small>
+                                        {% endfor %}
+                                    </div>
+                                    {% endif %}
+                                    {% if form.password1.help_text %}
+                                    <small class="form-text text-muted">{{ form.password1.help_text }}</small>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            
+                            <!-- 确认密码字段 -->
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="{{ form.password2.id_for_label }}">确认密码</label>
+                                    {{ form.password2 }}
+                                    {% if form.password2.errors %}
+                                    <div class="text-danger">
+                                        {% for error in form.password2.errors %}
+                                        <small>{{ error }}</small>
+                                        {% endfor %}
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <!-- 角色与权限部分 -->
+                <div class="card mb-4">
+                    <div class="card-header bg-light">
+                        <h6 class="mb-0">角色与权限</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <!-- 角色字段 -->
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="{{ form.role.id_for_label }}">角色</label>
+                                    {{ form.role }}
+                                    {% if form.role.errors %}
+                                    <div class="text-danger">
+                                        {% for error in form.role.errors %}
+                                        <small>{{ error }}</small>
+                                        {% endfor %}
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            
+                            <!-- 上级用户字段 -->
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="{{ form.parent_user.id_for_label }}">上级用户</label>
+                                    {{ form.parent_user }}
+                                    {% if form.parent_user.errors %}
+                                    <div class="text-danger">
+                                        {% for error in form.parent_user.errors %}
+                                        <small>{{ error }}</small>
+                                        {% endfor %}
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        {% if not is_create %}
+                        <div class="row">
+                            <!-- 账户状态字段 -->
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <div class="form-check">
+                                        {{ form.is_active }}
+                                        <label class="form-check-label" for="{{ form.is_active.id_for_label }}">
+                                            账户有效
+                                        </label>
+                                    </div>
+                                    {% if form.is_active.errors %}
+                                    <div class="text-danger">
+                                        {% for error in form.is_active.errors %}
+                                        <small>{{ error }}</small>
+                                        {% endfor %}
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            
+                            <!-- 管理员权限字段 -->
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <div class="form-check">
+                                        {{ form.is_staff }}
+                                        <label class="form-check-label" for="{{ form.is_staff.id_for_label }}">
+                                            管理员权限
+                                        </label>
+                                    </div>
+                                    {% if form.is_staff.errors %}
+                                    <div class="text-danger">
+                                        {% for error in form.is_staff.errors %}
+                                        <small>{{ error }}</small>
+                                        {% endfor %}
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <!-- 按钮组 -->
+                <div class="form-group d-flex justify-content-between">
+                    <a href="{% url 'admin_panel:user_list' %}" class="btn btn-outline-secondary">
+                        <i class="fas fa-times mr-1"></i> 取消
+                    </a>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas {% if is_create %}fa-user-plus{% else %}fa-save{% endif %} mr-1"></i>
+                        {% if is_create %}创建用户{% else %}保存更改{% endif %}
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock admin_content_main %} 
