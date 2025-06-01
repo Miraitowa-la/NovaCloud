@@ -1,51 +1,12 @@
 {% extends "base.html" %}
 {% load static %}
 
-{% block title %}NovaCloud - 管理面板{% endblock %}
+{% block title %}NovaCloud - 管理{% endblock %}
 
 {% block content %}
-<div class="admin-container d-flex">
-    <!-- 侧边栏导航 -->
-    <nav class="admin-sidebar sidebar">
-        {% block admin_sidebar_nav %}
-            <div class="menu-header">用户与权限</div>
-            <ul class="navbar-nav flex-column">
-                <li class="nav-item">
-                    <a class="nav-link {% if request.resolver_match.view_name == 'admin_panel:user_list' %}active{% endif %}" 
-                       href="{% url 'admin_panel:user_list' %}">
-                        <i class="fas fa-users"></i> 用户管理
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link {% if request.resolver_match.view_name == 'admin_panel:role_list' %}active{% endif %}" 
-                       href="{% url 'admin_panel:role_list' %}">
-                        <i class="fas fa-shield-alt"></i> 角色与权限
-                    </a>
-                </li>
-            </ul>
-            <div class="menu-header">系统管理</div>
-            <ul class="navbar-nav flex-column">
-                <li class="nav-item">
-                    <a class="nav-link {% if request.resolver_match.view_name == 'admin_panel:audit_log_list' %}active{% endif %}" 
-                       href="{% url 'admin_panel:audit_log_list' %}">
-                        <i class="fas fa-history"></i> 审计日志
-                    </a>
-                </li>
-                <!-- 可以添加更多管理模块的入口 -->
-            </ul>
-        {% endblock admin_sidebar_nav %}
-    </nav>
-
-    <!-- 主内容区域 -->
-    <main class="admin-content flex-grow-1 p-4">
-        <!-- 页面标题和面包屑导航 -->
-        <div class="admin-content-header mb-4">
-            <h2>{% block admin_page_title %}管理面板{% endblock admin_page_title %}</h2>
-            {% block admin_breadcrumbs %}{% endblock admin_breadcrumbs %}
-        </div>
-        
-        <!-- Django Messages -->
-        {% if messages %}
+<main>
+    {% if messages %}
+        <div class="container py-4">
             <div class="mb-3">
             {% for message in messages %}
                 <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
@@ -56,10 +17,9 @@
                 </div>
             {% endfor %}
             </div>
-        {% endif %}
+        </div>
+    {% endif %}
 
-        <!-- 主要内容区 -->
-        {% block admin_content_main %}{% endblock admin_content_main %}
-    </main>
-</div>
+    {% block admin_content_main %}{% endblock admin_content_main %}
+</main>
 {% endblock content %} 

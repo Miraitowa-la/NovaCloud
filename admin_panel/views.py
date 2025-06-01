@@ -6,14 +6,14 @@ from django.contrib.auth.decorators import login_required
 @login_required
 def dashboard_view(request):
     """
-    管理面板首页
+    管理首页
     """
     # 权限检查逻辑应在这里或装饰器中实现
     # if not request.user.is_staff and not request.user.userprofile.role_has_permission('can_access_admin_panel'):
     #     return HttpResponseForbidden("您没有权限访问该页面")
     
     context = {
-        'admin_page_title': '管理面板概览'
+        'admin_page_title': '系统管理'
     }
     return render(request, 'admin_panel/dashboard.html', context)
 
