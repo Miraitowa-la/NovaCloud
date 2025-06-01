@@ -24,6 +24,7 @@ urlpatterns = [
     path('', include('accounts.urls', namespace='accounts')),  # 主页和用户账户相关URLs
     path('iot/', include('iot_devices.urls')),  # 物联网设备管理URLs
     path('', include('strategy_engine.urls')),  # 策略引擎URLs
+    path('manage/', include('admin_panel.urls')),  # 管理面板URLs
 ]
 
 # 开发环境下添加媒体文件访问URL

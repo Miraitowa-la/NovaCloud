@@ -1,0 +1,78 @@
+{% extends "admin_panel/base_admin.html" %}
+{% load static %}
+
+{% block admin_page_title %}{{ admin_page_title }}{% endblock %}
+
+{% block admin_content_main %}
+<div class="row">
+    <!-- 用户统计卡片 -->
+    <div class="col-md-4 mb-4">
+        <div class="card h-100">
+            <div class="card-header">
+                <h5 class="card-title"><i class="fas fa-users text-primary mr-2"></i>用户统计</h5>
+            </div>
+            <div class="card-body">
+                <p class="mb-2">总用户数: <strong>{{ user_count|default:"-- 开发中 --" }}</strong></p>
+                <p class="mb-2">活跃用户: <strong>{{ active_user_count|default:"-- 开发中 --" }}</strong></p>
+                <p class="mb-0">新注册用户 (30天内): <strong>{{ new_user_count|default:"-- 开发中 --" }}</strong></p>
+            </div>
+            <div class="card-footer">
+                <a href="{% url 'admin_panel:user_list' %}" class="btn btn-sm btn-outline-primary">
+                    <i class="fas fa-arrow-right"></i> 查看所有用户
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- 角色统计卡片 -->
+    <div class="col-md-4 mb-4">
+        <div class="card h-100">
+            <div class="card-header">
+                <h5 class="card-title"><i class="fas fa-shield-alt text-primary mr-2"></i>角色统计</h5>
+            </div>
+            <div class="card-body">
+                <p class="mb-2">角色总数: <strong>{{ role_count|default:"-- 开发中 --" }}</strong></p>
+                <p class="mb-2">系统权限总数: <strong>{{ permission_count|default:"-- 开发中 --" }}</strong></p>
+                <p class="mb-0">自定义角色: <strong>{{ custom_role_count|default:"-- 开发中 --" }}</strong></p>
+            </div>
+            <div class="card-footer">
+                <a href="{% url 'admin_panel:role_list' %}" class="btn btn-sm btn-outline-primary">
+                    <i class="fas fa-arrow-right"></i> 查看所有角色
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- 审计日志统计卡片 -->
+    <div class="col-md-4 mb-4">
+        <div class="card h-100">
+            <div class="card-header">
+                <h5 class="card-title"><i class="fas fa-history text-primary mr-2"></i>审计日志</h5>
+            </div>
+            <div class="card-body">
+                <p class="mb-2">今日日志: <strong>{{ today_log_count|default:"-- 开发中 --" }}</strong></p>
+                <p class="mb-2">近7天日志: <strong>{{ week_log_count|default:"-- 开发中 --" }}</strong></p>
+                <p class="mb-0">总日志数: <strong>{{ total_log_count|default:"-- 开发中 --" }}</strong></p>
+            </div>
+            <div class="card-footer">
+                <a href="{% url 'admin_panel:audit_log_list' %}" class="btn btn-sm btn-outline-primary">
+                    <i class="fas fa-arrow-right"></i> 查看所有日志
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 最近活动 -->
+<div class="card mt-4">
+    <div class="card-header">
+        <h5 class="card-title"><i class="fas fa-chart-line text-primary mr-2"></i>最近活动</h5>
+    </div>
+    <div class="card-body">
+        <p class="text-muted">最近的系统活动将在此显示。此功能尚在开发中。</p>
+        <div class="alert alert-info">
+            <i class="fas fa-info-circle mr-2"></i> 管理面板功能将在后续开发中逐步完善。敬请期待！
+        </div>
+    </div>
+</div>
+{% endblock admin_content_main %} 

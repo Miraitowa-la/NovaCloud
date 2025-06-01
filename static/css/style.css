@@ -1590,4 +1590,127 @@ i.text-primary {
 
 .status-dot-offline {
     background-color: var(--color-secondary);
+}
+
+/* ====== 管理面板样式 ====== */
+
+/* 管理面板容器 */
+.admin-container {
+    min-height: calc(100vh - 60px); /* 假设顶部导航栏高度为60px */
+}
+
+/* 管理面板侧边栏 */
+.admin-sidebar {
+    width: 250px;
+    background-color: var(--background-default);
+    border-right: 1px solid var(--border-muted);
+    padding: 1.5rem 1rem;
+    flex-shrink: 0; /* 防止侧边栏在flex布局中被压缩 */
+}
+
+.admin-sidebar .menu-header {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    font-weight: 600;
+    color: var(--text-muted);
+    padding: 1rem 0 0.5rem;
+    margin-top: 1rem;
+}
+
+.admin-sidebar .menu-header:first-child {
+    margin-top: 0;
+}
+
+.admin-sidebar .navbar-nav .nav-link {
+    padding: 0.6rem 1rem;
+    margin-bottom: 0.25rem;
+    color: var(--text-muted);
+    border-left: 3px solid transparent;
+    border-radius: var(--border-radius-md);
+}
+
+.admin-sidebar .navbar-nav .nav-link:hover {
+    color: var(--text-default);
+    background-color: var(--background-hover);
+}
+
+.admin-sidebar .navbar-nav .nav-link.active {
+    color: var(--text-default);
+    font-weight: 600;
+    background-color: var(--background-selected);
+    border-left-color: var(--color-primary);
+}
+
+.admin-sidebar .navbar-nav .nav-link.active i {
+    color: var(--color-primary);
+}
+
+/* 管理面板主内容区 */
+.admin-content {
+    background-color: var(--background-body);
+}
+
+.admin-content-header {
+    background-color: var(--background-default);
+    border-radius: var(--border-radius-lg);
+    box-shadow: var(--shadow-sm);
+    padding: 1.5rem;
+}
+
+.admin-content-header h2 {
+    font-size: 1.8rem;
+    margin-bottom: 0.25rem;
+    color: var(--text-default);
+}
+
+/* 警告提示框样式 */
+.alert-dismissible .close {
+    position: absolute;
+    top: 0;
+    right: 0;
+    padding: 0.75rem 1.25rem;
+    color: inherit;
+    background: transparent;
+    border: 0;
+    float: right;
+    font-size: 1.5rem;
+    font-weight: 700;
+    line-height: 1;
+    color: var(--text-default);
+    text-shadow: 0 1px 0 var(--background-default);
+    opacity: 0.5;
+    cursor: pointer;
+}
+
+.alert-dismissible .close:hover {
+    opacity: 0.75;
+}
+
+/* 为管理面板中的表格添加样式 */
+.admin-content .table {
+    background-color: var(--background-default);
+    box-shadow: var(--shadow-sm);
+    border-radius: var(--border-radius-lg);
+    overflow: hidden;
+}
+
+.admin-content .table th {
+    background-color: var(--background-muted);
+    color: var(--text-default);
+    font-weight: 600;
+    border-top: none;
+}
+
+/* 管理面板中的卡片特定样式 */
+.admin-content .card {
+    margin-bottom: 2rem;
+}
+
+/* 管理面板中的表单特定样式 */
+.admin-content .form-group {
+    margin-bottom: 1.5rem;
+}
+
+.admin-content .form-label {
+    font-weight: 600;
 } 

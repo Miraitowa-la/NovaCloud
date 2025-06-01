@@ -42,6 +42,7 @@ INSTALLED_APPS = [
     'strategy_engine',
     'core',
     'communication_handler',
+    'admin_panel',
 ]
 
 MIDDLEWARE = [
