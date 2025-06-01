@@ -130,11 +130,58 @@
     <!-- 主内容区域 -->
     <main class="container py-4" id="main-content">
         {% if messages %}
-            {% for message in messages %}
-                <div class="alert {% if message.tags == 'success' %}alert-success{% elif message.tags == 'error' %}alert-danger{% elif message.tags == 'info' %}alert-info{% else %}alert-info{% endif %} mb-4">
-                    {{ message }}
-                </div>
-            {% endfor %}
+            <div id="django-messages">
+                {% for message in messages %}
+                    <div class="alert {% if message.tags == 'success' %}alert-success{% elif message.tags == 'error' %}alert-danger{% elif message.tags == 'warning' %}alert-warning{% elif message.tags == 'info' %}alert-info{% else %}alert-info{% endif %} alert-dismissible fade show mb-3" role="alert">
+                        <div class="d-flex align-items-center">
+                            {% if message.tags == 'success' %}
+                                <i class="fas fa-check-circle me-2"></i>
+                            {% elif message.tags == 'error' %}
+                                <i class="fas fa-exclamation-circle me-2"></i>
+                            {% elif message.tags == 'warning' %}
+                                <i class="fas fa-exclamation-triangle me-2"></i>
+                            {% else %}
+                                <i class="fas fa-info-circle me-2"></i>
+                            {% endif %}
+                            <div>{{ message }}</div>
+                        </div>
+                        <button type="button" class="alert-close" aria-label="关闭">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                {% endfor %}
+            </div>
+            
+            <script>
+                // 自动隐藏消息
+                document.addEventListener('DOMContentLoaded', function() {
+                    const alerts = document.querySelectorAll('.alert');
+                    alerts.forEach(alert => {
+                        // 添加关闭功能
+                        const closeBtn = alert.querySelector('.alert-close');
+                        if (closeBtn) {
+                            closeBtn.addEventListener('click', function() {
+                                fadeOut(alert);
+                            });
+                        }
+                        
+                        // 5秒后自动淡出
+                        setTimeout(() => {
+                            fadeOut(alert);
+                        }, 5000);
+                    });
+                    
+                    // 淡出效果函数
+                    function fadeOut(element) {
+                        element.classList.remove('show');
+                        setTimeout(() => {
+                            if (element.parentNode) {
+                                element.parentNode.removeChild(element);
+                            }
+                        }, 300); // 与CSS过渡时间一致
+                    }
+                });
+            </script>
         {% endif %}
         
         {% block content %}
@@ -142,6 +189,21 @@
         {% endblock content %}
     </main>
 
+    {% if user.is_authenticated and user.is_staff %}
+    <!-- Toast测试按钮 - 仅管理员可见 -->
+    <div class="container mb-4 text-center">
+        <div class="card p-3">
+            <h5>Toast通知测试</h5>
+            <div class="d-flex justify-content-center gap-2">
+                <button onclick="showToast('操作成功完成！', 'success')" class="btn btn-success">成功通知</button>
+                <button onclick="showToast('请注意，有一些警告需要处理', 'warning')" class="btn btn-warning">警告通知</button>
+                <button onclick="showToast('操作过程中发生错误，请重试', 'error')" class="btn btn-danger">错误通知</button>
+                <button onclick="showToast('这是一条信息通知', 'info')" class="btn btn-info">信息通知</button>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+    
     <!-- 底部区域 -->
     <footer class="footer">
         {% block footer %}

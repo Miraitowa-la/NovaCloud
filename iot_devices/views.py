@@ -420,7 +420,7 @@ def actuator_command_api_view(request, project_id, device_id, actuator_id):
     # 解析请求数据
     try:
         data = json.loads(request.body)
-        command_value = data.get('value')
+        command_value = data.get('value')  # 修改为与前端一致的字段名
         
         # 验证命令值
         if command_value is None:
@@ -456,7 +456,7 @@ def actuator_command_api_view(request, project_id, device_id, actuator_id):
             actuator_command.save()
             return JsonResponse({
                 "status": "success", 
-                "message": "命令已发送处理", 
+                "message": "命令已成功发送", 
                 "command_id": actuator_command.id
             })
         else:
