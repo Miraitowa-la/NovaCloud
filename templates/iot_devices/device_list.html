@@ -27,16 +27,22 @@
                     <div class="card device-card shadow-sm h-100">
                         <div class="card-header d-flex justify-content-between align-items-center">
                             <h5 class="card-title mb-0">{{ device.name }}</h5>
-                            <div>
+                            <div class="device-status">
                                 {% if device.status == 'online' %}
-                                    <span class="status-dot status-dot-success"></span>
-                                    <span class="text-muted">在线</span>
+                                    <div class="status-badge status-badge-success">
+                                        <span class="status-dot status-dot-success"></span>
+                                        <span class="status-text">在线</span>
+                                    </div>
                                 {% elif device.status == 'offline' %}
-                                    <span class="status-dot status-dot-offline"></span>
-                                    <span class="text-muted">离线</span>
+                                    <div class="status-badge status-badge-offline">
+                                        <span class="status-dot status-dot-offline"></span>
+                                        <span class="status-text">离线</span>
+                                    </div>
                                 {% else %}
-                                    <span class="status-dot status-dot-warning"></span>
-                                    <span class="text-muted">未注册</span>
+                                    <div class="status-badge status-badge-warning">
+                                        <span class="status-dot status-dot-warning"></span>
+                                        <span class="status-text">未注册</span>
+                                    </div>
                                 {% endif %}
                             </div>
                         </div>

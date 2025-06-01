@@ -26,9 +26,15 @@
                     <div class="card-header d-flex justify-content-between align-items-center">
                         <h5 class="card-title mb-0">{{ strategy.name }}</h5>
                         {% if strategy.is_enabled %}
-                        <span class="badge badge-success"><span class="status-dot status-dot-success"></span> 已启用</span>
+                        <div class="status-badge status-badge-success">
+                            <span class="status-dot status-dot-success"></span>
+                            <span class="status-text">已启用</span>
+                        </div>
                         {% else %}
-                        <span class="badge badge-secondary"><span class="status-dot status-dot-offline"></span> 已禁用</span>
+                        <div class="status-badge status-badge-offline">
+                            <span class="status-dot status-dot-offline"></span>
+                            <span class="status-text">已禁用</span>
+                        </div>
                         {% endif %}
                     </div>
                     <div class="card-body">
