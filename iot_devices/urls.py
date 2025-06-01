@@ -30,4 +30,6 @@ urlpatterns = [
     # API URLs
     path('api/projects/<uuid:project_id>/devices/<uuid:device_id>/actuators/<int:actuator_id>/command/', 
          views.actuator_command_api_view, name='actuator_command_api'),
+    path('api/projects/<uuid:project_id>/devices/<uuid:device_id>/sensors/<int:sensor_id>/data/',
+         views.sensor_data_api_view, name='sensor_data_api'),
 ] 

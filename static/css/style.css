@@ -48,6 +48,9 @@
     /* 字体 */
     --font-family-sans-serif: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif;
     --font-family-monospace: SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+
+    /* 添加背景颜色的RGB值，用于半透明背景 */
+    --background-default-rgb: 255, 255, 255;
 }
 
 /* 暗色主题 - 支持多种选择器确保在任何情况下都能应用 */
@@ -83,6 +86,9 @@ html[data-theme='dark'] {
     --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
     --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.2);
     --shadow-lg: 0 10px 25px -5px rgba(0, 0, 0, 0.3), 0 10px 10px -5px rgba(0, 0, 0, 0.2);
+
+    /* 添加背景颜色的RGB值，用于半透明背景 */
+    --background-default-rgb: 22, 27, 34;
 }
 
 /* 为HTML元素设置暗色主题背景和文字颜色，避免闪烁 */
@@ -1713,4 +1719,70 @@ i.text-primary {
 
 .admin-content .form-label {
     font-weight: 600;
+}
+
+/* 添加传感器图表相关的样式 */
+
+/* 图表容器样式 */
+.chart-wrapper {
+    position: relative;
+    margin: 0 auto;
+    height: 300px;
+    width: 100%;
+}
+
+/* 传感器图表行样式 */
+.chart-row {
+    background-color: var(--background-muted);
+    transition: all 0.3s ease;
+}
+
+/* 传感器图表容器样式 */
+.sensor-chart-container {
+    background-color: var(--background-default);
+    border-top: 1px solid var(--border-default);
+    border-bottom: 1px solid var(--border-default);
+    transition: all 0.3s ease;
+}
+
+/* 时间范围选择器按钮组样式 */
+.sensor-data-range-selector {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-bottom: 1rem;
+}
+
+.sensor-data-range-selector .btn {
+    margin: 0.25rem;
+}
+
+/* 图表切换按钮样式 */
+.chart-toggle-btn {
+    background-color: var(--background-muted);
+    transition: background-color 0.3s ease;
+}
+
+.chart-toggle-btn:hover {
+    background-color: var(--background-hover);
+}
+
+/* 加载指示器样式 */
+.chart-loading {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(var(--background-default-rgb), 0.8);
+    z-index: 10;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+/* 无数据提示样式 */
+.no-data-message {
+    min-height: 150px;
 } 

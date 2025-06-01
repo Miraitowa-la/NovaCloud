@@ -2,6 +2,125 @@
 
 {% block title %}设备详情 - {{ device.name }} - NovaCloud{% endblock %}
 
+{% load static %}
+
+{% block extra_head_css %}
+<!-- 可以在这里添加额外的CSS -->
+<style>
+    .device-id-container {
+        display: flex;
+        gap: 10px;
+    }
+    .device-id-container input {
+        flex-grow: 1;
+    }
+    .copy-btn {
+        flex-shrink: 0;
+    }
+    
+    /* 表格内的操作按钮间距 */
+    .me-1 {
+        margin-right: 0.25rem;
+    }
+    
+    /* 执行器控制按钮组样式 */
+    .actuator-control-cell {
+        min-width: 180px;
+    }
+    .actuator-input-group {
+        display: flex;
+    }
+    .actuator-input-group input {
+        max-width: 100px;
+        border-top-right-radius: 0;
+        border-bottom-right-radius: 0;
+    }
+    .actuator-input-group .btn {
+        border-top-left-radius: 0;
+        border-bottom-left-radius: 0;
+    }
+
+    /* 图表相关样式 */
+    .chart-wrapper {
+        position: relative;
+        margin: 0 auto;
+        height: 300px;
+        width: 100%;
+        background-color: var(--background-default);
+        border-radius: var(--border-radius-md);
+        overflow: hidden;
+    }
+
+    .sensor-chart-container {
+        background-color: var(--background-default);
+        border-top: 1px solid var(--border-default);
+        padding: 1rem;
+        box-shadow: inset 0 1px 3px rgba(0,0,0,0.05);
+    }
+
+    /* 时间范围选择器样式 */
+    .sensor-data-range-selector {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+
+    .sensor-data-range-selector .btn {
+        padding: 0.25rem 0.5rem;
+        font-size: 0.775rem;
+        margin: 0 0.15rem;
+    }
+
+    /* 加载指示器样式 */
+    .chart-loading {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 2rem 0;
+    }
+
+    .spinner {
+        width: 40px;
+        height: 40px;
+        border: 3px solid rgba(var(--color-primary-rgb), 0.3);
+        border-radius: 50%;
+        border-top: 3px solid var(--color-primary);
+        animation: spin 1s linear infinite;
+        margin: 0 auto 1rem auto;
+    }
+
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+
+    /* 无数据提示样式 */
+    .no-data-message {
+        padding: 2rem;
+        text-align: center;
+        background-color: var(--background-default);
+        border-radius: var(--border-radius-md);
+    }
+
+    /* 图表切换按钮样式 */
+    .chart-toggle-btn {
+        padding: 0.5rem 0;
+        border-bottom: 1px solid var(--border-default);
+        transition: background-color 0.2s ease;
+    }
+
+    .chart-toggle-btn button {
+        box-shadow: none;
+        transition: all 0.2s ease;
+    }
+
+    .chart-toggle-btn:hover {
+        background-color: var(--background-hover);
+    }
+</style>
+{% endblock %}
+
 {% block content %}
 <!-- 添加CSRF token以支持AJAX POST请求 -->
 {% csrf_token %}
@@ -138,6 +257,46 @@
                                            onclick="return confirm('您确定要删除传感器 \'{{ item.sensor_info.name }}\' 吗？此操作不可恢复！');">
                                             <i class="fas fa-trash"></i>
                                         </a>
+                                    </td>
+                                </tr>
+                                <tr class="chart-row">
+                                    <td colspan="6" class="p-0">
+                                        <div class="sensor-chart-container p-3" style="display:none;">
+                                            <!-- 时间范围选择器 -->
+                                            <div class="mb-3">
+                                                <div class="btn-group sensor-data-range-selector" role="group">
+                                                    <button type="button" class="btn btn-outline-secondary btn-sm active" data-range="1h" data-sensor-id="{{ item.sensor_info.id }}" data-chart-canvas-id="sensorChart{{ item.sensor_info.id }}">1小时</button>
+                                                    <button type="button" class="btn btn-outline-secondary btn-sm" data-range="6h" data-sensor-id="{{ item.sensor_info.id }}" data-chart-canvas-id="sensorChart{{ item.sensor_info.id }}">6小时</button>
+                                                    <button type="button" class="btn btn-outline-secondary btn-sm" data-range="24h" data-sensor-id="{{ item.sensor_info.id }}" data-chart-canvas-id="sensorChart{{ item.sensor_info.id }}">24小时</button>
+                                                    <button type="button" class="btn btn-outline-secondary btn-sm" data-range="7d" data-sensor-id="{{ item.sensor_info.id }}" data-chart-canvas-id="sensorChart{{ item.sensor_info.id }}">7天</button>
+                                                    <button type="button" class="btn btn-outline-secondary btn-sm" data-range="30d" data-sensor-id="{{ item.sensor_info.id }}" data-chart-canvas-id="sensorChart{{ item.sensor_info.id }}">30天</button>
+                                                </div>
+                                            </div>
+                                            
+                                            <!-- 加载指示器 -->
+                                            <div class="chart-loading text-center py-5" id="loading{{ item.sensor_info.id }}">
+                                                <div class="spinner"></div>
+                                                <p class="mt-2 text-muted">加载数据中...</p>
+                                            </div>
+                                            
+                                            <!-- 图表容器 -->
+                                            <div class="chart-wrapper" style="height: 300px;">
+                                                <canvas id="sensorChart{{ item.sensor_info.id }}"></canvas>
+                                            </div>
+                                            
+                                            <!-- 无数据提示 -->
+                                            <div class="no-data-message text-center py-5" style="display: none;" id="noData{{ item.sensor_info.id }}">
+                                                <i class="fas fa-chart-line fa-3x text-muted mb-3"></i>
+                                                <p class="text-muted">当前时间范围内没有数据</p>
+                                            </div>
+                                        </div>
+                                        
+                                        <!-- 图表切换器按钮 -->
+                                        <div class="text-center py-2 chart-toggle-btn" data-target="sensorChart{{ item.sensor_info.id }}">
+                                            <button class="btn btn-sm btn-outline-primary">
+                                                <i class="fas fa-chart-line"></i> 显示历史数据
+                                            </button>
+                                        </div>
                                     </td>
                                 </tr>
                             {% endfor %}
@@ -352,115 +511,449 @@
 </style>
 
 {% block extra_body_js %}
+<!-- 引入Chart.js库 -->
+<script src="{% static 'libs/chartjs/chart.min.js' %}"></script>
+
 <script>
-    function copyToClipboard(elementId) {
-        const element = document.getElementById(elementId);
-        element.select();
-        document.execCommand("copy");
-        
-        // 创建提示元素
-        const tooltip = document.createElement("div");
-        tooltip.className = "copy-tooltip alert alert-success";
-        tooltip.textContent = "已复制到剪贴板";
-        tooltip.style.position = "fixed";
-        tooltip.style.top = "20px";
-        tooltip.style.left = "50%";
-        tooltip.style.transform = "translateX(-50%)";
-        tooltip.style.padding = "8px 16px";
-        tooltip.style.zIndex = "9999";
-        document.body.appendChild(tooltip);
-        
-        // 2秒后移除提示
-        setTimeout(function() {
-            document.body.removeChild(tooltip);
-        }, 2000);
-    }
+// 用于复制设备ID和密钥的函数
+function copyToClipboard(elementId) {
+    var copyText = document.getElementById(elementId);
+    copyText.select();
+    copyText.setSelectionRange(0, 99999); /* For mobile devices */
+    document.execCommand("copy");
     
-    // 执行器控制相关脚本
-    document.addEventListener('DOMContentLoaded', function() {
-        // 获取所有执行器控制按钮
-        const controlButtons = document.querySelectorAll('.actuator-control-btn');
+    // 复制成功提示
+    var btn = document.querySelector(`#${elementId}`).nextElementSibling;
+    var originalText = btn.innerHTML;
+    btn.innerHTML = '<i class="fas fa-check"></i> 已复制';
+    setTimeout(function() {
+        btn.innerHTML = originalText;
+    }, 2000);
+}
+
+// 存储创建的图表实例
+let sensorCharts = {};
+
+// 获取CSS变量的辅助函数
+function getCssVariable(variableName) {
+    return getComputedStyle(document.documentElement).getPropertyValue(variableName).trim();
+}
+
+// 渲染传感器图表函数
+function renderSensorChart(sensorId, chartCanvasId, timeRange = '1h') {
+    // 显示加载指示器
+    const loadingElement = document.getElementById(`loading${sensorId}`);
+    const chartElement = document.getElementById(chartCanvasId);
+    const noDataElement = document.getElementById(`noData${sensorId}`);
+    
+    if (loadingElement) loadingElement.style.display = 'flex';
+    if (noDataElement) noDataElement.style.display = 'none';
+    
+    // 获取CSRF token以发送Ajax请求
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+    
+    // 构建API URL
+    const projectId = '{{ project.project_id }}';
+    const deviceId = '{{ device.device_id }}';
+    const apiUrl = `/api/projects/${projectId}/devices/${deviceId}/sensors/${sensorId}/data/?range=${timeRange}`;
+    
+    // 使用Fetch API发送请求
+    fetch(apiUrl, {
+        method: 'GET',
+        headers: {
+            'X-CSRFToken': csrfToken,
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('网络响应异常');
+        }
+        return response.json();
+    })
+    .then(data => {
+        // 隐藏加载指示器
+        if (loadingElement) loadingElement.style.display = 'none';
         
-        // 为每个按钮添加点击事件监听器
-        controlButtons.forEach(button => {
-            button.addEventListener('click', function(event) {
-                event.preventDefault();
-                
-                // 禁用按钮，显示加载状态
-                this.disabled = true;
-                const originalHtml = this.innerHTML;
-                this.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 发送中...';
-                
-                // 获取必要的数据
-                const actuatorId = this.getAttribute('data-actuator-id');
-                const apiUrl = this.getAttribute('data-api-url');
-                const targetInputId = this.getAttribute('data-command-target-input-id');
-                
-                // 确定命令值
-                let commandValue;
-                if (targetInputId) {
-                    // 从关联的输入框获取值
-                    const inputElement = document.getElementById(targetInputId);
-                    if (!inputElement || !inputElement.value.trim()) {
-                        showFeedback('请输入有效的命令值', 'error');
-                        this.disabled = false;
-                        this.innerHTML = originalHtml;
-                        return;
-                    }
-                    commandValue = inputElement.value.trim();
-                } else {
-                    // 直接从按钮属性获取值
-                    commandValue = this.getAttribute('data-command-value');
-                }
-                
-                // 准备CSRF Token
-                const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value || 
-                                 '{{ csrf_token }}';
-                
-                // 发送AJAX请求
-                fetch(apiUrl, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRFToken': csrfToken
+        // 如果没有数据，显示无数据提示
+        if (!data.labels || data.labels.length === 0) {
+            if (noDataElement) {
+                noDataElement.querySelector('p').textContent = '当前时间范围内没有数据';
+                noDataElement.style.display = 'block';
+            }
+            return;
+        }
+        
+        // 如果已存在图表实例，则销毁它
+        if (sensorCharts[sensorId]) {
+            sensorCharts[sensorId].destroy();
+        }
+        
+        // 获取当前主题的颜色变量
+        const isDarkMode = document.body.classList.contains('dark-mode') || 
+                           document.documentElement.classList.contains('theme-dark') || 
+                           document.documentElement.getAttribute('data-theme') === 'dark';
+        
+        // 准备图表颜色
+        const primaryColor = getCssVariable('--color-primary');
+        const primaryColorRgb = getCssVariable('--color-primary-rgb');
+        const textColorDefault = getCssVariable('--text-default');
+        const textColorMuted = getCssVariable('--text-muted');
+        const borderColorDefault = getCssVariable('--border-default');
+        const backgroundColorDefault = getCssVariable('--background-default');
+        
+        // 图表Label显示单位
+        let labelDisplay = data.sensor_name;
+        if (data.sensor_unit) {
+            labelDisplay += ` (${data.sensor_unit})`;
+        }
+        
+        // 确定是否为数值型数据（用于设置Y轴参数）
+        const isNumericData = typeof data.values[0] === 'number';
+        
+        // 获取Canvas上下文
+        const ctx = chartElement.getContext('2d');
+        
+        // 创建Chart实例
+        sensorCharts[sensorId] = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: data.labels,
+                datasets: [{
+                    label: labelDisplay,
+                    data: data.values,
+                    borderColor: primaryColor,
+                    backgroundColor: `rgba(${primaryColorRgb || '52, 152, 219'}, 0.1)`,
+                    borderWidth: 2,
+                    pointRadius: data.labels.length > 50 ? 1 : 3, // 大量数据点时减小点的大小
+                    pointHoverRadius: 5,
+                    tension: 0.1,
+                    fill: true
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    x: {
+                        grid: {
+                            color: `rgba(${primaryColorRgb || '52, 152, 219'}, 0.1)`,
+                            borderColor: borderColorDefault
+                        },
+                        ticks: {
+                            color: textColorMuted || '#6a737d',
+                            maxRotation: 45,
+                            minRotation: 0,
+                            font: {
+                                size: 10
+                            },
+                            // 调整X轴标签数量，避免过于密集
+                            maxTicksLimit: timeRange === '30d' ? 10 : (timeRange === '7d' ? 14 : 24)
+                        }
                     },
-                    body: JSON.stringify({ value: commandValue })
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.status === 'success') {
-                        showFeedback('命令已发送处理', 'success');
-                    } else {
-                        showFeedback(data.message || '命令发送失败', 'error');
+                    y: {
+                        beginAtZero: isNumericData ? (Math.min(...data.values.filter(v => typeof v === 'number')) > 0) : false,
+                        grid: {
+                            color: `rgba(${primaryColorRgb || '52, 152, 219'}, 0.1)`,
+                            borderColor: borderColorDefault
+                        },
+                        ticks: {
+                            color: textColorMuted || '#6a737d',
+                            // 为数值数据添加单位
+                            callback: function(value) {
+                                if (isNumericData && data.sensor_unit) {
+                                    return value + ' ' + data.sensor_unit;
+                                }
+                                return value;
+                            }
+                        }
                     }
-                })
-                .catch(error => {
-                    console.error('发送命令时出错:', error);
-                    showFeedback('发送命令时发生错误', 'error');
-                })
-                .finally(() => {
-                    // 恢复按钮状态
-                    this.disabled = false;
-                    this.innerHTML = originalHtml;
-                });
-            });
+                },
+                plugins: {
+                    legend: {
+                        display: true,
+                        labels: {
+                            color: textColorDefault || '#24292f',
+                            font: {
+                                family: getCssVariable('--font-family-sans-serif')
+                            }
+                        }
+                    },
+                    tooltip: {
+                        mode: 'index',
+                        intersect: false,
+                        backgroundColor: backgroundColorDefault || '#ffffff',
+                        titleColor: textColorDefault || '#24292f',
+                        bodyColor: textColorDefault || '#24292f',
+                        borderColor: borderColorDefault || '#d0d7de',
+                        borderWidth: 1,
+                        padding: 10,
+                        titleFont: {
+                            family: getCssVariable('--font-family-sans-serif')
+                        },
+                        bodyFont: {
+                            family: getCssVariable('--font-family-sans-serif')
+                        },
+                        callbacks: {
+                            // 为数值数据添加单位
+                            label: function(context) {
+                                let label = context.dataset.label || '';
+                                if (label) {
+                                    label += ': ';
+                                }
+                                if (context.parsed.y !== null) {
+                                    label += context.parsed.y;
+                                    if (isNumericData && data.sensor_unit) {
+                                        label += ' ' + data.sensor_unit;
+                                    }
+                                }
+                                return label;
+                            }
+                        }
+                    }
+                },
+                interaction: {
+                    intersect: false,
+                    mode: 'index'
+                },
+                animation: {
+                    duration: 250
+                }
+            }
         });
         
-        // 显示反馈提示
-        function showFeedback(message, type) {
-            const feedback = document.createElement('div');
-            feedback.className = `command-feedback ${type}`;
-            feedback.textContent = message;
-            document.body.appendChild(feedback);
-            
-            // 2秒后移除提示
-            setTimeout(() => {
-                feedback.style.opacity = '0';
-                feedback.style.transition = 'opacity 0.5s';
-                setTimeout(() => document.body.removeChild(feedback), 500);
-            }, 2000);
+        // 显示数据统计信息（可选）
+        console.log(`已显示 ${data.data_count}/${data.total_records} 个数据点`);
+    })
+    .catch(error => {
+        console.error('获取图表数据失败:', error);
+        if (loadingElement) loadingElement.style.display = 'none';
+        if (noDataElement) {
+            noDataElement.querySelector('p').textContent = '获取数据失败，请稍后再试';
+            noDataElement.style.display = 'block';
         }
     });
+}
+
+// 文档加载完成后执行
+document.addEventListener('DOMContentLoaded', function() {
+    // 图表折叠切换功能
+    const toggleButtons = document.querySelectorAll('.chart-toggle-btn button');
+    toggleButtons.forEach(btn => {
+        btn.addEventListener('click', function() {
+            // 找到对应的图表容器
+            const chartId = this.closest('.chart-toggle-btn').dataset.target;
+            const chartContainer = this.closest('tr').querySelector('.sensor-chart-container');
+            
+            if (chartContainer.style.display === 'none') {
+                // 显示图表
+                chartContainer.style.display = 'block';
+                this.innerHTML = '<i class="fas fa-chart-line"></i> 隐藏历史数据';
+                
+                // 获取传感器ID和图表Canvas ID
+                const sensorId = chartId.replace('sensorChart', '');
+                
+                // 渲染图表
+                renderSensorChart(sensorId, chartId, '1h');
+            } else {
+                // 隐藏图表
+                chartContainer.style.display = 'none';
+                this.innerHTML = '<i class="fas fa-chart-line"></i> 显示历史数据';
+            }
+        });
+    });
+    
+    // 时间范围选择器功能
+    const rangeButtons = document.querySelectorAll('.sensor-data-range-selector button');
+    rangeButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            const sensorId = this.dataset.sensorId;
+            const chartCanvasId = this.dataset.chartCanvasId;
+            const timeRange = this.dataset.range;
+            
+            // 更新按钮激活状态
+            const parentGroup = this.closest('.sensor-data-range-selector');
+            parentGroup.querySelectorAll('button').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            this.classList.add('active');
+            
+            // 重新渲染图表
+            renderSensorChart(sensorId, chartCanvasId, timeRange);
+        });
+    });
+    
+    // 执行器控制按钮功能
+    const actuatorControlButtons = document.querySelectorAll('.actuator-control-btn');
+    actuatorControlButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            const actuatorId = this.dataset.actuatorId;
+            const apiUrl = this.dataset.apiUrl;
+            const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+            
+            // 获取命令值
+            let commandValue = this.dataset.commandValue;
+            
+            // 如果命令值需要从输入框获取
+            if (this.dataset.commandTargetInputId) {
+                const inputField = document.getElementById(this.dataset.commandTargetInputId);
+                commandValue = inputField.value;
+            }
+            
+            // 发送控制命令
+            fetch(apiUrl, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': csrfToken,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    command_value: commandValue
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    // 添加一个临时成功提示
+                    const originalText = this.innerHTML;
+                    const originalBg = this.style.backgroundColor;
+                    this.innerHTML = '<i class="fas fa-check"></i> 已发送';
+                    this.classList.add('btn-success');
+                    this.classList.remove('btn-primary', 'btn-danger');
+                    
+                    setTimeout(() => {
+                        this.innerHTML = originalText;
+                        this.style.backgroundColor = originalBg;
+                        if (!this.classList.contains('btn-success') && !this.classList.contains('btn-danger')) {
+                            this.classList.add('btn-primary');
+                            this.classList.remove('btn-success');
+                        }
+                    }, 2000);
+                } else {
+                    // 添加一个临时失败提示
+                    const originalText = this.innerHTML;
+                    this.innerHTML = '<i class="fas fa-times"></i> 失败';
+                    this.classList.add('btn-danger');
+                    this.classList.remove('btn-primary', 'btn-success');
+                    
+                    setTimeout(() => {
+                        this.innerHTML = originalText;
+                        if (!this.classList.contains('btn-success') && !this.classList.contains('btn-danger')) {
+                            this.classList.add('btn-primary');
+                            this.classList.remove('btn-danger');
+                        }
+                    }, 2000);
+                }
+            })
+            .catch(error => {
+                console.error('控制命令发送失败:', error);
+                // 添加一个临时失败提示
+                const originalText = this.innerHTML;
+                this.innerHTML = '<i class="fas fa-times"></i> 错误';
+                this.classList.add('btn-danger');
+                this.classList.remove('btn-primary', 'btn-success');
+                
+                setTimeout(() => {
+                    this.innerHTML = originalText;
+                    if (!this.classList.contains('btn-success') && !this.classList.contains('btn-danger')) {
+                        this.classList.add('btn-primary');
+                        this.classList.remove('btn-danger');
+                    }
+                }, 2000);
+            });
+        });
+    });
+});
+
+// 监听主题变化，更新所有图表
+function updateChartsForTheme() {
+    const currentTheme = document.body.classList.contains('dark-mode') || 
+                       document.documentElement.classList.contains('theme-dark') || 
+                       document.documentElement.getAttribute('data-theme') === 'dark'
+                       ? 'dark' : 'light';
+    
+    // 遍历所有已创建的图表并更新
+    Object.keys(sensorCharts).forEach(sensorId => {
+        if (sensorCharts[sensorId]) {
+            // 更新图表的颜色设置
+            const chart = sensorCharts[sensorId];
+            if (chart.config && chart.config.options) {
+                // 获取更新后的颜色变量
+                const primaryColor = getCssVariable('--color-primary');
+                const primaryColorRgb = getCssVariable('--color-primary-rgb');
+                const textColorDefault = getCssVariable('--text-default');
+                const textColorMuted = getCssVariable('--text-muted');
+                const borderColorDefault = getCssVariable('--border-default');
+                const backgroundColorDefault = getCssVariable('--background-default');
+                
+                // 更新数据集颜色
+                if (chart.data && chart.data.datasets && chart.data.datasets.length > 0) {
+                    chart.data.datasets[0].borderColor = primaryColor;
+                    chart.data.datasets[0].backgroundColor = `rgba(${primaryColorRgb || '52, 152, 219'}, 0.1)`;
+                }
+                
+                // 更新网格线和文本颜色
+                if (chart.options.scales) {
+                    // X轴
+                    if (chart.options.scales.x) {
+                        chart.options.scales.x.grid.color = `rgba(${primaryColorRgb || '52, 152, 219'}, 0.1)`;
+                        chart.options.scales.x.grid.borderColor = borderColorDefault;
+                        chart.options.scales.x.ticks.color = textColorMuted;
+                    }
+                    // Y轴
+                    if (chart.options.scales.y) {
+                        chart.options.scales.y.grid.color = `rgba(${primaryColorRgb || '52, 152, 219'}, 0.1)`;
+                        chart.options.scales.y.grid.borderColor = borderColorDefault;
+                        chart.options.scales.y.ticks.color = textColorMuted;
+                    }
+                }
+                
+                // 更新图例和提示框颜色
+                if (chart.options.plugins) {
+                    // 图例
+                    if (chart.options.plugins.legend) {
+                        chart.options.plugins.legend.labels.color = textColorDefault;
+                    }
+                    // 提示框
+                    if (chart.options.plugins.tooltip) {
+                        chart.options.plugins.tooltip.backgroundColor = backgroundColorDefault;
+                        chart.options.plugins.tooltip.titleColor = textColorDefault;
+                        chart.options.plugins.tooltip.bodyColor = textColorDefault;
+                        chart.options.plugins.tooltip.borderColor = borderColorDefault;
+                    }
+                }
+            }
+            
+            // 应用更新
+            sensorCharts[sensorId].update();
+        }
+    });
+    
+    // 将主题状态记录在控制台，方便调试
+    console.log(`主题已切换为: ${currentTheme}`);
+}
+
+// 监听body上的class变化，检测主题变化
+const observer = new MutationObserver(mutations => {
+    let themeChanged = false;
+    
+    mutations.forEach(mutation => {
+        if (mutation.attributeName === 'class' || mutation.attributeName === 'data-theme') {
+            themeChanged = true;
+        }
+    });
+    
+    if (themeChanged) {
+        // 主题变化时更新图表
+        updateChartsForTheme();
+    }
+});
+
+// 开始监听body的class变化
+observer.observe(document.body, { attributes: true });
+
+// 同时监听html元素的主题属性变化
+observer.observe(document.documentElement, { attributes: true });
 </script>
 {% endblock %}
 {% endblock %} 

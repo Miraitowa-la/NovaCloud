@@ -8,6 +8,7 @@ import json
 import logging
 from .models import Project, Device, Sensor, Actuator, SensorData, ActuatorCommandLog
 from .forms import ProjectForm, DeviceForm, SensorForm, ActuatorForm
+from django.utils.timezone import now, timedelta
 
 # 创建logger
 logger = logging.getLogger(__name__)
@@ -475,3 +476,111 @@ def actuator_command_api_view(request, project_id, device_id, actuator_id):
             "message": f"命令处理过程中发生错误: {str(e)}", 
             "command_id": actuator_command.id
         }, status=500)
+
+@login_required
+def sensor_data_api_view(request, project_id, device_id, sensor_id):
+    """返回传感器数据的API视图，支持时间范围筛选"""
+    # 验证权限并获取传感器
+    sensor = get_object_or_404(
+        Sensor, 
+        pk=sensor_id, 
+        device__pk=device_id,
+        device__project__pk=project_id, 
+        device__project__owner=request.user
+    )
+    
+    # 获取查询参数（时间范围）
+    time_range = request.GET.get('range', '1h')  # 默认为过去1小时
+    
+    # 计算时间范围
+    end_time = now()
+    if time_range == 'custom' and 'start_date' in request.GET and 'end_date' in request.GET:
+        # 处理自定义时间范围
+        try:
+            from datetime import datetime
+            start_time = datetime.fromisoformat(request.GET.get('start_date'))
+            end_time = datetime.fromisoformat(request.GET.get('end_date'))
+        except (ValueError, TypeError):
+            # 如果解析失败，默认为过去1小时
+            start_time = end_time - timedelta(hours=1)
+    else:
+        # 处理预设时间范围
+        if time_range == '1h':  # 1小时
+            start_time = end_time - timedelta(hours=1)
+        elif time_range == '6h':  # 6小时
+            start_time = end_time - timedelta(hours=6)
+        elif time_range == '24h':  # 24小时
+            start_time = end_time - timedelta(hours=24)
+        elif time_range == '7d':  # 7天
+            start_time = end_time - timedelta(days=7)
+        elif time_range == '30d':  # 30天
+            start_time = end_time - timedelta(days=30)
+        else:
+            start_time = end_time - timedelta(hours=1)  # 默认1小时
+    
+    # 查询数据记录
+    data_records = SensorData.objects.filter(
+        sensor=sensor, 
+        timestamp__gte=start_time, 
+        timestamp__lte=end_time
+    ).order_by('timestamp')
+    
+    # 针对数据集进行采样，避免图表过于密集
+    total_records = data_records.count()
+    max_data_points = 200  # 最大数据点数
+    
+    # 根据记录数量和时间范围调整采样率
+    if total_records > max_data_points:
+        # 计算采样率，确保至少采样 max_data_points 个点
+        sample_rate = max(1, total_records // max_data_points)
+        # 使用列表切片进行采样
+        data_records = list(data_records)[::sample_rate]
+    else:
+        # 记录数少于最大点数，全部使用
+        data_records = list(data_records)
+    
+    # 准备Chart.js所需的数据格式
+    labels = []
+    values = []
+    
+    for record in data_records:
+        # 根据时间范围选择合适的时间戳格式
+        if time_range == '1h':
+            # 1小时显示时:分
+            timestamp_str = record.timestamp.strftime('%H:%M')
+        elif time_range == '6h':
+            # 6小时显示时:分
+            timestamp_str = record.timestamp.strftime('%H:%M')
+        elif time_range == '24h':
+            # 24小时显示日 时:分
+            timestamp_str = record.timestamp.strftime('%d日 %H:%M')
+        elif time_range == '7d':
+            # 7天显示月-日 时
+            timestamp_str = record.timestamp.strftime('%m-%d %H:00')
+        elif time_range == '30d':
+            # 30天只显示月-日
+            timestamp_str = record.timestamp.strftime('%m-%d')
+        else:
+            # 默认格式
+            timestamp_str = record.timestamp.strftime('%Y-%m-%d %H:%M')
+        
+        # 获取记录值
+        value = record.get_value()
+        
+        # 添加数据点
+        labels.append(timestamp_str)
+        values.append(value)
+    
+    # 返回JSON响应
+    return JsonResponse({
+        'labels': labels,
+        'values': values,
+        'sensor_name': sensor.name,
+        'sensor_type': sensor.sensor_type,
+        'sensor_unit': sensor.unit,
+        'time_range': time_range,
+        'start_time': start_time.isoformat(),
+        'end_time': end_time.isoformat(),
+        'data_count': len(values),
+        'total_records': total_records
+    })
