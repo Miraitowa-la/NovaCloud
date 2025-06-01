@@ -27,22 +27,19 @@
                     <div class="card device-card shadow-sm h-100">
                         <div class="card-header d-flex justify-content-between align-items-center">
                             <h5 class="card-title mb-0">{{ device.name }}</h5>
-                            <div class="device-status">
+                            <div>
                                 {% if device.status == 'online' %}
-                                    <div class="status-badge status-badge-success">
-                                        <span class="status-dot status-dot-success"></span>
-                                        <span class="status-text">在线</span>
-                                    </div>
+                                    <span class="status-label status-label-success">
+                                        <span class="status-dot status-dot-success"></span> 在线
+                                    </span>
                                 {% elif device.status == 'offline' %}
-                                    <div class="status-badge status-badge-offline">
-                                        <span class="status-dot status-dot-offline"></span>
-                                        <span class="status-text">离线</span>
-                                    </div>
+                                    <span class="status-label status-label-offline">
+                                        <span class="status-dot status-dot-offline"></span> 离线
+                                    </span>
                                 {% else %}
-                                    <div class="status-badge status-badge-warning">
-                                        <span class="status-dot status-dot-warning"></span>
-                                        <span class="status-text">未注册</span>
-                                    </div>
+                                    <span class="status-label status-label-warning">
+                                        <span class="status-dot status-dot-warning"></span> 未注册
+                                    </span>
                                 {% endif %}
                             </div>
                         </div>

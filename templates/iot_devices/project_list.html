@@ -28,20 +28,17 @@
                         <div class="card-header d-flex justify-content-between align-items-center">
                             <h5 class="card-title mb-0">{{ project.name }}</h5>
                             {% if project.device_count == 0 %}
-                            <div class="status-badge status-badge-offline">
-                                <span class="status-dot status-dot-offline"></span>
-                                <span class="status-text">无设备</span>
-                            </div>
+                            <span class="status-label status-label-secondary">
+                                <span class="status-dot status-dot-secondary"></span> 无设备
+                            </span>
                             {% elif project.online_device_count > 0 %}
-                            <div class="status-badge status-badge-success">
-                                <span class="status-dot status-dot-success"></span>
-                                <span class="status-text">有设备在线</span>
-                            </div>
+                            <span class="status-label status-label-success">
+                                <span class="status-dot status-dot-success"></span> 有设备在线
+                            </span>
                             {% else %}
-                            <div class="status-badge status-badge-warning">
-                                <span class="status-dot status-dot-warning"></span>
-                                <span class="status-text">全部离线</span>
-                            </div>
+                            <span class="status-label status-label-warning">
+                                <span class="status-dot status-dot-warning"></span> 全部离线
+                            </span>
                             {% endif %}
                         </div>
                         <div class="card-body">

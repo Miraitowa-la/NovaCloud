@@ -159,20 +159,11 @@
                         <h5 class="text-muted">状态</h5>
                         <p>
                             {% if device.status == 'online' %}
-                                <div class="status-badge status-badge-success">
-                                    <span class="status-dot status-dot-success"></span>
-                                    <span class="status-text">在线</span>
-                                </div>
+                                <span class="status-dot status-dot-success"></span> 在线
                             {% elif device.status == 'offline' %}
-                                <div class="status-badge status-badge-offline">
-                                    <span class="status-dot status-dot-offline"></span>
-                                    <span class="status-text">离线</span>
-                                </div>
+                                <span class="status-dot status-dot-offline"></span> 离线
                             {% else %}
-                                <div class="status-badge status-badge-warning">
-                                    <span class="status-dot status-dot-warning"></span>
-                                    <span class="status-text">未注册</span>
-                                </div>
+                                <span class="status-dot status-dot-warning"></span> 未注册
                             {% endif %}
                         </p>
                     </div>
