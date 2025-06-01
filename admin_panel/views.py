@@ -37,7 +37,7 @@ def user_list_view(request):
     status_filter = request.GET.get('status', '')
     
     # 查询用户列表
-    users = User.objects.select_related('userprofile').all()
+    users = User.objects.select_related('profile').all()
     
     # 应用搜索条件
     if search_query:
@@ -48,7 +48,7 @@ def user_list_view(request):
     
     # 应用角色筛选
     if role_filter:
-        users = users.filter(userprofile__role_id=role_filter)
+        users = users.filter(profile__role_id=role_filter)
     
     # 应用状态筛选
     if status_filter:

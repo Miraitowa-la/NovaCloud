@@ -96,9 +96,9 @@ class AdminUserChangeForm(UserChangeForm):
         self.fields.pop('password', None)
         
         # 如果用户有profile，初始化role和parent_user字段
-        if self.instance and hasattr(self.instance, 'userprofile'):
-            self.fields['role'].initial = self.instance.userprofile.role
-            self.fields['parent_user'].initial = self.instance.userprofile.parent_user
+        if self.instance and hasattr(self.instance, 'profile'):
+            self.fields['role'].initial = self.instance.profile.role
+            self.fields['parent_user'].initial = self.instance.profile.parent_user
             
             # 避免将用户自己设为自己的上级
             self.fields['parent_user'].queryset = User.objects.exclude(pk=self.instance.pk)
