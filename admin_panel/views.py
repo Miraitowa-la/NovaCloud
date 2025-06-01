@@ -6,11 +6,13 @@ from django.core.paginator import Paginator
 from django.db.models import Q, Count
 from django.urls import reverse
 from django.views.decorators.http import require_POST
+from django.utils import timezone
+from datetime import datetime, timedelta
 from accounts.models import UserProfile, Role
 from core.models import AuditLog
-from core.constants import AuditActionType
+from core.constants import AuditActionType, AUDIT_ACTION_CHOICES
 from .decorators import admin_required
-from .forms import AdminUserCreationForm, AdminUserChangeForm, RoleForm
+from .forms import AdminUserCreationForm, AdminUserChangeForm, RoleForm, AuditLogFilterForm
 
 # Create your views here.
 
@@ -290,13 +292,66 @@ def role_delete_view(request, role_id):
     messages.success(request, f'角色 {role_name} 已成功删除')
     return redirect('admin_panel:role_list')
 
-# 用于后续实现的审计日志视图占位
-@login_required
+@admin_required
 def audit_log_list_view(request):
     """
-    审计日志列表页面
+    审计日志列表页面，支持多条件筛选和分页
     """
+    # 初始化筛选表单
+    form = AuditLogFilterForm(request.GET)
+    
+    # 获取基础查询集
+    logs_query = AuditLog.objects.select_related('user', 'target_content_type').order_by('-timestamp')
+    
+    # 应用筛选条件
+    if form.is_valid():
+        # 用户筛选
+        user_id = form.cleaned_data.get('user')
+        if user_id:
+            logs_query = logs_query.filter(user=user_id)
+        
+        # 操作类型筛选
+        action_type = form.cleaned_data.get('action_type')
+        if action_type:
+            logs_query = logs_query.filter(action_type=action_type)
+        
+        # 日期范围筛选
+        start_date = form.cleaned_data.get('start_date')
+        if start_date:
+            logs_query = logs_query.filter(timestamp__gte=start_date)
+        
+        end_date = form.cleaned_data.get('end_date')
+        if end_date:
+            # 调整结束日期到当天结束
+            end_date_adjusted = datetime.combine(end_date, datetime.max.time())
+            logs_query = logs_query.filter(timestamp__lte=end_date_adjusted)
+        
+        # IP地址筛选
+        ip_address = form.cleaned_data.get('ip_address')
+        if ip_address:
+            logs_query = logs_query.filter(ip_address__icontains=ip_address)
+        
+        # 详情搜索
+        search_query = form.cleaned_data.get('search_query')
+        if search_query:
+            logs_query = logs_query.filter(
+                Q(target_object_repr__icontains=search_query) | 
+                Q(details__icontains=search_query)
+            )
+    
+    # 分页处理
+    paginator = Paginator(logs_query, 20)  # 每页显示20条记录
+    page_number = request.GET.get('page', 1)
+    page_obj = paginator.get_page(page_number)
+    
+    # 构建上下文
     context = {
-        'admin_page_title': '审计日志'
+        'admin_page_title': '审计日志',
+        'form': form,
+        'page_obj': page_obj,
+        'action_choices': AUDIT_ACTION_CHOICES,
+        # 构建分页URL时保留筛选参数
+        'filter_params': request.GET.urlencode()
     }
+    
     return render(request, 'admin_panel/audit_log_list.html', context)

@@ -2,6 +2,7 @@ from django import forms
 from django.contrib.auth.forms import UserCreationForm, UserChangeForm
 from django.contrib.auth.models import User, Permission
 from accounts.models import UserProfile, Role
+from core.constants import AUDIT_ACTION_CHOICES
 
 class AdminUserCreationForm(UserCreationForm):
     """
@@ -158,3 +159,58 @@ class RoleForm(forms.ModelForm):
             'content_type__model', 
             'name'
         ) 
+
+class AuditLogFilterForm(forms.Form):
+    """
+    审计日志筛选表单
+    """
+    user = forms.ModelChoiceField(
+        queryset=User.objects.all(),
+        required=False,
+        empty_label="所有用户",
+        widget=forms.Select(attrs={'class': 'form-control'})
+    )
+    
+    action_type = forms.ChoiceField(
+        choices=[('', '所有操作类型')] + list(AUDIT_ACTION_CHOICES),
+        required=False,
+        widget=forms.Select(attrs={'class': 'form-control'})
+    )
+    
+    start_date = forms.DateField(
+        required=False,
+        widget=forms.DateInput(attrs={
+            'class': 'form-control',
+            'type': 'date',
+            'placeholder': '开始日期'
+        }),
+        label="开始日期"
+    )
+    
+    end_date = forms.DateField(
+        required=False,
+        widget=forms.DateInput(attrs={
+            'class': 'form-control',
+            'type': 'date',
+            'placeholder': '结束日期'
+        }),
+        label="结束日期"
+    )
+    
+    ip_address = forms.CharField(
+        required=False,
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': '搜索IP地址'
+        }),
+        label="IP地址"
+    )
+    
+    search_query = forms.CharField(
+        required=False,
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': '搜索目标对象或详情'
+        }),
+        label="搜索内容"
+    ) 

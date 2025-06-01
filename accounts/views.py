@@ -6,6 +6,8 @@ from django.utils import timezone
 
 from .forms import UserRegistrationForm, UserLoginForm, UserProfileEditForm, InvitationCodeCreateForm
 from .models import UserProfile, InvitationCode
+from core.constants import AuditActionType
+from core.utils import log_audit_event
 
 def index(request):
     """
@@ -59,6 +61,14 @@ def register_view(request):
                     # 这种情况应该在表单验证中已经处理过，但为保险起见再检查一次
                     messages.error(request, '邀请码不存在。')
             
+            # 记录审计日志
+            log_audit_event(
+                request=request,
+                action_type=AuditActionType.USER_REGISTER,
+                target_object=new_user,
+                details=f"用户 {new_user.username} 注册成功"
+            )
+            
             # 添加成功消息
             messages.success(request, '恭喜您，注册成功！现在您可以登录了。')
             
@@ -97,6 +107,14 @@ def login_view(request):
                 # 登录用户
                 login(request, user)
                 
+                # 记录审计日志
+                log_audit_event(
+                    request=request,
+                    action_type=AuditActionType.USER_LOGIN,
+                    target_object=user,
+                    details=f"用户 {user.username} 登录成功"
+                )
+                
                 # 添加成功消息
                 messages.success(request, f'欢迎回来，{user.username}！')
                 
@@ -123,11 +141,20 @@ def login_view(request):
     })
 
 
+@login_required
 def logout_view(request):
     """
     用户登出视图
     清除用户会话并重定向
     """
+    # 记录审计日志
+    log_audit_event(
+        request=request,
+        action_type=AuditActionType.USER_LOGOUT,
+        target_object=request.user,
+        details=f"用户 {request.user.username} 登出系统"
+    )
+    
     # 登出用户
     logout(request)
     
