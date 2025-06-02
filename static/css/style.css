@@ -112,6 +112,7 @@ html {
     scrollbar-width: none; /* Firefox */
     -ms-overflow-style: none; /* IE 和 Edge */
     overflow-y: scroll;
+    scroll-padding-top: 70px; /* 设置滚动定位点的偏移，解决锚点跳转被导航栏遮挡的问题 */
 }
 
 /* Chrome, Safari 和 新版 Edge */
@@ -131,10 +132,13 @@ body {
     -moz-osx-font-smoothing: grayscale;
     transition: background-color 0.2s ease-in-out, color 0.2s ease-in-out;
     margin: 0;
+    min-height: 100vh; /* 至少保持视口高度 */
+    padding-top: 65px; /* 与导航栏高度相同，确保内容不被遮挡 */
 }
 
 #main-content {
     flex: 1 0 auto;
+    padding-top: 20px; /* 调整为较小的值，因为body已经有padding-top了 */
 }
 
 /* 排版 */
@@ -619,6 +623,15 @@ strong, b {
     border-bottom: 1px solid var(--border-muted);
     box-shadow: var(--shadow-sm);
     min-height: 60px;
+    height: 65px; /* 明确设置导航栏高度 */
+    /* 固定导航栏在顶部 */
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    width: 100%;
+    z-index: 1000;
+    transition: background-color 0.2s ease-in-out, color 0.2s ease-in-out; /* 确保主题切换平滑过渡 */
 }
 
 .navbar-brand {
@@ -1082,19 +1095,20 @@ select.form-control {
     border: 0;
 }
 
-/* 页面整体布局 - 固定底部的footer */
+/* 页面布局相关 */
 html, body {
     height: 100%;
+    margin: 0;
 }
 
 /* 页脚样式 */
 .footer {
-    flex-shrink: 0;
-    background-color: var(--background-default);
-    color: var(--text-default);
-    padding-top: 1rem;
-    margin-top: 2rem;
+    flex-shrink: 0; /* 防止footer被压缩 */
     width: 100%;
+    background-color: var(--background-default);
+    border-top: 1px solid var(--border-muted);
+    padding: 2rem 0 1rem;
+    margin-top: 2rem;
 }
 
 .footer-divider {

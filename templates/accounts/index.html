@@ -2,52 +2,250 @@
 {% load static %}
 
 {% block title %}
-    欢迎来到 NovaCloud
+    欢迎来到 NovaCloud - 智能物联网平台
 {% endblock title %}
 
 {% block content %}
-    <div class="container py-5">
-        <div class="row">
-            <div class="col-md-7 mb-4">
-                <h1 class="mb-4">欢迎来到 NovaCloud</h1>
-                <p class="lead">NovaCloud 是一个强大的物联网平台，帮助您连接、监控和管理各种设备。</p>
-                <p class="mb-4">通过我们的平台，您可以轻松创建项目、添加设备，并构建自动化策略，让您的物联网应用更加智能。</p>
-                
-                {% if not user.is_authenticated %}
-                <div class="mt-4">
-                    <a href="{% url 'accounts:register' %}" class="btn btn-primary btn-lg mr-3">
-                        <i class="fas fa-user-plus"></i> 注册
-                    </a>
-                    <a href="{% url 'accounts:login' %}" class="btn btn-outline-primary btn-lg">
-                        <i class="fas fa-sign-in-alt"></i> 登录
-                    </a>
-                </div>
-                {% else %}
-                <div class="mt-4">
-                    <a href="{% url 'iot_devices:project_list' %}" class="btn btn-primary btn-lg">
-                        <i class="fas fa-cubes"></i> 我的项目
-                    </a>
-                </div>
-                {% endif %}
-            </div>
-            
-            <div class="col-md-5">
-                <div class="card mb-4">
-                    <div class="card-header">
-                        <h5 class="card-title">平台功能</h5>
+<div class="container py-5">
+    <!-- 欢迎区域 - 使用渐变背景 -->
+    <div class="card mb-5 hover-card">
+        <div class="card-body p-5">
+            <div class="row align-items-center">
+                <div class="col-lg-8">
+                    <h1 class="display-4 mb-3">智能物联网平台</h1>
+                    <h2 class="h3 mb-4 text-muted">连接、监控、分析和自动化</h2>
+                    <p class="lead mb-4">NovaCloud 提供端到端物联网解决方案，帮助您打造智能、高效、安全的物联网应用。</p>
+                    
+                    {% if not user.is_authenticated %}
+                    <div class="mt-4">
+                        <a href="{% url 'accounts:register' %}" class="btn btn-primary btn-lg mr-3">
+                            <i class="fas fa-user-plus"></i> 立即注册
+                        </a>
+                        <a href="{% url 'accounts:login' %}" class="btn btn-outline-primary btn-lg">
+                            <i class="fas fa-sign-in-alt"></i> 登录账户
+                        </a>
                     </div>
-                    <div class="card-body">
-                        <ul>
-                            <li>创建物联网项目</li>
-                            <li>添加和管理智能设备</li>
-                            <li>实时数据监控与可视化</li>
-                            <li>强大的自动化策略引擎</li>
-                            <li>多级用户权限控制</li>
-                            <li>安全的设备通信机制</li>
-                        </ul>
+                    {% else %}
+                    <div class="mt-4">
+                        <h4 class="h5 mb-3">欢迎回来，{{ user.username }}!</h4>
+                        <div class="d-flex flex-wrap">
+                            <a href="{% url 'iot_devices:project_list' %}" class="btn btn-primary mr-2 mb-2">
+                                <i class="fas fa-cubes"></i> 我的项目
+                            </a>
+                            <a href="{% url 'strategy_engine:strategy_list' %}" class="btn btn-outline-primary mr-2 mb-2">
+                                <i class="fas fa-sitemap"></i> 我的策略
+                            </a>
+                            <a href="{% url 'accounts:profile' %}" class="btn btn-outline-primary mb-2">
+                                <i class="fas fa-user-cog"></i> 个人资料
+                            </a>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+                <div class="col-lg-4 text-center mt-4 mt-lg-0">
+                    <div class="fa-stack fa-6x">
+                        <i class="fas fa-circle fa-stack-2x text-primary"></i>
+                        <i class="fas fa-cloud fa-stack-1x fa-inverse"></i>
                     </div>
                 </div>
             </div>
         </div>
     </div>
+
+    <!-- 平台价值卡片 -->
+    <h2 class="text-center mb-4">NovaCloud 平台优势</h2>
+    <div class="row">
+        <!-- 连接与管理 -->
+        <div class="col-md-4 mb-4">
+            <div class="card h-100 hover-card">
+                <div class="card-body text-center py-4">
+                    <div class="mb-3">
+                        <i class="fas fa-plug fa-3x text-primary"></i>
+                    </div>
+                    <h3 class="h4 card-title">连接与管理</h3>
+                    <p class="card-text">轻松管理大量设备，支持多种通信协议，可靠的认证与安全机制。</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 数据与分析 -->
+        <div class="col-md-4 mb-4">
+            <div class="card h-100 hover-card">
+                <div class="card-body text-center py-4">
+                    <div class="mb-3">
+                        <i class="fas fa-chart-line fa-3x text-primary"></i>
+                    </div>
+                    <h3 class="h4 card-title">数据与分析</h3>
+                    <p class="card-text">实时监控、数据可视化和趋势分析，助您深入了解设备状态和性能。</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 自动化策略 -->
+        <div class="col-md-4 mb-4">
+            <div class="card h-100 hover-card">
+                <div class="card-body text-center py-4">
+                    <div class="mb-3">
+                        <i class="fas fa-robot fa-3x text-primary"></i>
+                    </div>
+                    <h3 class="h4 card-title">自动化策略</h3>
+                    <p class="card-text">基于条件的自动化规则引擎，使您的设备能够智能响应各种事件。</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 主要功能列表 - 新布局 -->
+    <div class="mt-5">
+        <h2 class="text-center mb-4">强大的平台功能</h2>
+        <div class="row justify-content-center">
+            <div class="col-lg-2 col-md-4 col-sm-6 mb-3">
+                <div class="card h-100 hover-card">
+                    <div class="card-body text-center py-2 px-2">
+                        <div class="mb-2">
+                            <i class="fas fa-project-diagram fa-lg text-primary"></i>
+                        </div>
+                        <h3 class="h6 card-title mb-1">项目与设备管理</h3>
+                        <p class="card-text small mb-0">创建物联网项目，高效组织设备</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-lg-2 col-md-4 col-sm-6 mb-3">
+                <div class="card h-100 hover-card">
+                    <div class="card-body text-center py-2 px-2">
+                        <div class="mb-2">
+                            <i class="fas fa-database fa-lg text-primary"></i>
+                        </div>
+                        <h3 class="h6 card-title mb-1">数据采集存储</h3>
+                        <p class="card-text small mb-0">实时采集及存储传感器数据</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-lg-2 col-md-4 col-sm-6 mb-3">
+                <div class="card h-100 hover-card">
+                    <div class="card-body text-center py-2 px-2">
+                        <div class="mb-2">
+                            <i class="fas fa-chart-line fa-lg text-primary"></i>
+                        </div>
+                        <h3 class="h6 card-title mb-1">监控与可视化</h3>
+                        <p class="card-text small mb-0">直观图表展示实时数据</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-lg-2 col-md-4 col-sm-6 mb-3">
+                <div class="card h-100 hover-card">
+                    <div class="card-body text-center py-2 px-2">
+                        <div class="mb-2">
+                            <i class="fas fa-gamepad fa-lg text-primary"></i>
+                        </div>
+                        <h3 class="h6 card-title mb-1">设备控制</h3>
+                        <p class="card-text small mb-0">远程操作设备与自动化</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-lg-2 col-md-4 col-sm-6 mb-3">
+                <div class="card h-100 hover-card">
+                    <div class="card-body text-center py-2 px-2">
+                        <div class="mb-2">
+                            <i class="fas fa-user-shield fa-lg text-primary"></i>
+                        </div>
+                        <h3 class="h6 card-title mb-1">权限与安全</h3>
+                        <p class="card-text small mb-0">多级权限和安全通信</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-lg-2 col-md-4 col-sm-6 mb-3">
+                <div class="card h-100 hover-card">
+                    <div class="card-body text-center py-2 px-2">
+                        <div class="mb-2">
+                            <i class="fas fa-cogs fa-lg text-primary"></i>
+                        </div>
+                        <h3 class="h6 card-title mb-1">策略与审计</h3>
+                        <p class="card-text small mb-0">自动化规则与操作记录</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 适用场景 -->
+    <div class="mt-5">
+        <h2 class="text-center mb-4">适用场景</h2>
+        <div class="row">
+            <!-- 将适用场景从4列改为2列布局 -->
+            <div class="col-md-6 mb-4">
+                <div class="card h-100 hover-card">
+                    <div class="card-body text-center">
+                        <i class="fas fa-home fa-2x text-primary mb-3"></i>
+                        <h3 class="h5">智能家居</h3>
+                        <p class="small">连接家中各类智能设备，打造舒适安全的智能生活环境</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6 mb-4">
+                <div class="card h-100 hover-card">
+                    <div class="card-body text-center">
+                        <i class="fas fa-industry fa-2x text-primary mb-3"></i>
+                        <h3 class="h5">工业监控</h3>
+                        <p class="small">实时监测工业设备状态，预测性维护，提高生产效率</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6 mb-4">
+                <div class="card h-100 hover-card">
+                    <div class="card-body text-center">
+                        <i class="fas fa-seedling fa-2x text-primary mb-3"></i>
+                        <h3 class="h5">智慧农业</h3>
+                        <p class="small">监测土壤、水分、光照等参数，实现智能灌溉和环境控制</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6 mb-4">
+                <div class="card h-100 hover-card">
+                    <div class="card-body text-center">
+                        <i class="fas fa-city fa-2x text-primary mb-3"></i>
+                        <h3 class="h5">智慧城市</h3>
+                        <p class="small">连接城市基础设施，优化资源配置，提升市民生活品质</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+/* 确保在明暗模式下都有良好的显示效果 */
+.feature-list {
+    list-style-type: none;
+    padding-left: 0.5rem;
+}
+
+.feature-list li {
+    padding: 0.5rem 0;
+}
+
+/* 卡片浮动效果 */
+.hover-card {
+    transition: all 0.3s ease;
+    border: 1px solid var(--border-muted);
+}
+
+.hover-card:hover {
+    transform: translateY(-8px);
+    box-shadow: var(--shadow-md);
+    border-color: var(--border-focus);
+}
+
+/* 确保在暗色模式下也有良好效果 */
+html.theme-dark .hover-card:hover,
+html[data-theme='dark'] .hover-card:hover,
+body.dark-mode .hover-card:hover {
+    box-shadow: 0 8px 15px rgba(var(--color-primary-rgb), 0.3);
+}
+</style>
 {% endblock content %} 
