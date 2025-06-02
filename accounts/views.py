@@ -3,6 +3,7 @@ from django.contrib.auth import login, authenticate, logout
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.utils import timezone
+from django.contrib.auth.models import User
 
 from .forms import UserRegistrationForm, UserLoginForm, UserProfileEditForm, InvitationCodeCreateForm
 from .models import UserProfile, InvitationCode
@@ -27,6 +28,14 @@ def register_view(request):
         if form.is_valid():
             # 保存用户信息
             new_user = form.save()
+            
+            # 检查是否是第一个用户
+            if User.objects.all().count() == 1:
+                # 这是系统中的第一个用户，设置为超级管理员
+                new_user.is_staff = True
+                new_user.is_superuser = True
+                new_user.save(update_fields=['is_staff', 'is_superuser'])
+                messages.info(request, '恭喜您！作为系统的第一位用户，您已被自动设为超级管理员。')
             
             # 创建用户配置文件
             user_profile = UserProfile.objects.create(user=new_user)
