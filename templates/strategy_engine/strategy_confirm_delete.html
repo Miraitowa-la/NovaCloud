@@ -18,26 +18,62 @@
                         此操作将<span class="text-danger">永久删除</span>该策略及其所有条件和动作，且<span class="text-danger">无法恢复</span>。
                     </p>
                     
-                    <div class="alert alert-warning">
-                        <i class="fas fa-info-circle"></i> 如果您只是暂时不需要此策略，可以考虑通过编辑策略将其设为<strong>禁用</strong>状态，而不是彻底删除。
+                    <div class="card mb-3 border-0 shadow-sm">
+                        <div class="card-header bg-light border-bottom">
+                            <h6 class="mb-0">
+                                <i class="fas fa-info-circle text-primary mr-2"></i>策略详细信息
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="info-group mb-3">
+                                        <label class="text-muted mb-1">策略名称</label>
+                                        <h6>{{ strategy.name }}</h6>
+                                    </div>
+                                    <div class="info-group mb-3">
+                                        <label class="text-muted mb-1">所属项目</label>
+                                        <h6>{{ strategy.project.name }}</h6>
+                                    </div>
+                                    <div class="info-group mb-3">
+                                        <label class="text-muted mb-1">触发类型</label>
+                                        <h6>{{ strategy.get_trigger_type_display }}</h6>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="info-group mb-3">
+                                        <label class="text-muted mb-1">状态</label>
+                                        <h6>
+                                            {% if strategy.is_enabled %}
+                                                <span>已启用</span>
+                                            {% else %}
+                                                <span>已禁用</span>
+                                            {% endif %}
+                                        </h6>
+                                    </div>
+                                    <div class="info-group mb-3">
+                                        <label class="text-muted mb-1">创建时间</label>
+                                        <h6>{{ strategy.created_at|date:"Y-m-d H:i" }}</h6>
+                                    </div>
+                                    <div class="info-group mb-3">
+                                        <label class="text-muted mb-1">最后更新</label>
+                                        <h6>{{ strategy.updated_at|date:"Y-m-d H:i" }}</h6>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                     
-                    <div class="card mb-3">
-                        <div class="card-body">
-                            <h6>策略信息:</h6>
-                            <dl class="row mb-0">
-                                <dt class="col-sm-3">名称:</dt>
-                                <dd class="col-sm-9">{{ strategy.name }}</dd>
-                                
-                                <dt class="col-sm-3">所属项目:</dt>
-                                <dd class="col-sm-9">{{ strategy.project.name }}</dd>
-                                
-                                <dt class="col-sm-3">创建时间:</dt>
-                                <dd class="col-sm-9">{{ strategy.created_at|date:"Y-m-d H:i" }}</dd>
-                                
-                                <dt class="col-sm-3">最后更新:</dt>
-                                <dd class="col-sm-9">{{ strategy.updated_at|date:"Y-m-d H:i" }}</dd>
-                            </dl>
+                    <div class="alert alert-warning text-left">
+                        <div style="display:flex; align-items:flex-start;">
+                            <i class="fas fa-info-circle mt-1 mr-2"></i>
+                            <div>如果您只是暂时不需要此策略，可以考虑通过编辑策略将其
+                                <strong>禁用</strong>，而不是彻底删除。删除后相关的
+                                <strong>条件组</strong>、
+                                <strong>条件</strong>和
+                                <strong>动作</strong>
+                                将全部丢失。
+                            </div>
                         </div>
                     </div>
                     

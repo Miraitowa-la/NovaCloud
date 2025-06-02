@@ -7,28 +7,54 @@
     <div class="row justify-content-center">
         <div class="col-md-8">
             <div class="card shadow-sm">
-                <div class="card-header">
-                    <h4 class="card-title mb-0">确认删除传感器</h4>
+                <div class="card-header bg-danger text-white">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-exclamation-triangle"></i> 确认删除传感器
+                    </h5>
                 </div>
                 <div class="card-body">
-                    <div class="alert alert-danger">
-                        <i class="fas fa-exclamation-triangle"></i> 警告：此操作不可撤销！
+                    <p class="text-center mb-4">
+                        您确定要删除传感器 <strong>"{{ sensor.name }}"</strong> 吗？<br>
+                        此操作将<span class="text-danger">永久删除</span>传感器及其所有历史数据，且<span class="text-danger">无法恢复</span>。
+                    </p>
+                    
+                    <div class="card mb-3">
+                        <div class="card-body">
+                            <h6>传感器信息:</h6>
+                            <dl class="row mb-0">
+                                <dt class="col-sm-3">名称:</dt>
+                                <dd class="col-sm-9">{{ sensor.name }}</dd>
+                                
+                                <dt class="col-sm-3">所属设备:</dt>
+                                <dd class="col-sm-9">{{ device.name }}</dd>
+                                
+                                <dt class="col-sm-3">所属项目:</dt>
+                                <dd class="col-sm-9">{{ project.name }}</dd>
+                                
+                                <dt class="col-sm-3">传感器类型:</dt>
+                                <dd class="col-sm-9">{{ sensor.sensor_type }}</dd>
+                                
+                                <dt class="col-sm-3">测量单位:</dt>
+                                <dd class="col-sm-9">{{ sensor.unit }}</dd>
+                                
+                                <dt class="col-sm-3">数据键名:</dt>
+                                <dd class="col-sm-9"><code>{{ sensor.value_key }}</code></dd>
+                            </dl>
+                        </div>
                     </div>
                     
-                    <p>您确定要删除传感器 <strong>"{{ sensor.name }}"</strong> 吗？</p>
-                    <p>此操作将删除此传感器的所有历史数据记录，且不可恢复。</p>
-                    
-                    <div class="my-3">
-                        <h5>传感器信息：</h5>
-                        <ul>
-                            <li><strong>设备：</strong> {{ device.name }}</li>
-                            <li><strong>传感器类型：</strong> {{ sensor.sensor_type }}</li>
-                            <li><strong>测量单位：</strong> {{ sensor.unit }}</li>
-                            <li><strong>数据键名：</strong> {{ sensor.value_key }}</li>
-                        </ul>
+                    <div class="alert alert-warning text-left">
+                        <div style="display:flex; align-items:flex-start;">
+                            <i class="fas fa-info-circle mt-1 mr-2"></i>
+                            <div>删除操作将同时删除此传感器的
+                                <strong>全部历史数据记录</strong>，且基于此传感器的
+                                <strong>自动化策略</strong>
+                                可能会受到影响。
+                            </div>
+                        </div>
                     </div>
                     
-                    <form method="post">
+                    <form method="post" class="text-center">
                         {% csrf_token %}
                         <div class="d-flex mt-4">
                             <a href="{% url 'iot_devices:device_detail' project.project_id device.device_id %}" class="btn btn-secondary flex-grow-1">

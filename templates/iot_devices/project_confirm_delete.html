@@ -7,18 +7,68 @@
     <div class="row justify-content-center">
         <div class="col-md-8">
             <div class="card shadow-sm">
-                <div class="card-header">
-                    <h4 class="card-title mb-0">确认删除项目</h4>
+                <div class="card-header bg-danger text-white">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-exclamation-triangle"></i> 确认删除项目
+                    </h5>
                 </div>
                 <div class="card-body">
-                    <div class="alert alert-danger">
-                        <i class="fas fa-exclamation-triangle"></i> 警告：此操作不可撤销！
+                    <p class="text-center mb-4">
+                        您确定要删除项目 <strong>"{{ project.name }}"</strong> 吗？<br>
+                        此操作将<span class="text-danger">永久删除</span>项目及其所有关联数据，且<span class="text-danger">无法恢复</span>。
+                    </p>
+                    
+                    <div class="card mb-3 border-0 shadow-sm">
+                        <div class="card-header bg-light border-bottom">
+                            <h6 class="mb-0">
+                                <i class="fas fa-info-circle text-primary mr-2"></i>项目详细信息
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="info-group mb-3">
+                                        <label class="text-muted mb-1">项目名称</label>
+                                        <h6>{{ project.name }}</h6>
+                                    </div>
+                                    <div class="info-group mb-3">
+                                        <label class="text-muted mb-1">创建时间</label>
+                                        <h6>{{ project.created_at|date:"Y-m-d H:i" }}</h6>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="info-group mb-3">
+                                        <label class="text-muted mb-1">项目ID</label>
+                                        <h6><code class="bg-light px-2 py-1 rounded">{{ project.project_id }}</code></h6>
+                                    </div>
+                                    <div class="info-group mb-3">
+                                        <label class="text-muted mb-1">设备数量</label>
+                                        <h6>
+                                            {% if project.device_set.count > 0 %}
+                                            <span class="badge badge-info">{{ project.device_set.count }}</span> 个设备
+                                            {% else %}
+                                            <span class="badge badge-secondary">0</span> 个设备
+                                            {% endif %}
+                                        </h6>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                     
-                    <p>您确定要删除项目 <strong>"{{ project.name }}"</strong> 吗？</p>
-                    <p>此操作不可恢复，项目下的所有设备和数据也将被永久删除。</p>
+                    <div class="alert alert-warning text-left">
+                        <div style="display:flex; align-items:flex-start;">
+                            <i class="fas fa-info-circle mt-1 mr-2"></i>
+                            <div>删除操作将同时删除项目下的所有
+                                <strong>设备</strong>、
+                                <strong>传感器</strong>、
+                                <strong>执行器</strong>及其
+                                <strong>历史数据</strong>。
+                            </div>
+                        </div>
+                    </div>
                     
-                    <form method="post">
+                    <form method="post" class="text-center">
                         {% csrf_token %}
                         <div class="d-flex mt-4">
                             <a href="{% url 'iot_devices:project_list' %}" class="btn btn-secondary flex-grow-1">

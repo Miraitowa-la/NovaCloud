@@ -7,30 +7,56 @@
     <div class="row justify-content-center">
         <div class="col-md-8">
             <div class="card shadow-sm">
-                <div class="card-header">
-                    <h4 class="card-title mb-0">确认删除执行器</h4>
+                <div class="card-header bg-danger text-white">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-exclamation-triangle"></i> 确认删除执行器
+                    </h5>
                 </div>
                 <div class="card-body">
-                    <div class="alert alert-danger">
-                        <i class="fas fa-exclamation-triangle"></i> 警告：此操作不可撤销！
+                    <p class="text-center mb-4">
+                        您确定要删除执行器 <strong>"{{ actuator.name }}"</strong> 吗？<br>
+                        此操作将<span class="text-danger">永久删除</span>执行器及其所有命令历史记录，且<span class="text-danger">无法恢复</span>。
+                    </p>
+                    
+                    <div class="card mb-3">
+                        <div class="card-body">
+                            <h6>执行器信息:</h6>
+                            <dl class="row mb-0">
+                                <dt class="col-sm-3">名称:</dt>
+                                <dd class="col-sm-9">{{ actuator.name }}</dd>
+                                
+                                <dt class="col-sm-3">所属设备:</dt>
+                                <dd class="col-sm-9">{{ device.name }}</dd>
+                                
+                                <dt class="col-sm-3">所属项目:</dt>
+                                <dd class="col-sm-9">{{ project.name }}</dd>
+                                
+                                <dt class="col-sm-3">执行器类型:</dt>
+                                <dd class="col-sm-9">{{ actuator.actuator_type }}</dd>
+                                
+                                <dt class="col-sm-3">命令键名:</dt>
+                                <dd class="col-sm-9"><code>{{ actuator.command_key }}</code></dd>
+                                
+                                {% if actuator.current_state_payload %}
+                                <dt class="col-sm-3">当前状态:</dt>
+                                <dd class="col-sm-9"><code>{{ actuator.current_state_payload }}</code></dd>
+                                {% endif %}
+                            </dl>
+                        </div>
                     </div>
                     
-                    <p>您确定要删除执行器 <strong>"{{ actuator.name }}"</strong> 吗？</p>
-                    <p>此操作将删除此执行器的所有历史命令记录，且不可恢复。</p>
-                    
-                    <div class="my-3">
-                        <h5>执行器信息：</h5>
-                        <ul>
-                            <li><strong>设备：</strong> {{ device.name }}</li>
-                            <li><strong>执行器类型：</strong> {{ actuator.actuator_type }}</li>
-                            <li><strong>命令键名：</strong> {{ actuator.command_key }}</li>
-                            {% if actuator.current_state_payload %}
-                            <li><strong>当前状态：</strong> {{ actuator.current_state_payload }}</li>
-                            {% endif %}
-                        </ul>
+                    <div class="alert alert-warning text-left">
+                        <div style="display:flex; align-items:flex-start;">
+                            <i class="fas fa-info-circle mt-1 mr-2"></i>
+                            <div>删除操作将同时删除此执行器的
+                                <strong>所有命令历史记录</strong>，且基于此执行器的
+                                <strong>自动化策略</strong>
+                                可能会受到影响。
+                            </div>
+                        </div>
                     </div>
                     
-                    <form method="post">
+                    <form method="post" class="text-center">
                         {% csrf_token %}
                         <div class="d-flex mt-4">
                             <a href="{% url 'iot_devices:device_detail' project.project_id device.device_id %}" class="btn btn-secondary flex-grow-1">

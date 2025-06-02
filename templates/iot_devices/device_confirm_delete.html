@@ -7,18 +7,72 @@
     <div class="row justify-content-center">
         <div class="col-md-8">
             <div class="card shadow-sm">
-                <div class="card-header">
-                    <h4 class="card-title mb-0">确认删除设备</h4>
+                <div class="card-header bg-danger text-white">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-exclamation-triangle"></i> 确认删除设备
+                    </h5>
                 </div>
                 <div class="card-body">
-                    <div class="alert alert-danger">
-                        <i class="fas fa-exclamation-triangle"></i> 警告：此操作不可撤销！
+                    <p class="text-center mb-4">
+                        您确定要删除设备 <strong>"{{ device.name }}"</strong> 吗？<br>
+                        此操作将<span class="text-danger">永久删除</span>设备及其所有关联数据，且<span class="text-danger">无法恢复</span>。
+                    </p>
+                    
+                    <div class="card mb-3 border-0 shadow-sm">
+                        <div class="card-header bg-light border-bottom">
+                            <h6 class="mb-0">
+                                <i class="fas fa-info-circle text-primary mr-2"></i>设备详细信息
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="info-group mb-3">
+                                        <label class="text-muted mb-1">设备名称</label>
+                                        <h6>{{ device.name }}</h6>
+                                    </div>
+                                    <div class="info-group mb-3">
+                                        <label class="text-muted mb-1">所属项目</label>
+                                        <h6>{{ project.name }}</h6>
+                                    </div>
+                                    <div class="info-group mb-3">
+                                        <label class="text-muted mb-1">创建时间</label>
+                                        <h6>{{ device.created_at|date:"Y-m-d H:i" }}</h6>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="info-group mb-3">
+                                        <label class="text-muted mb-1">设备ID</label>
+                                        <h6><code class="bg-light px-2 py-1 rounded">{{ device.device_id }}</code></h6>
+                                    </div>
+                                    <div class="info-group mb-3">
+                                        <label class="text-muted mb-1">物理标识</label>
+                                        <h6><code class="bg-light px-2 py-1 rounded">{{ device.device_identifier }}</code></h6>
+                                    </div>
+                                    <div class="info-group mb-3">
+                                        <label class="text-muted mb-1">传感器/执行器</label>
+                                        <h6>
+                                            <span class="badge badge-info">{{ device.sensors.count }}</span> 个传感器 &nbsp;|&nbsp;
+                                            <span class="badge badge-info">{{ device.actuators.count }}</span> 个执行器
+                                        </h6>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                     
-                    <p>您确定要删除设备 <strong>"{{ device.name }}"</strong> 吗？</p>
-                    <p>此操作不可恢复，设备下的所有传感器、执行器和历史数据也将被永久删除。</p>
+                    <div class="alert alert-warning text-left">
+                        <div style="display:flex; align-items:flex-start;">
+                            <i class="fas fa-info-circle mt-1 mr-2"></i>
+                            <div>删除操作将同时删除设备下的所有
+                                <strong>传感器</strong>、
+                                <strong>执行器</strong>及其
+                                <strong>历史数据</strong>。
+                            </div>
+                        </div>
+                    </div>
                     
-                    <form method="post">
+                    <form method="post" class="text-center">
                         {% csrf_token %}
                         <div class="d-flex mt-4">
                             <a href="{% url 'iot_devices:device_list' project.project_id %}" class="btn btn-secondary flex-grow-1">
