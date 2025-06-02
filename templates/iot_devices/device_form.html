@@ -1,7 +1,7 @@
 {% extends 'base.html' %}
 
 {% block title %}
-    {% if form.instance.pk %}编辑设备：{{ form.instance.name }}{% else %}添加新设备{% endif %} - {{ project.name }} - NovaCloud
+    {% if device %}编辑设备：{{ device.name }}{% else %}添加新设备{% endif %} - {{ project.name }} - NovaCloud
 {% endblock %}
 
 {% block content %}
@@ -11,7 +11,7 @@
             <div class="card shadow-sm">
                 <div class="card-header">
                     <h4 class="card-title mb-0">
-                        {% if form.instance.pk %}编辑设备：{{ form.instance.name }}{% else %}添加新设备{% endif %}
+                        {% if device %}编辑设备：{{ device.name }}{% else %}添加新设备{% endif %}
                     </h4>
                 </div>
                 <div class="card-body">
@@ -51,13 +51,14 @@
                             <div class="form-text text-muted">设备物理标识（如MAC地址、序列号等）在项目中必须唯一。可留空由系统自动生成。</div>
                         </div>
                         
-                        <div class="d-flex justify-content-between mt-4">
-                            <a href="{% url 'iot_devices:device_list' project.project_id %}" class="btn btn-secondary">
+                        <div class="d-flex mt-4">
+                            <a href="{% url 'iot_devices:device_list' project.project_id %}" class="btn btn-secondary flex-grow-1">
                                 <i class="fas fa-arrow-left"></i> 返回
                             </a>
-                            <button type="submit" class="btn btn-primary">
+                            <div style="width: 15px;"></div>
+                            <button type="submit" class="btn btn-primary flex-grow-1">
                                 <i class="fas fa-save"></i> 
-                                {% if form.instance.pk %}保存修改{% else %}创建设备{% endif %}
+                                {% if device %}保存修改{% else %}创建设备{% endif %}
                             </button>
                         </div>
                     </form>

@@ -47,7 +47,7 @@ def project_create_view(request):
     else:
         form = ProjectForm()
     
-    return render(request, 'iot_devices/project_form.html', {'form': form})
+    return render(request, 'iot_devices/project_form.html', {'form': form, 'project': None})
 
 @login_required
 def project_update_view(request, project_id):
@@ -63,7 +63,7 @@ def project_update_view(request, project_id):
     else:
         form = ProjectForm(instance=project)
     
-    return render(request, 'iot_devices/project_form.html', {'form': form})
+    return render(request, 'iot_devices/project_form.html', {'form': form, 'project': project})
 
 @login_required
 def project_delete_view(request, project_id):
@@ -108,7 +108,7 @@ def device_create_view(request, project_id):
             if device_identifier:
                 if Device.objects.filter(project=project, device_identifier=device_identifier).exists():
                     form.add_error('device_identifier', '此设备物理ID在该项目下已存在。')
-                    return render(request, 'iot_devices/device_form.html', {'form': form, 'project': project})
+                    return render(request, 'iot_devices/device_form.html', {'form': form, 'project': project, 'device': None})
             
             device.project = project
             device.save()
@@ -117,7 +117,7 @@ def device_create_view(request, project_id):
     else:
         form = DeviceForm()
     
-    return render(request, 'iot_devices/device_form.html', {'form': form, 'project': project})
+    return render(request, 'iot_devices/device_form.html', {'form': form, 'project': project, 'device': None})
 
 @login_required
 def device_update_view(request, project_id, device_id):

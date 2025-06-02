@@ -1039,6 +1039,25 @@ select.form-control {
     transition: box-shadow 0.2s ease-in-out;
 }
 
+/* 卡片悬浮效果 */
+.hover-card {
+    transition: all 0.3s ease;
+    border: 1px solid var(--border-muted);
+}
+
+.hover-card:hover {
+    transform: translateY(-8px);
+    box-shadow: var(--shadow-md);
+    border-color: var(--border-focus);
+}
+
+/* 确保在暗色模式下也有良好效果 */
+html.theme-dark .hover-card:hover,
+html[data-theme='dark'] .hover-card:hover,
+body.dark-mode .hover-card:hover {
+    box-shadow: 0 8px 15px rgba(var(--color-primary-rgb), 0.3);
+}
+
 .card-header {
     padding: 1rem 1.25rem;
     margin-bottom: 0;
