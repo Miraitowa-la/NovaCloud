@@ -136,25 +136,18 @@
         </div>
         <div class="card-body">
             <div class="row">
-                <div class="col-md-4">
+                <div class="col-md-6">
                     <div class="device-info mb-3">
-                        <h5 class="text-muted">设备名称</h5>
-                        <p class="lead">{{ device.name }}</p>
-                    </div>
-                </div>
-
-                <div class="col-md-4">
-                    <div class="device-info mb-3">
-                        <h5 class="text-muted">设备物理标识</h5>
+                        <h5 class="text-muted">设备名称/设备物理标识</h5>
                         {% if device.device_identifier %}
-                            <p>{{ device.device_identifier }}</p>
+                            <p>{{ device.name }}/{{ device.device_identifier }}</p>
                         {% else %}
-                            <p>{{ "无设备物理标识" }}</p>
+                            <p>{{ device.name }}/{{ "无设备物理标识" }}</p>
                         {% endif %}
                     </div>
                 </div>
 
-                <div class="col-md-4">
+                <div class="col-md-6">
                     <div class="device-info mb-3">
                         <h5 class="text-muted">状态</h5>
                         <p>
