@@ -4,38 +4,54 @@
 
 {% block extra_head_css %}
 <style>
-    /* 条件组样式 */
+    /* 基础组件样式 */
     .condition-group {
         background-color: var(--background-muted);
         border-radius: var(--border-radius-lg);
         padding: 1.5rem;
         margin-bottom: 1.5rem;
         border: 2px solid var(--border-color);
+        position: relative;
     }
     
-    /* 条件样式 */
     .condition {
         background-color: var(--background-default);
         border-radius: var(--border-radius-md);
         padding: 1rem;
         margin-bottom: 1rem;
         border: 1px solid var(--border-color);
+        position: relative;
     }
     
-    /* 动态显示/隐藏字段 */
-    .field-container {
-        margin-bottom: 0.75rem;
+    .action-card {
+        background-color: var(--background-muted);
+        border-radius: var(--border-radius-lg);
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+        border: 2px solid var(--border-color);
+        position: relative;
     }
     
-    /* 表单错误消息 */
-    .error-text {
-        color: var(--color-danger);
+    /* 头部和操作区 */
+    .component-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1rem;
+    }
+    
+    /* 逻辑运算符标签 */
+    .logic-operator-badge {
+        font-weight: 600;
+        padding: 0.25rem 0.75rem;
+        background-color: var(--color-primary);
+        color: var(--text-on-primary);
+        border-radius: var(--border-radius-sm);
         font-size: 0.875rem;
-        margin-top: 0.25rem;
     }
     
     /* 添加按钮样式 */
-    .btn-add-item {
+    .btn-add {
         display: flex;
         align-items: center;
         justify-content: center;
@@ -49,62 +65,136 @@
         transition: all 0.2s;
     }
     
-    .btn-add-item:hover {
+    .btn-add:hover {
         background-color: var(--background-active);
         color: var(--text-default);
     }
     
-    /* 删除按钮样式 */
-    .btn-remove {
-        color: var(--color-danger);
+    /* 为添加条件按钮增加特殊样式 */
+    .add-condition {
+        margin: 0;
+        width: 100%;
+        border: 1px dashed var(--border-color);
+        background-color: var(--background-default);
     }
     
-    .condition-header, .condition-group-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
+    /* 表单字段容器 */
+    .field-group {
         margin-bottom: 1rem;
-    }
-    
-    /* 逻辑运算符标签 */
-    .logic-operator-label {
-        font-weight: 600;
-        padding: 0.25rem 0.75rem;
-        background-color: var(--color-primary);
-        color: var(--text-on-primary);
-        border-radius: var(--border-radius-sm);
-        font-size: 0.875rem;
-    }
-    
-    /* 动作样式 */
-    .action {
-        margin-bottom: 1.5rem;
-    }
-    
-    .action-body {
         transition: all 0.3s ease;
     }
     
-    /* 动态显示/隐藏动作字段组 */
-    .action-field-group {
+    /* 隐藏的表单组 */
+    .hidden-field-group {
         display: none;
-        padding: 1.5rem;
-        margin-top: 1rem;
-        background-color: var(--background-muted);
-        border: 2px solid var(--border-color);
-        border-radius: var(--border-radius-lg);
-        box-shadow: var(--shadow-sm);
-    }
-    
-    .action-field-group h6 {
-        color: var(--color-primary);
-        font-weight: 600;
     }
     
     /* 代码编辑器样式 */
     .code-editor {
         font-family: monospace;
         font-size: 0.9rem;
+        background-color: var(--background-muted);
+        color: var(--text-default);
+    }
+    
+    /* 错误提示 */
+    .error-message {
+        color: var(--color-danger);
+        font-size: 0.875rem;
+        margin-top: 0.25rem;
+    }
+    
+    /* 暗模式下删除按钮样式优化 */
+    html[data-theme='dark'] .btn-outline-danger,
+    body.dark-mode .btn-outline-danger {
+        color: #adb5bd; /* 柔和的灰白色 */
+        border-color: #adb5bd;
+    }
+    
+    html[data-theme='dark'] .btn-outline-danger:hover,
+    body.dark-mode .btn-outline-danger:hover {
+        background-color: rgba(173, 181, 189, 0.2); /* 半透明背景 */
+        color: #ced4da; /* 悬停时稍微亮一点 */
+        border-color: #ced4da;
+    }
+    
+    /* Toast通知样式 */
+    .toast-container {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        z-index: 9999;
+    }
+    
+    .toast {
+        background-color: var(--background-default);
+        color: var(--text-default);
+        border-left: 4px solid var(--color-primary);
+        border-radius: var(--border-radius-md);
+        box-shadow: var(--shadow-md);
+        padding: 12px 20px;
+        margin-bottom: 10px;
+        min-width: 250px;
+        max-width: 350px;
+        opacity: 0;
+        transform: translateX(100%);
+        transition: all 0.3s ease-in-out;
+    }
+    
+    .toast.show {
+        opacity: 1;
+        transform: translateX(0);
+    }
+    
+    .toast.success {
+        border-left-color: var(--color-success);
+    }
+    
+    .toast.error {
+        border-left-color: var(--color-danger);
+    }
+    
+    .toast.warning {
+        border-left-color: var(--color-warning);
+    }
+    
+    .toast.info {
+        border-left-color: var(--color-info);
+    }
+    
+    /* 加载动画 */
+    .loading-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 9999;
+        opacity: 0;
+        visibility: hidden;
+        transition: all 0.3s;
+    }
+    
+    .loading-overlay.show {
+        opacity: 1;
+        visibility: visible;
+    }
+    
+    .spinner {
+        width: 50px;
+        height: 50px;
+        border: 5px solid var(--background-muted);
+        border-top-color: var(--color-primary);
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+    }
+    
+    @keyframes spin {
+        to { transform: rotate(360deg); }
     }
 </style>
 {% endblock %}
@@ -115,22 +205,19 @@
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h2>配置策略：{{ strategy.name }}</h2>
         <div>
-            <a href="{% url 'strategy_engine:execution_log_list' %}?strategy_id={{ strategy.id }}" class="btn btn-outline-primary btn-sm me-2">
+            <a href="{% url 'strategy_engine:execution_log_list' %}?strategy_id={{ strategy.id }}" class="btn btn-outline-primary">
                 <i class="fas fa-clipboard-list"></i> 查看此策略的执行日志
-            </a>
-            <a href="{% url 'strategy_engine:strategy_update' strategy.id %}" class="btn btn-outline-secondary btn-sm me-2">
-                <i class="fas fa-edit"></i> 编辑基本信息
-            </a>
-            <a href="{% url 'strategy_engine:strategy_list' %}" class="btn btn-secondary btn-sm">
-                <i class="fas fa-arrow-left"></i> 返回策略列表
             </a>
         </div>
     </div>
     
     <!-- 策略基本信息卡片 -->
     <div class="card mb-4 shadow-sm">
-        <div class="card-header">
+        <div class="card-header d-flex justify-content-between align-items-center">
             <h4 class="card-title mb-0">策略信息</h4>
+            <a href="{% url 'strategy_engine:strategy_update' strategy.id %}" class="btn btn-outline-secondary">
+                <i class="fas fa-edit"></i> 编辑基本信息
+            </a>
         </div>
         <div class="card-body">
             <div class="row">
@@ -168,7 +255,8 @@
         </div>
     </div>
     
-    <form method="post">
+    <!-- 主表单 -->
+    <form method="post" id="strategyConfigForm">
         {% csrf_token %}
         
         <!-- 条件配置卡片 -->
@@ -179,40 +267,33 @@
             <div class="card-body">
                 <p class="mb-4">配置触发此策略的条件。您可以添加多个条件组，每个条件组内可以有多个条件。</p>
                 
-                <!-- 管理表单，用于处理表单集 -->
+                <!-- 条件组表单集 -->
+                <div id="conditionGroupsContainer">
                 {{ condition_group_formset.management_form }}
                 
-                <!-- 条件组列表 -->
                 {% for group_form in condition_group_formset %}
-                    <div class="condition-group" id="group-{{ forloop.counter0 }}">
-                        <!-- 条件组隐藏字段 -->
+                    <div class="condition-group" id="group-{{ forloop.counter0 }}" data-group-id="{{ forloop.counter0 }}">
                         {% for hidden_field in group_form.hidden_fields %}
                             {{ hidden_field }}
                         {% endfor %}
                         
-                        <!-- 条件组头部 -->
-                        <div class="condition-group-header">
+                        <div class="component-header">
                             <h5 class="mb-0">条件组 {{ forloop.counter }}</h5>
-                            <div class="form-check">
-                                {{ group_form.DELETE }}
-                                <label class="form-check-label text-danger" for="{{ group_form.DELETE.id_for_label }}">
-                                    删除此条件组
-                                </label>
-                            </div>
+                            <button type="button" class="btn btn-outline-danger delete-group" data-group-id="{{ forloop.counter0 }}">
+                                <i class="fas fa-trash"></i> 删除条件组
+                            </button>
+                            {{ group_form.DELETE.as_hidden }}
                         </div>
                         
                         <div class="row mb-3">
-                            <!-- 逻辑运算符 -->
                             <div class="col-md-6 mb-3">
                                 <label for="{{ group_form.logical_operator.id_for_label }}" class="form-label">
                                     逻辑运算符
                                 </label>
                                 {{ group_form.logical_operator }}
-                                <div class="form-text text-muted">
-                                    此组内多个条件之间的关系：全部满足(AND) 或 任一满足(OR)
-                                </div>
+                                <div class="form-text text-muted">此组内条件的关系：全部满足(AND) 或 任一满足(OR)</div>
                                 {% if group_form.logical_operator.errors %}
-                                    <div class="error-text">
+                                <div class="error-message">
                                         {% for error in group_form.logical_operator.errors %}
                                             {{ error }}
                                         {% endfor %}
@@ -220,17 +301,14 @@
                                 {% endif %}
                             </div>
                             
-                            <!-- 执行顺序 -->
                             <div class="col-md-6 mb-3">
                                 <label for="{{ group_form.execution_order.id_for_label }}" class="form-label">
                                     执行顺序
                                 </label>
                                 {{ group_form.execution_order }}
-                                <div class="form-text text-muted">
-                                    多个条件组的评估顺序，数字越小越先评估
-                                </div>
+                                <div class="form-text text-muted">多个条件组的评估顺序，数字越小越先评估</div>
                                 {% if group_form.execution_order.errors %}
-                                    <div class="error-text">
+                                <div class="error-message">
                                         {% for error in group_form.execution_order.errors %}
                                             {{ error }}
                                         {% endfor %}
@@ -241,39 +319,30 @@
                         
                         <!-- 条件表单集 -->
                         <div class="conditions-container">
-                            <!-- 条件表单集管理表单 -->
                             {{ group_form.nested_condition_formset.management_form }}
                             
                             <h6 class="mb-3">条件列表：</h6>
                             
-                            <!-- 条件列表 -->
                             {% for condition_form in group_form.nested_condition_formset %}
-                                <div class="condition" id="condition-{{ forloop.parentloop.counter0 }}-{{ forloop.counter0 }}">
-                                    <!-- 条件隐藏字段 -->
+                            <div class="condition" id="condition-{{ forloop.parentloop.counter0 }}-{{ forloop.counter0 }}" data-group-id="{{ forloop.parentloop.counter0 }}" data-condition-id="{{ forloop.counter0 }}">
                                     {% for hidden_field in condition_form.hidden_fields %}
                                         {{ hidden_field }}
                                     {% endfor %}
                                     
-                                    <!-- 条件头部 -->
-                                    <div class="condition-header">
+                                <div class="component-header">
                                         <h6 class="mb-0">条件 {{ forloop.counter }}</h6>
-                                        <div class="form-check">
-                                            {{ condition_form.DELETE }}
-                                            <label class="form-check-label text-danger" for="{{ condition_form.DELETE.id_for_label }}">
-                                                删除此条件
-                                            </label>
-                                        </div>
+                                    <button type="button" class="btn btn-outline-danger delete-condition" data-group-id="{{ forloop.parentloop.counter0 }}" data-condition-id="{{ forloop.counter0 }}">
+                                        <i class="fas fa-trash"></i> 删除条件
+                                    </button>
+                                    {{ condition_form.DELETE.as_hidden }}
                                     </div>
                                     
-                                    <!-- 数据源类型 -->
-                                    <div class="row mb-3">
-                                        <div class="col-12">
-                                            <label for="{{ condition_form.data_source_type.id_for_label }}" class="form-label">
-                                                数据源类型
-                                            </label>
+                                <div class="row">
+                                    <div class="col-12 mb-3">
+                                        <label for="{{ condition_form.data_source_type.id_for_label }}" class="form-label">数据源类型</label>
                                             {{ condition_form.data_source_type }}
                                             {% if condition_form.data_source_type.errors %}
-                                                <div class="error-text">
+                                        <div class="error-message">
                                                     {% for error in condition_form.data_source_type.errors %}
                                                         {{ error }}
                                                     {% endfor %}
@@ -282,46 +351,45 @@
                                         </div>
                                     </div>
                                     
-                                    <!-- 数据源字段 - 会根据data_source_type动态显示/隐藏 -->
-                                    <div class="row mb-3">
-                                        <!-- 传感器选择字段 -->
-                                        <div class="col-md-6 field-container data-source-field" data-source-type="sensor">
-                                            <label for="{{ condition_form.sensor.id_for_label }}" class="form-label">
-                                                传感器
-                                            </label>
+                                <!-- 数据源相关字段组 -->
+                                <div class="field-group source-sensor-fields" data-source-type="sensor">
+                                    <div class="row">
+                                        <div class="col-md-12 mb-3">
+                                            <label for="{{ condition_form.sensor.id_for_label }}" class="form-label">传感器</label>
                                             {{ condition_form.sensor }}
                                             {% if condition_form.sensor.errors %}
-                                                <div class="error-text">
+                                            <div class="error-message">
                                                     {% for error in condition_form.sensor.errors %}
                                                         {{ error }}
                                                     {% endfor %}
                                                 </div>
                                             {% endif %}
                                         </div>
+                                    </div>
+                                        </div>
                                         
-                                        <!-- 设备属性字段 -->
-                                        <div class="col-md-6 field-container data-source-field" data-source-type="device_attribute">
-                                            <label for="{{ condition_form.device_attribute.id_for_label }}" class="form-label">
-                                                设备属性
-                                            </label>
+                                <div class="field-group source-device-fields hidden-field-group" data-source-type="device_attribute">
+                                    <div class="row">
+                                        <div class="col-md-12 mb-3">
+                                            <label for="{{ condition_form.device_attribute.id_for_label }}" class="form-label">设备属性</label>
                                             {{ condition_form.device_attribute }}
                                             {% if condition_form.device_attribute.errors %}
-                                                <div class="error-text">
+                                            <div class="error-message">
                                                     {% for error in condition_form.device_attribute.errors %}
                                                         {{ error }}
                                                     {% endfor %}
                                                 </div>
                                             {% endif %}
                                         </div>
+                                    </div>
+                                        </div>
                                         
-                                        <!-- 比较运算符 -->
-                                        <div class="col-md-6 mt-3">
-                                            <label for="{{ condition_form.operator.id_for_label }}" class="form-label">
-                                                比较运算符
-                                            </label>
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label for="{{ condition_form.operator.id_for_label }}" class="form-label">比较运算符</label>
                                             {{ condition_form.operator }}
                                             {% if condition_form.operator.errors %}
-                                                <div class="error-text">
+                                        <div class="error-message">
                                                     {% for error in condition_form.operator.errors %}
                                                         {{ error }}
                                                     {% endfor %}
@@ -329,14 +397,11 @@
                                             {% endif %}
                                         </div>
                                         
-                                        <!-- 阈值类型 -->
-                                        <div class="col-md-6 mt-3">
-                                            <label for="{{ condition_form.threshold_value_type.id_for_label }}" class="form-label">
-                                                阈值类型
-                                            </label>
+                                    <div class="col-md-6 mb-3">
+                                        <label for="{{ condition_form.threshold_value_type.id_for_label }}" class="form-label">阈值类型</label>
                                             {{ condition_form.threshold_value_type }}
                                             {% if condition_form.threshold_value_type.errors %}
-                                                <div class="error-text">
+                                        <div class="error-message">
                                                     {% for error in condition_form.threshold_value_type.errors %}
                                                         {{ error }}
                                                     {% endfor %}
@@ -345,66 +410,66 @@
                                         </div>
                                     </div>
                                     
-                                    <!-- 阈值字段 - 会根据threshold_value_type动态显示/隐藏 -->
+                                <!-- 阈值相关字段组 -->
+                                <div class="field-group threshold-static-fields" data-threshold-type="static">
                                     <div class="row">
-                                        <!-- 静态阈值 -->
-                                        <div class="col-md-12 field-container threshold-field" data-threshold-type="static">
-                                            <label for="{{ condition_form.threshold_value_static.id_for_label }}" class="form-label">
-                                                静态阈值
-                                            </label>
+                                        <div class="col-md-12 mb-3">
+                                            <label for="{{ condition_form.threshold_value_static.id_for_label }}" class="form-label">静态阈值</label>
                                             {{ condition_form.threshold_value_static }}
                                             {% if condition_form.threshold_value_static.errors %}
-                                                <div class="error-text">
+                                            <div class="error-message">
                                                     {% for error in condition_form.threshold_value_static.errors %}
                                                         {{ error }}
                                                     {% endfor %}
                                                 </div>
                                             {% endif %}
                                         </div>
+                                    </div>
+                                        </div>
                                         
-                                        <!-- 传感器阈值 -->
-                                        <div class="col-md-12 field-container threshold-field" data-threshold-type="sensor_value">
-                                            <label for="{{ condition_form.threshold_value_sensor.id_for_label }}" class="form-label">
-                                                对比传感器
-                                            </label>
+                                <div class="field-group threshold-sensor-fields hidden-field-group" data-threshold-type="sensor_value">
+                                    <div class="row">
+                                        <div class="col-md-12 mb-3">
+                                            <label for="{{ condition_form.threshold_value_sensor.id_for_label }}" class="form-label">对比传感器</label>
                                             {{ condition_form.threshold_value_sensor }}
                                             {% if condition_form.threshold_value_sensor.errors %}
-                                                <div class="error-text">
+                                            <div class="error-message">
                                                     {% for error in condition_form.threshold_value_sensor.errors %}
                                                         {{ error }}
                                                     {% endfor %}
                                                 </div>
                                             {% endif %}
                                         </div>
+                                    </div>
+                                        </div>
                                         
-                                        <!-- 设备属性阈值 -->
-                                        <div class="col-md-12 field-container threshold-field" data-threshold-type="device_attribute_value">
-                                            <label for="{{ condition_form.threshold_value_device_attribute.id_for_label }}" class="form-label">
-                                                对比设备属性
-                                            </label>
+                                <div class="field-group threshold-device-fields hidden-field-group" data-threshold-type="device_attribute_value">
+                                    <div class="row">
+                                        <div class="col-md-12 mb-3">
+                                            <label for="{{ condition_form.threshold_value_device_attribute.id_for_label }}" class="form-label">对比设备属性</label>
                                             {{ condition_form.threshold_value_device_attribute }}
                                             {% if condition_form.threshold_value_device_attribute.errors %}
-                                                <div class="error-text">
+                                            <div class="error-message">
                                                     {% for error in condition_form.threshold_value_device_attribute.errors %}
                                                         {{ error }}
                                                     {% endfor %}
                                                 </div>
                                             {% endif %}
                                         </div>
+                                        </div>
                                     </div>
                                 </div>
                             {% endfor %}
                             
-                            <!-- 添加条件按钮 -->
-                            <button type="button" class="btn-add-item add-condition" data-group-id="{{ forloop.counter0 }}">
+                            <button type="button" class="btn-add add-condition" data-group-id="{{ forloop.counter0 }}">
                                 <i class="fas fa-plus me-2"></i> 添加条件
                             </button>
                         </div>
                     </div>
                 {% endfor %}
+                </div>
                 
-                <!-- 添加条件组按钮 -->
-                <button type="button" class="btn-add-item add-condition-group">
+                <button type="button" class="btn-add add-group">
                     <i class="fas fa-plus-circle me-2"></i> 添加条件组
                 </button>
             </div>
@@ -418,42 +483,31 @@
             <div class="card-body">
                 <p class="mb-4">配置当条件满足时要执行的动作。您可以添加多个动作，并设置它们的执行顺序。</p>
                 
-                <!-- 动作管理表单，用于处理动作表单集 -->
+                <!-- 动作表单集 -->
+                <div id="actionsContainer">
                 {{ action_formset.management_form }}
                 
-                <!-- 动作列表 -->
                 {% for action_form in action_formset %}
-                    <div class="action" id="action-{{ forloop.counter0 }}">
-                        <!-- 动作隐藏字段 -->
+                    <div class="action-card" id="action-{{ forloop.counter0 }}" data-action-id="{{ forloop.counter0 }}">
                         {% for hidden_field in action_form.hidden_fields %}
                             {{ hidden_field }}
                         {% endfor %}
                         
-                        <!-- 动作主体内容 -->
-                        <div class="action-body bg-light p-4 mb-4 rounded border">
-                            <!-- 动作头部 -->
-                            <div class="action-header d-flex justify-content-between align-items-center mb-3">
+                        <div class="component-header">
                                 <h5 class="mb-0">动作 {{ forloop.counter }}</h5>
-                                <div class="form-check">
-                                    {{ action_form.DELETE }}
-                                    <label class="form-check-label text-danger" for="{{ action_form.DELETE.id_for_label }}">
-                                        删除此动作
-                                    </label>
-                                </div>
+                            <button type="button" class="btn btn-outline-danger delete-action" data-action-id="{{ forloop.counter0 }}">
+                                <i class="fas fa-trash"></i> 删除动作
+                            </button>
+                            {{ action_form.DELETE.as_hidden }}
                             </div>
                             
                             <div class="row mb-3">
-                                <!-- 动作类型 -->
                                 <div class="col-md-6 mb-3">
-                                    <label for="{{ action_form.action_type.id_for_label }}" class="form-label">
-                                        动作类型
-                                    </label>
+                                <label for="{{ action_form.action_type.id_for_label }}" class="form-label">动作类型</label>
                                     {{ action_form.action_type }}
-                                    <div class="form-text text-muted">
-                                        选择要执行的动作类型
-                                    </div>
+                                <div class="form-text text-muted">选择要执行的动作类型</div>
                                     {% if action_form.action_type.errors %}
-                                        <div class="error-text">
+                                <div class="error-message">
                                             {% for error in action_form.action_type.errors %}
                                                 {{ error }}
                                             {% endfor %}
@@ -461,17 +515,12 @@
                                     {% endif %}
                                 </div>
                                 
-                                <!-- 执行顺序 -->
                                 <div class="col-md-6 mb-3">
-                                    <label for="{{ action_form.execution_order.id_for_label }}" class="form-label">
-                                        执行顺序
-                                    </label>
+                                <label for="{{ action_form.execution_order.id_for_label }}" class="form-label">执行顺序</label>
                                     {{ action_form.execution_order }}
-                                    <div class="form-text text-muted">
-                                        多个动作的执行顺序，数字越小越先执行
-                                    </div>
+                                <div class="form-text text-muted">多个动作的执行顺序，数字越小越先执行</div>
                                     {% if action_form.execution_order.errors %}
-                                        <div class="error-text">
+                                <div class="error-message">
                                             {% for error in action_form.execution_order.errors %}
                                                 {{ error }}
                                             {% endfor %}
@@ -481,61 +530,51 @@
                             </div>
                             
                             <!-- 控制执行器相关字段组 -->
-                            <div class="action-fields action-field-group" data-action-type="control_actuator">
+                        <div class="field-group action-actuator-fields" data-action-type="control_actuator">
                                 <h6 class="mb-3">执行器控制参数</h6>
                                 
-                                <!-- 目标执行器 -->
-                                <div class="mb-3">
-                                    <label for="{{ action_form.target_actuator.id_for_label }}" class="form-label">
-                                        目标执行器
-                                    </label>
+                            <div class="row">
+                                <div class="col-md-12 mb-3">
+                                    <label for="{{ action_form.target_actuator.id_for_label }}" class="form-label">目标执行器</label>
                                     {{ action_form.target_actuator }}
-                                    <div class="form-text text-muted">
-                                        选择要控制的执行器
-                                    </div>
+                                    <div class="form-text text-muted">选择要控制的执行器</div>
                                     {% if action_form.target_actuator.errors %}
-                                        <div class="error-text">
+                                    <div class="error-message">
                                             {% for error in action_form.target_actuator.errors %}
                                                 {{ error }}
                                             {% endfor %}
                                         </div>
                                     {% endif %}
                                 </div>
+                                </div>
                                 
-                                <!-- 命令内容模板 -->
-                                <div class="mb-3">
-                                    <label for="{{ action_form.command_payload_template.id_for_label }}" class="form-label">
-                                        命令内容模板 (JSON)
-                                    </label>
+                            <div class="row">
+                                <div class="col-md-12 mb-3">
+                                    <label for="{{ action_form.command_payload_template.id_for_label }}" class="form-label">命令内容模板 (JSON)</label>
                                     {{ action_form.command_payload_template }}
-                                    <div class="form-text text-muted">
-                                        JSON格式的命令内容，可以使用模板变量如 {% templatetag openvariable %}sensor.value{% templatetag closevariable %}
-                                    </div>
+                                    <div class="form-text text-muted">JSON格式的命令内容，可以使用模板变量如 {% templatetag openvariable %}sensor.value{% templatetag closevariable %}</div>
                                     {% if action_form.command_payload_template.errors %}
-                                        <div class="error-text">
+                                    <div class="error-message">
                                             {% for error in action_form.command_payload_template.errors %}
                                                 {{ error }}
                                             {% endfor %}
                                         </div>
                                     {% endif %}
                                 </div>
+                                </div>
                             </div>
                             
                             <!-- 发送通知相关字段组 -->
-                            <div class="action-fields action-field-group" data-action-type="send_notification">
+                        <div class="field-group action-notification-fields hidden-field-group" data-action-type="send_notification">
                                 <h6 class="mb-3">通知参数</h6>
                                 
-                                <!-- 接收者类型 -->
-                                <div class="mb-3">
-                                    <label for="{{ action_form.notification_recipient_type.id_for_label }}" class="form-label">
-                                        接收者类型
-                                    </label>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="{{ action_form.notification_recipient_type.id_for_label }}" class="form-label">接收者类型</label>
                                     {{ action_form.notification_recipient_type }}
-                                    <div class="form-text text-muted">
-                                        选择通知的接收者类型
-                                    </div>
+                                    <div class="form-text text-muted">选择通知的接收者类型</div>
                                     {% if action_form.notification_recipient_type.errors %}
-                                        <div class="error-text">
+                                    <div class="error-message">
                                             {% for error in action_form.notification_recipient_type.errors %}
                                                 {{ error }}
                                             {% endfor %}
@@ -543,58 +582,47 @@
                                     {% endif %}
                                 </div>
                                 
-                                <!-- 接收者值 -->
-                                <div class="mb-3">
-                                    <label for="{{ action_form.notification_recipient_value.id_for_label }}" class="form-label">
-                                        接收者值
-                                    </label>
+                                <div class="col-md-6 mb-3">
+                                    <label for="{{ action_form.notification_recipient_value.id_for_label }}" class="form-label">接收者值</label>
                                     {{ action_form.notification_recipient_value }}
-                                    <div class="form-text text-muted">
-                                        接收者的值，如邮箱地址、电话号码等
-                                    </div>
+                                    <div class="form-text text-muted">接收者的值，如邮箱地址、电话号码等</div>
                                     {% if action_form.notification_recipient_value.errors %}
-                                        <div class="error-text">
+                                    <div class="error-message">
                                             {% for error in action_form.notification_recipient_value.errors %}
                                                 {{ error }}
                                             {% endfor %}
                                         </div>
                                     {% endif %}
                                 </div>
+                                </div>
                                 
-                                <!-- 通知内容模板 -->
-                                <div class="mb-3">
-                                    <label for="{{ action_form.notification_message_template.id_for_label }}" class="form-label">
-                                        通知内容模板
-                                    </label>
+                            <div class="row">
+                                <div class="col-md-12 mb-3">
+                                    <label for="{{ action_form.notification_message_template.id_for_label }}" class="form-label">通知内容模板</label>
                                     {{ action_form.notification_message_template }}
-                                    <div class="form-text text-muted">
-                                        通知内容，可以使用模板变量如 {% templatetag openvariable %}strategy.name{% templatetag closevariable %}, {% templatetag openvariable %}sensor.name{% templatetag closevariable %}, {% templatetag openvariable %}sensor.value{% templatetag closevariable %}
-                                    </div>
+                                    <div class="form-text text-muted">通知内容，可以使用模板变量如 {% templatetag openvariable %}strategy.name{% templatetag closevariable %}, {% templatetag openvariable %}sensor.name{% templatetag closevariable %}</div>
                                     {% if action_form.notification_message_template.errors %}
-                                        <div class="error-text">
+                                    <div class="error-message">
                                             {% for error in action_form.notification_message_template.errors %}
                                                 {{ error }}
                                             {% endfor %}
                                         </div>
                                     {% endif %}
                                 </div>
+                                </div>
                             </div>
                             
                             <!-- 调用Webhook相关字段组 -->
-                            <div class="action-fields action-field-group" data-action-type="call_webhook">
+                        <div class="field-group action-webhook-fields hidden-field-group" data-action-type="call_webhook">
                                 <h6 class="mb-3">Webhook参数</h6>
                                 
-                                <!-- Webhook URL -->
-                                <div class="mb-3">
-                                    <label for="{{ action_form.webhook_url.id_for_label }}" class="form-label">
-                                        Webhook URL
-                                    </label>
+                            <div class="row">
+                                <div class="col-md-8 mb-3">
+                                    <label for="{{ action_form.webhook_url.id_for_label }}" class="form-label">Webhook URL</label>
                                     {{ action_form.webhook_url }}
-                                    <div class="form-text text-muted">
-                                        要调用的Webhook URL
-                                    </div>
+                                    <div class="form-text text-muted">要调用的Webhook URL</div>
                                     {% if action_form.webhook_url.errors %}
-                                        <div class="error-text">
+                                    <div class="error-message">
                                             {% for error in action_form.webhook_url.errors %}
                                                 {{ error }}
                                             {% endfor %}
@@ -602,53 +630,42 @@
                                     {% endif %}
                                 </div>
                                 
-                                <!-- HTTP方法 -->
-                                <div class="mb-3">
-                                    <label for="{{ action_form.webhook_method.id_for_label }}" class="form-label">
-                                        HTTP方法
-                                    </label>
+                                <div class="col-md-4 mb-3">
+                                    <label for="{{ action_form.webhook_method.id_for_label }}" class="form-label">HTTP方法</label>
                                     {{ action_form.webhook_method }}
-                                    <div class="form-text text-muted">
-                                        HTTP请求方法
-                                    </div>
+                                    <div class="form-text text-muted">HTTP请求方法</div>
                                     {% if action_form.webhook_method.errors %}
-                                        <div class="error-text">
+                                    <div class="error-message">
                                             {% for error in action_form.webhook_method.errors %}
                                                 {{ error }}
                                             {% endfor %}
                                         </div>
                                     {% endif %}
                                 </div>
+                                </div>
                                 
-                                <!-- 请求头部模板 -->
-                                <div class="mb-3">
-                                    <label for="{{ action_form.webhook_headers_template.id_for_label }}" class="form-label">
-                                        请求头部模板 (JSON)
-                                    </label>
+                            <div class="row">
+                                <div class="col-md-12 mb-3">
+                                    <label for="{{ action_form.webhook_headers_template.id_for_label }}" class="form-label">请求头部模板 (JSON)</label>
                                     {{ action_form.webhook_headers_template }}
-                                    <div class="form-text text-muted">
-                                        JSON格式的HTTP请求头，可以使用模板变量如 {% templatetag openvariable %}strategy.id{% templatetag closevariable %}
-                                    </div>
+                                    <div class="form-text text-muted">JSON格式的HTTP请求头，可以使用模板变量</div>
                                     {% if action_form.webhook_headers_template.errors %}
-                                        <div class="error-text">
+                                    <div class="error-message">
                                             {% for error in action_form.webhook_headers_template.errors %}
                                                 {{ error }}
                                             {% endfor %}
                                         </div>
                                     {% endif %}
                                 </div>
+                                </div>
                                 
-                                <!-- 请求体模板 -->
-                                <div class="mb-3">
-                                    <label for="{{ action_form.webhook_payload_template.id_for_label }}" class="form-label">
-                                        请求体模板 (JSON)
-                                    </label>
+                            <div class="row">
+                                <div class="col-md-12 mb-3">
+                                    <label for="{{ action_form.webhook_payload_template.id_for_label }}" class="form-label">请求体模板 (JSON)</label>
                                     {{ action_form.webhook_payload_template }}
-                                    <div class="form-text text-muted">
-                                        JSON格式的HTTP请求体，可以使用模板变量如 {% templatetag openvariable %}sensor.value{% templatetag closevariable %}
-                                    </div>
+                                    <div class="form-text text-muted">JSON格式的HTTP请求体，可以使用模板变量</div>
                                     {% if action_form.webhook_payload_template.errors %}
-                                        <div class="error-text">
+                                    <div class="error-message">
                                             {% for error in action_form.webhook_payload_template.errors %}
                                                 {{ error }}
                                             {% endfor %}
@@ -659,240 +676,1063 @@
                         </div>
                     </div>
                 {% endfor %}
+                </div>
                 
-                <!-- 添加动作按钮 -->
-                <button type="button" class="btn-add-item add-action">
+                <button type="button" class="btn-add add-action">
                     <i class="fas fa-plus-circle me-2"></i> 添加动作
                 </button>
                 
                 <!-- 提交按钮 -->
                 <div class="d-flex justify-content-end mt-4">
-                    <button type="submit" class="btn btn-primary">
-                        <i class="fas fa-save"></i> 保存条件和动作配置
+                    <button type="submit" class="btn btn-primary" id="saveBtn">
+                        <i class="fas fa-save"></i> 保存配置
                     </button>
                 </div>
             </div>
         </div>
     </form>
+    
+    <!-- 条件组模板 (用于复制) -->
+    <div id="group-template" style="display: none;">
+        <!-- 模板内容将由JavaScript动态生成 -->
+    </div>
+    
+    <!-- 条件模板 (用于复制) -->
+    <div id="condition-template" style="display: none;">
+        <!-- 模板内容将由JavaScript动态生成 -->
+    </div>
+    
+    <!-- 动作模板 (用于复制) -->
+    <div id="action-template" style="display: none;">
+        <!-- 模板内容将由JavaScript动态生成 -->
+    </div>
+    
+    <!-- Toast通知容器 -->
+    <div class="toast-container" id="toastContainer"></div>
+    
+    <!-- 加载动画 -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="spinner"></div>
+    </div>
 </div>
 {% endblock %}
 
 {% block extra_body_js %}
 <script>
-// 当文档加载完成时执行
+/**
+ * 策略详情页面脚本
+ * 重构版本，提高稳定性和性能
+ */
 document.addEventListener('DOMContentLoaded', function() {
-    // 获取表单集前缀和初始计数
-    const groupPrefix = 'conditiongroups';
-    const actionPrefix = 'actions';
-    const TOTAL_FORMS = document.querySelector(`#id_${groupPrefix}-TOTAL_FORMS`);
-    const ACTION_TOTAL_FORMS = document.querySelector(`#id_${actionPrefix}-TOTAL_FORMS`);
-    const conditionGroupsContainer = document.querySelector('.card-body form');
-    
-    // 初始化条件表单和动作表单的显示/隐藏
-    initializeFormDisplay();
-    initializeActionFormDisplay();
-    
-    // 添加条件组
-    document.querySelector('.add-condition-group').addEventListener('click', function() {
-        // 获取现有条件组数量
-        const groupCount = parseInt(TOTAL_FORMS.value);
-        
-        // 获取空白条件组模板
-        let emptyGroupForm = document.querySelector(`#${groupPrefix}-__prefix__`);
-        
-        if (!emptyGroupForm) {
-            console.error('找不到条件组模板');
-            return;
+    // ===== 常量定义 =====
+    const CONFIG = {
+        prefixes: {
+            group: 'conditiongroups',
+            action: 'actions'
+        },
+        selectors: {
+            groupContainer: '#conditionGroupsContainer',
+            actionContainer: '#actionsContainer',
+            groupTemplate: '#group-template',
+            conditionTemplate: '#condition-template',
+            actionTemplate: '#action-template'
+        },
+        formCounters: {
+            groupTotal: `#id_conditiongroups-TOTAL_FORMS`,
+            actionTotal: `#id_actions-TOTAL_FORMS`
         }
-        
-        // 创建新条件组
-        const newGroupHTML = emptyGroupForm.outerHTML
-            .replace(/__prefix__/g, groupCount)
-            .replace('style="display: none;"', '');
-        
-        // 更新TOTAL_FORMS值
-        TOTAL_FORMS.value = groupCount + 1;
-        
-        // 在添加按钮前插入新条件组
-        this.insertAdjacentHTML('beforebegin', newGroupHTML);
-        
-        // 重新初始化新添加条件组的事件监听
-        initializeFormDisplay();
-        
-        // 为新添加的条件组绑定添加条件按钮事件
-        const newAddConditionButton = document.querySelector(`#group-${groupCount} .add-condition`);
-        if (newAddConditionButton) {
-            newAddConditionButton.setAttribute('data-group-id', groupCount);
-            newAddConditionButton.addEventListener('click', addCondition);
-        }
-    });
-    
-    // 为现有的添加条件按钮绑定事件
-    document.querySelectorAll('.add-condition').forEach(button => {
-        button.addEventListener('click', addCondition);
-    });
-    
-    // 添加动作
-    document.querySelector('.add-action').addEventListener('click', function() {
-        // 获取现有动作数量
-        const actionCount = parseInt(ACTION_TOTAL_FORMS.value);
-        
-        // 获取空白动作模板
-        let emptyActionForm = document.querySelector(`#${actionPrefix}-__prefix__`);
-        
-        if (!emptyActionForm) {
-            console.error('找不到动作模板');
-            return;
-        }
-        
-        // 创建新动作
-        const newActionHTML = emptyActionForm.outerHTML
-            .replace(/__prefix__/g, actionCount)
-            .replace('style="display: none;"', '');
-        
-        // 更新ACTION_TOTAL_FORMS值
-        ACTION_TOTAL_FORMS.value = actionCount + 1;
-        
-        // 在添加按钮前插入新动作
-        this.insertAdjacentHTML('beforebegin', newActionHTML);
-        
-        // 重新初始化动作表单显示
-        initializeActionFormDisplay();
-    });
-    
-    // 添加条件函数
-    function addCondition(event) {
-        const groupId = this.dataset.groupId;
-        
-        // 获取该组的条件表单集
-        const conditionPrefix = `${groupPrefix}-${groupId}-conditions`;
-        const conditionTotalForms = document.querySelector(`#id_${conditionPrefix}-TOTAL_FORMS`);
-        
-        if (!conditionTotalForms) {
-            console.error(`找不到条件表单集 ${conditionPrefix} 的TOTAL_FORMS元素`);
-            return;
-        }
-        
-        const conditionCount = parseInt(conditionTotalForms.value);
-        
-        // 获取空白条件模板
-        let emptyConditionForm = document.querySelector(`#${conditionPrefix}-__prefix__`);
-        
-        if (!emptyConditionForm) {
-            console.error(`找不到条件模板 ${conditionPrefix}-__prefix__`);
-            return;
-        }
-        
-        // 创建新条件
-        const newConditionHTML = emptyConditionForm.outerHTML
-            .replace(/__prefix__/g, conditionCount)
-            .replace('style="display: none;"', '');
-        
-        // 更新TOTAL_FORMS值
-        conditionTotalForms.value = conditionCount + 1;
-        
-        // 在添加按钮前插入新条件
-        this.insertAdjacentHTML('beforebegin', newConditionHTML);
-        
-        // 重新初始化表单显示
-        initializeFormDisplay();
-    }
-    
-    // 初始化条件表单字段的显示和隐藏逻辑
-    function initializeFormDisplay() {
-        // 处理数据源类型的变化
-        document.querySelectorAll('[id$=data_source_type]').forEach(select => {
-            // 初始状态设置
-            handleDataSourceChange(select);
+    };
+
+    // ===== 全局变量 =====
+    const state = {
+        formset: {
+            groups: document.querySelector(CONFIG.formCounters.groupTotal),
+            actions: document.querySelector(CONFIG.formCounters.actionTotal)
+        },
+        containers: {
+            groups: document.querySelector(CONFIG.selectors.groupContainer),
+            actions: document.querySelector(CONFIG.selectors.actionContainer)
+        },
+        templates: {}
+    };
+
+    // ===== 初始化函数 =====
+    function initialize() {
+        try {
+            // 准备模板
+            prepareTemplates();
             
-            // 变化事件监听
-            select.addEventListener('change', function() {
-                handleDataSourceChange(this);
-            });
+            // 初始化表单显示/隐藏逻辑
+            initializeFormVisibility();
+            
+            // 设置事件监听器
+            setupEventListeners();
+            
+            // 初始化验证（可选）
+            initializeValidation();
+            
+        } catch (error) {
+            console.error('页面初始化时出错:', error);
+            showToast('页面初始化时出错，请刷新重试', 'error');
+        }
+    }
+
+    /**
+     * 准备用于动态添加的模板
+     */
+    function prepareTemplates() {
+        try {
+            // 条件组模板
+            if (document.querySelector('.condition-group')) {
+                const groupTemplate = document.querySelector('.condition-group').cloneNode(true);
+                cleanTemplate(groupTemplate, 'group');
+                state.templates.group = groupTemplate;
+                document.querySelector(CONFIG.selectors.groupTemplate).innerHTML = groupTemplate.outerHTML;
+            }
+            
+            // 条件模板
+            if (document.querySelector('.condition')) {
+                const conditionTemplate = document.querySelector('.condition').cloneNode(true);
+                cleanTemplate(conditionTemplate, 'condition');
+                state.templates.condition = conditionTemplate;
+                document.querySelector(CONFIG.selectors.conditionTemplate).innerHTML = conditionTemplate.outerHTML;
+            }
+            
+            // 动作模板
+            if (document.querySelector('.action-card')) {
+                const actionTemplate = document.querySelector('.action-card').cloneNode(true);
+                cleanTemplate(actionTemplate, 'action');
+                state.templates.action = actionTemplate;
+                document.querySelector(CONFIG.selectors.actionTemplate).innerHTML = actionTemplate.outerHTML;
+            }
+        } catch (error) {
+            console.error('准备模板时出错:', error);
+            showToast('初始化模板时出错，请刷新页面重试', 'error');
+        }
+    }
+
+    /**
+     * 清理模板，移除ID、值和错误消息
+     */
+    function cleanTemplate(template, type) {
+        // 重置ID
+        template.id = '';
+        
+        // 清除数据属性
+        if (type === 'group') {
+            template.removeAttribute('data-group-id');
+        } else if (type === 'condition') {
+            template.removeAttribute('data-group-id');
+            template.removeAttribute('data-condition-id');
+        } else if (type === 'action') {
+            template.removeAttribute('data-action-id');
+        }
+        
+        // 清除表单值和错误消息
+        template.querySelectorAll('input, select, textarea').forEach(input => {
+            if (input.type === 'checkbox') {
+                input.checked = false;
+            } else if (input.type !== 'hidden' || !input.name.includes('-id')) {
+                input.value = '';
+            }
         });
         
-        // 处理阈值类型的变化
-        document.querySelectorAll('[id$=threshold_value_type]').forEach(select => {
-            // 初始状态设置
-            handleThresholdTypeChange(select);
+        // 移除错误消息
+        template.querySelectorAll('.error-message').forEach(error => {
+            error.remove();
+        });
+        
+        // 根据类型特殊处理
+        if (type === 'group') {
+            // 清理条件容器
+            const conditionsContainer = template.querySelector('.conditions-container');
+            if (conditionsContainer) {
+                const addButton = conditionsContainer.querySelector('.add-condition');
+                conditionsContainer.innerHTML = '';
+                if (addButton) {
+                    conditionsContainer.appendChild(addButton);
+                }
+            }
+        }
+        
+        return template;
+    }
+
+    /**
+     * 初始化表单字段的显示/隐藏逻辑
+     */
+    function initializeFormVisibility() {
+        // 初始化条件表单字段
+        document.querySelectorAll('.condition').forEach(condition => {
+            // 数据源类型
+            const dataSourceSelect = condition.querySelector('[id$=data_source_type]');
+            if (dataSourceSelect) {
+                updateDataSourceFields(dataSourceSelect);
+            }
             
-            // 变化事件监听
-            select.addEventListener('change', function() {
-                handleThresholdTypeChange(this);
-            });
+            // 阈值类型
+            const thresholdTypeSelect = condition.querySelector('[id$=threshold_value_type]');
+            if (thresholdTypeSelect) {
+                updateThresholdFields(thresholdTypeSelect);
+            }
+        });
+        
+        // 初始化动作表单字段
+        document.querySelectorAll('.action-card').forEach(action => {
+            const actionTypeSelect = action.querySelector('[id$=action_type]');
+            if (actionTypeSelect) {
+                updateActionFields(actionTypeSelect);
+            }
         });
     }
-    
-    // 初始化动作表单字段的显示和隐藏逻辑
-    function initializeActionFormDisplay() {
-        // 处理动作类型的变化
-        document.querySelectorAll('[id$=action_type]').forEach(select => {
-            // 初始状态设置
-            handleActionTypeChange(select);
-            
-            // 变化事件监听
-            select.addEventListener('change', function() {
-                handleActionTypeChange(this);
-            });
-        });
-    }
-    
-    // 处理数据源类型变化
-    function handleDataSourceChange(select) {
+
+    /**
+     * 更新数据源字段的显示/隐藏
+     */
+    function updateDataSourceFields(select) {
         const selectedValue = select.value;
-        const conditionContainer = select.closest('.condition');
+        const condition = select.closest('.condition');
         
-        if (conditionContainer) {
-            // 隐藏所有数据源字段
-            conditionContainer.querySelectorAll('.data-source-field').forEach(field => {
-                field.style.display = 'none';
+        if (condition) {
+            // 隐藏所有数据源字段组
+            condition.querySelectorAll('[data-source-type]').forEach(field => {
+                field.classList.add('hidden-field-group');
             });
             
-            // 显示选中的数据源对应的字段
-            const selectedField = conditionContainer.querySelector(`.data-source-field[data-source-type="${selectedValue}"]`);
+            // 显示选定的数据源字段组
+            const selectedField = condition.querySelector(`[data-source-type="${selectedValue}"]`);
             if (selectedField) {
-                selectedField.style.display = 'block';
+                selectedField.classList.remove('hidden-field-group');
             }
         }
     }
-    
-    // 处理阈值类型变化
-    function handleThresholdTypeChange(select) {
+
+    /**
+     * 更新阈值字段的显示/隐藏
+     */
+    function updateThresholdFields(select) {
         const selectedValue = select.value;
-        const conditionContainer = select.closest('.condition');
+        const condition = select.closest('.condition');
         
-        if (conditionContainer) {
-            // 隐藏所有阈值字段
-            conditionContainer.querySelectorAll('.threshold-field').forEach(field => {
-                field.style.display = 'none';
+        if (condition) {
+            // 隐藏所有阈值字段组
+            condition.querySelectorAll('[data-threshold-type]').forEach(field => {
+                field.classList.add('hidden-field-group');
             });
             
-            // 显示选中的阈值类型对应的字段
-            const selectedField = conditionContainer.querySelector(`.threshold-field[data-threshold-type="${selectedValue}"]`);
+            // 显示选定的阈值字段组
+            const selectedField = condition.querySelector(`[data-threshold-type="${selectedValue}"]`);
             if (selectedField) {
-                selectedField.style.display = 'block';
+                selectedField.classList.remove('hidden-field-group');
             }
         }
     }
-    
-    // 处理动作类型变化
-    function handleActionTypeChange(select) {
+
+    /**
+     * 更新动作字段的显示/隐藏
+     */
+    function updateActionFields(select) {
         const selectedValue = select.value;
-        const actionContainer = select.closest('.action');
+        const action = select.closest('.action-card');
         
-        if (actionContainer) {
+        if (action) {
             // 隐藏所有动作字段组
-            actionContainer.querySelectorAll('.action-field-group').forEach(group => {
-                group.style.display = 'none';
+            action.querySelectorAll('[data-action-type]').forEach(field => {
+                field.classList.add('hidden-field-group');
             });
             
-            // 显示选中的动作类型对应的字段组
-            const selectedGroup = actionContainer.querySelector(`.action-field-group[data-action-type="${selectedValue}"]`);
-            if (selectedGroup) {
-                selectedGroup.style.display = 'block';
+            // 显示选定的动作字段组
+            const selectedField = action.querySelector(`[data-action-type="${selectedValue}"]`);
+            if (selectedField) {
+                selectedField.classList.remove('hidden-field-group');
             }
         }
     }
+
+    /**
+     * 设置事件监听器
+     */
+    function setupEventListeners() {
+        // 数据源类型变化
+        document.querySelectorAll('[id$=data_source_type]').forEach(select => {
+            select.addEventListener('change', function() {
+                updateDataSourceFields(this);
+            });
+        });
+        
+        // 阈值类型变化
+        document.querySelectorAll('[id$=threshold_value_type]').forEach(select => {
+            select.addEventListener('change', function() {
+                updateThresholdFields(this);
+            });
+        });
+        
+        // 动作类型变化
+        document.querySelectorAll('[id$=action_type]').forEach(select => {
+            select.addEventListener('change', function() {
+                updateActionFields(this);
+            });
+        });
+        
+        // 添加条件组按钮
+        document.querySelector('.add-group').addEventListener('click', addConditionGroup);
+        
+        // 添加条件按钮
+        document.querySelectorAll('.add-condition').forEach(button => {
+            button.addEventListener('click', function() {
+        const groupId = this.dataset.groupId;
+                addCondition(groupId);
+            });
+        });
+        
+        // 添加动作按钮
+        document.querySelector('.add-action').addEventListener('click', addAction);
+        
+        // 删除条件组按钮
+        document.querySelectorAll('.delete-group').forEach(button => {
+            button.addEventListener('click', function() {
+                const groupId = this.dataset.groupId;
+                deleteConditionGroup(groupId);
+            });
+        });
+        
+        // 删除条件按钮
+        document.querySelectorAll('.delete-condition').forEach(button => {
+            button.addEventListener('click', function() {
+                const groupId = this.dataset.groupId;
+                const conditionId = this.dataset.conditionId;
+                deleteCondition(groupId, conditionId);
+            });
+        });
+        
+        // 删除动作按钮
+        document.querySelectorAll('.delete-action').forEach(button => {
+            button.addEventListener('click', function() {
+                const actionId = this.dataset.actionId;
+                deleteAction(actionId);
+            });
+        });
+        
+        // 表单提交
+        document.getElementById('strategyConfigForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            submitForm(this);
+        });
+    }
+
+    /**
+     * 初始化表单验证
+     */
+    function initializeValidation() {
+        // 可以在这里添加表单验证逻辑
+    }
+
+    // ===== 添加/删除条件组和条件的函数 =====
+    
+    /**
+     * 添加新的条件组
+     */
+    function addConditionGroup() {
+        try {
+            // 获取当前条件组总数
+            const totalGroups = parseInt(state.formset.groups.value);
+            const newGroupId = totalGroups;
+            
+            // 克隆模板
+            const newGroup = state.templates.group.cloneNode(true);
+            
+            // 更新ID和数据属性
+            newGroup.id = `group-${newGroupId}`;
+            newGroup.setAttribute('data-group-id', newGroupId);
+            
+            // 更新所有表单元素的name和id
+            newGroup.querySelectorAll('[name], [id]').forEach(element => {
+                if (element.name) {
+                    element.name = element.name.replace(/conditiongroups-\d+/, `conditiongroups-${newGroupId}`);
+                }
+                if (element.id) {
+                    element.id = element.id.replace(/id_conditiongroups-\d+/, `id_conditiongroups-${newGroupId}`);
+                }
+            });
+            
+            // 更新标题
+            const header = newGroup.querySelector('h5');
+            if (header) {
+                header.textContent = `条件组 ${newGroupId + 1}`;
+            }
+            
+            // 更新删除按钮
+            const deleteButton = newGroup.querySelector('.delete-group');
+            if (deleteButton) {
+                deleteButton.setAttribute('data-group-id', newGroupId);
+                deleteButton.addEventListener('click', function() {
+                    deleteConditionGroup(newGroupId);
+                });
+            }
+            
+            // 更新添加条件按钮
+            const addButton = newGroup.querySelector('.add-condition');
+            if (addButton) {
+                addButton.setAttribute('data-group-id', newGroupId);
+                addButton.addEventListener('click', function() {
+                    addCondition(newGroupId);
+                });
+            }
+            
+            // 初始化一个条件
+            const conditionsContainer = newGroup.querySelector('.conditions-container');
+            if (conditionsContainer) {
+                // 添加条件表单集管理表单
+                const managementForm = document.createElement('input');
+                managementForm.type = 'hidden';
+                managementForm.name = `conditiongroups-${newGroupId}-conditions-TOTAL_FORMS`;
+                managementForm.id = `id_conditiongroups-${newGroupId}-conditions-TOTAL_FORMS`;
+                managementForm.value = '1';
+                
+                const initialForm = document.createElement('input');
+                initialForm.type = 'hidden';
+                initialForm.name = `conditiongroups-${newGroupId}-conditions-INITIAL_FORMS`;
+                initialForm.id = `id_conditiongroups-${newGroupId}-conditions-INITIAL_FORMS`;
+                initialForm.value = '0';
+                
+                const minForm = document.createElement('input');
+                minForm.type = 'hidden';
+                minForm.name = `conditiongroups-${newGroupId}-conditions-MIN_NUM_FORMS`;
+                minForm.id = `id_conditiongroups-${newGroupId}-conditions-MIN_NUM_FORMS`;
+                minForm.value = '0';
+                
+                const maxForm = document.createElement('input');
+                maxForm.type = 'hidden';
+                maxForm.name = `conditiongroups-${newGroupId}-conditions-MAX_NUM_FORMS`;
+                maxForm.id = `id_conditiongroups-${newGroupId}-conditions-MAX_NUM_FORMS`;
+                maxForm.value = '1000';
+                
+                conditionsContainer.insertBefore(maxForm, conditionsContainer.firstChild);
+                conditionsContainer.insertBefore(minForm, conditionsContainer.firstChild);
+                conditionsContainer.insertBefore(initialForm, conditionsContainer.firstChild);
+                conditionsContainer.insertBefore(managementForm, conditionsContainer.firstChild);
+                
+                // 添加条件列表标题
+                const title = document.createElement('h6');
+                title.className = 'mb-3';
+                title.textContent = '条件列表：';
+                conditionsContainer.insertBefore(title, addButton);
+                
+                try {
+                    // 添加第一个条件，不显示提示
+                    addCondition(newGroupId, true);
+                } catch (conditionError) {
+                    console.error('添加初始条件时出错:', conditionError);
+                    // 不显示错误提示，因为我们会在外层显示总体错误
+                }
+            }
+            
+            // 更新条件组总数
+            state.formset.groups.value = totalGroups + 1;
+            
+            // 添加到DOM
+            document.querySelector('.add-group').insertAdjacentElement('beforebegin', newGroup);
+            
+            // 更新删除按钮状态
+            updateDeleteButtonsState();
+            
+            showToast('已添加新的条件组', 'success');
+        } catch (error) {
+            console.error('添加条件组时出错:', error);
+            showToast('添加条件组失败', 'error');
+        }
+    }
+
+    /**
+     * 添加新的条件
+     */
+    function addCondition(groupId, isNewGroup = false) {
+        try {
+            // 获取该组当前条件总数
+            const conditionTotalForms = document.querySelector(`#id_conditiongroups-${groupId}-conditions-TOTAL_FORMS`);
+        if (!conditionTotalForms) {
+                throw new Error(`找不到条件组 ${groupId} 的条件表单集管理表单`);
+            }
+            
+            const totalConditions = parseInt(conditionTotalForms.value);
+            const newConditionId = totalConditions;
+            
+            // 克隆条件模板
+            const newCondition = state.templates.condition.cloneNode(true);
+            
+            // 更新ID和数据属性
+            newCondition.id = `condition-${groupId}-${newConditionId}`;
+            newCondition.setAttribute('data-group-id', groupId);
+            newCondition.setAttribute('data-condition-id', newConditionId);
+            
+            // 更新所有表单元素的name和id
+            newCondition.querySelectorAll('[name], [id]').forEach(element => {
+                if (element.name) {
+                    element.name = element.name.replace(/conditiongroups-\d+-conditions-\d+/, 
+                                                      `conditiongroups-${groupId}-conditions-${newConditionId}`);
+                }
+                if (element.id) {
+                    element.id = element.id.replace(/id_conditiongroups-\d+-conditions-\d+/, 
+                                                  `id_conditiongroups-${groupId}-conditions-${newConditionId}`);
+                }
+            });
+            
+            // 更新标题
+            const header = newCondition.querySelector('h6');
+            if (header) {
+                header.textContent = `条件 ${newConditionId + 1}`;
+            }
+            
+            // 更新删除按钮
+            const deleteButton = newCondition.querySelector('.delete-condition');
+            if (deleteButton) {
+                deleteButton.setAttribute('data-group-id', groupId);
+                deleteButton.setAttribute('data-condition-id', newConditionId);
+                deleteButton.addEventListener('click', function() {
+                    deleteCondition(groupId, newConditionId);
+                });
+            }
+            
+            // 清除所有选择框的默认选择
+            newCondition.querySelectorAll('select').forEach(select => {
+                select.selectedIndex = -1;
+            });
+            
+            // 添加事件监听器
+            const dataSourceSelect = newCondition.querySelector('[id$=data_source_type]');
+            if (dataSourceSelect) {
+                dataSourceSelect.addEventListener('change', function() {
+                    updateDataSourceFields(this);
+                });
+                // 触发一次更新以隐藏所有数据源相关字段，因为没有选中任何值
+                updateDataSourceFields(dataSourceSelect);
+            }
+            
+            const thresholdTypeSelect = newCondition.querySelector('[id$=threshold_value_type]');
+            if (thresholdTypeSelect) {
+                thresholdTypeSelect.addEventListener('change', function() {
+                    updateThresholdFields(this);
+                });
+                // 触发一次更新以隐藏所有阈值相关字段，因为没有选中任何值
+                updateThresholdFields(thresholdTypeSelect);
+            }
+            
+            // 更新条件总数
+            conditionTotalForms.value = totalConditions + 1;
+            
+            // 添加到DOM
+            const addButton = document.querySelector(`#group-${groupId} .add-condition`);
+            addButton.insertAdjacentElement('beforebegin', newCondition);
+            
+            // 更新删除按钮状态
+            updateDeleteButtonsState();
+            
+            // 仅在不是新建条件组时显示提示
+            if (!isNewGroup) {
+                showToast('已添加新的条件', 'success');
+            }
+            
+            return true; // 成功添加
+        } catch (error) {
+            console.error('添加条件时出错:', error);
+            // 仅在不是新建条件组时显示提示
+            if (!isNewGroup) {
+                showToast('添加条件失败', 'error');
+            }
+            throw error; // 重新抛出错误以便上层函数捕获
+        }
+    }
+
+    /**
+     * 添加新的动作
+     */
+    function addAction() {
+        try {
+            // 获取当前动作总数
+            const totalActions = parseInt(state.formset.actions.value);
+            const newActionId = totalActions;
+            
+            // 克隆模板
+            const newAction = state.templates.action.cloneNode(true);
+            
+            // 更新ID和数据属性
+            newAction.id = `action-${newActionId}`;
+            newAction.setAttribute('data-action-id', newActionId);
+            
+            // 更新所有表单元素的name和id
+            newAction.querySelectorAll('[name], [id]').forEach(element => {
+                if (element.name) {
+                    element.name = element.name.replace(/actions-\d+/, `actions-${newActionId}`);
+                }
+                if (element.id) {
+                    element.id = element.id.replace(/id_actions-\d+/, `id_actions-${newActionId}`);
+                }
+            });
+            
+            // 更新标题
+            const header = newAction.querySelector('h5');
+            if (header) {
+                header.textContent = `动作 ${newActionId + 1}`;
+            }
+            
+            // 更新删除按钮
+            const deleteButton = newAction.querySelector('.delete-action');
+            if (deleteButton) {
+                deleteButton.setAttribute('data-action-id', newActionId);
+                deleteButton.addEventListener('click', function() {
+                    deleteAction(newActionId);
+                });
+            }
+            
+            // 清除所有选择框的默认选择
+            newAction.querySelectorAll('select').forEach(select => {
+                select.selectedIndex = -1;
+            });
+            
+            // 添加事件监听器
+            const actionTypeSelect = newAction.querySelector('[id$=action_type]');
+            if (actionTypeSelect) {
+                actionTypeSelect.addEventListener('change', function() {
+                    updateActionFields(this);
+                });
+                // 触发一次更新以隐藏所有动作类型相关字段，因为没有选中任何值
+                updateActionFields(actionTypeSelect);
+            }
+            
+            // 更新动作总数
+            state.formset.actions.value = totalActions + 1;
+            
+            // 添加到DOM
+            document.querySelector('.add-action').insertAdjacentElement('beforebegin', newAction);
+            
+            // 更新删除按钮状态
+            updateDeleteButtonsState();
+            
+            showToast('已添加新的动作', 'success');
+        } catch (error) {
+            console.error('添加动作时出错:', error);
+            showToast('添加动作失败', 'error');
+        }
+    }
+
+    /**
+     * 删除条件组
+     */
+    function deleteConditionGroup(groupId) {
+        try {
+            const group = document.getElementById(`group-${groupId}`);
+            if (!group) return;
+            
+            // 检查是否是最后一个可见的条件组 - 允许全部删除
+            /* 移除此检查，允许删除所有条件组
+            const visibleGroups = Array.from(document.querySelectorAll('.condition-group'))
+                                   .filter(g => g.style.display !== 'none');
+            if (visibleGroups.length <= 1) {
+                showToast('至少需要保留一个条件组', 'warning');
+            return;
+        }
+            */
+            
+            // 标记为删除
+            const deleteCheckbox = document.querySelector(`#id_conditiongroups-${groupId}-DELETE`);
+            if (deleteCheckbox) {
+                deleteCheckbox.checked = true;
+            }
+            
+            // 隐藏条件组
+            group.style.display = 'none';
+            
+            // 更新删除按钮状态
+            updateDeleteButtonsState();
+            
+            showToast('条件组已标记为删除', 'info');
+        } catch (error) {
+            console.error('删除条件组时出错:', error);
+            showToast('删除条件组失败', 'error');
+        }
+    }
+
+    /**
+     * 删除条件
+     */
+    function deleteCondition(groupId, conditionId) {
+        try {
+            const condition = document.getElementById(`condition-${groupId}-${conditionId}`);
+            if (!condition) return;
+            
+            // 检查是否是该组最后一个可见的条件 - 允许全部删除
+            /* 移除此检查，允许删除所有条件
+            const visibleConditions = Array.from(document.querySelectorAll(`#group-${groupId} .condition`))
+                                     .filter(c => c.style.display !== 'none');
+            if (visibleConditions.length <= 1) {
+                showToast('条件组内至少需要保留一个条件', 'warning');
+            return;
+        }
+            */
+            
+            // 标记为删除
+            const deleteCheckbox = document.querySelector(`#id_conditiongroups-${groupId}-conditions-${conditionId}-DELETE`);
+            if (deleteCheckbox) {
+                deleteCheckbox.checked = true;
+            }
+            
+            // 隐藏条件
+            condition.style.display = 'none';
+            
+            // 更新删除按钮状态
+            updateDeleteButtonsState();
+            
+            showToast('条件已标记为删除', 'info');
+        } catch (error) {
+            console.error('删除条件时出错:', error);
+            showToast('删除条件失败', 'error');
+        }
+    }
+
+    /**
+     * 删除动作
+     */
+    function deleteAction(actionId) {
+        try {
+            const action = document.getElementById(`action-${actionId}`);
+            if (!action) return;
+            
+            // 检查是否是最后一个可见的动作 - 允许全部删除
+            /* 移除此检查，允许删除所有动作
+            const visibleActions = Array.from(document.querySelectorAll('.action-card'))
+                                  .filter(a => a.style.display !== 'none');
+            if (visibleActions.length <= 1) {
+                showToast('至少需要保留一个动作', 'warning');
+                return;
+            }
+            */
+            
+            // 标记为删除
+            const deleteCheckbox = document.querySelector(`#id_actions-${actionId}-DELETE`);
+            if (deleteCheckbox) {
+                deleteCheckbox.checked = true;
+            }
+            
+            // 隐藏动作
+            action.style.display = 'none';
+            
+            // 更新删除按钮状态
+            updateDeleteButtonsState();
+            
+            showToast('动作已标记为删除', 'info');
+        } catch (error) {
+            console.error('删除动作时出错:', error);
+            showToast('删除动作失败', 'error');
+        }
+    }
+
+    /**
+     * 更新删除按钮的状态
+     */
+    function updateDeleteButtonsState() {
+        // 允许删除所有元素，不再禁用按钮
+        
+        // 条件组删除按钮 - 允许全部删除
+        /* 移除禁用逻辑
+        const visibleGroups = Array.from(document.querySelectorAll('.condition-group'))
+                             .filter(g => g.style.display !== 'none');
+        document.querySelectorAll('.delete-group').forEach(button => {
+            if (visibleGroups.length <= 1) {
+                button.disabled = true;
+                button.classList.add('disabled');
+                button.title = '至少保留一个条件组';
+            } else {
+                button.disabled = false;
+                button.classList.remove('disabled');
+                button.title = '删除此条件组';
+            }
+        });
+        */
+        
+        // 条件删除按钮 - 允许全部删除
+        /* 移除禁用逻辑
+        document.querySelectorAll('.condition-group').forEach(group => {
+            if (group.style.display === 'none') return;
+            
+            const groupId = group.dataset.groupId;
+            const visibleConditions = Array.from(document.querySelectorAll(`#group-${groupId} .condition`))
+                                     .filter(c => c.style.display !== 'none');
+            
+            group.querySelectorAll('.delete-condition').forEach(button => {
+                if (visibleConditions.length <= 1) {
+                    button.disabled = true;
+                    button.classList.add('disabled');
+                    button.title = '至少保留一个条件';
+                } else {
+                    button.disabled = false;
+                    button.classList.remove('disabled');
+                    button.title = '删除此条件';
+                }
+            });
+        });
+        */
+        
+        // 动作删除按钮 - 允许全部删除
+        /* 移除禁用逻辑
+        const visibleActions = Array.from(document.querySelectorAll('.action-card'))
+                              .filter(a => a.style.display !== 'none');
+        document.querySelectorAll('.delete-action').forEach(button => {
+            if (visibleActions.length <= 1) {
+                button.disabled = true;
+                button.classList.add('disabled');
+                button.title = '至少保留一个动作';
+            } else {
+                button.disabled = false;
+                button.classList.remove('disabled');
+                button.title = '删除此动作';
+            }
+        });
+        */
+        
+        // 只保留按钮标题设置
+        document.querySelectorAll('.delete-group').forEach(button => {
+            button.title = '删除此条件组';
+        });
+        
+        document.querySelectorAll('.delete-condition').forEach(button => {
+            button.title = '删除此条件';
+        });
+        
+        document.querySelectorAll('.delete-action').forEach(button => {
+            button.title = '删除此动作';
+        });
+    }
+
+    // ===== 表单提交相关 =====
+    
+    /**
+     * 提交表单
+     */
+    function submitForm(form) {
+        try {
+            // 提交前验证是否存在可见的条件组和动作
+            const visibleGroups = Array.from(document.querySelectorAll('.condition-group'))
+                                  .filter(g => g.style.display !== 'none');
+            const visibleActions = Array.from(document.querySelectorAll('.action-card'))
+                                  .filter(a => a.style.display !== 'none');
+                                  
+            // 如果不存在可见的条件组或动作，阻止提交
+            if (visibleGroups.length === 0) {
+                showToast('请至少添加一个条件组', 'error');
+                return;
+            }
+            
+            // 检查每个条件组是否有可见的条件
+            let hasEmptyGroup = false;
+            visibleGroups.forEach(group => {
+                const groupId = group.dataset.groupId;
+                const visibleConditions = Array.from(group.querySelectorAll('.condition'))
+                                         .filter(c => c.style.display !== 'none');
+                if (visibleConditions.length === 0) {
+                    hasEmptyGroup = true;
+                    showToast(`条件组 ${parseInt(groupId) + 1} 中没有条件`, 'error');
+                }
+            });
+            
+            if (hasEmptyGroup) {
+                return;
+            }
+            
+            if (visibleActions.length === 0) {
+                showToast('请至少添加一个动作', 'error');
+                return;
+            }
+            
+            // 显示加载动画
+            showLoading(true);
+            
+            // 创建表单数据
+            const formData = new FormData(form);
+            
+            // 发送请求
+            fetch(window.location.href, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('服务器响应异常');
+                }
+                
+                // 检查是否有重定向
+                if (response.redirected) {
+                    // 重定向意味着成功提交并由服务器处理了重定向
+                    showToast('保存成功！', 'success');
+                    // 延迟后跟随重定向
+                    setTimeout(() => {
+                        window.location.href = response.url;
+                    }, 1500);
+                    return { success: false }; // 返回一个失败对象以避免下一步再次显示提示
+                }
+                
+                // 尝试解析JSON响应
+                return response.text().then(text => {
+                    if (!text || text.trim() === '') {
+                        // 空响应但状态码为200，视为成功
+                        return { success: true };
+                    }
+                    
+                    try {
+                        return JSON.parse(text);
+                    } catch (e) {
+                        console.log('响应不是有效的JSON:', text.substring(0, 100) + '...');
+                        // 如果响应不是JSON但状态码为200，说明提交成功但返回了HTML
+                        if (text.includes('<html') || text.includes('<!DOCTYPE html>')) {
+                            // 这很可能是一个成功提交后的完整页面响应
+                            showToast('保存成功！', 'success');
+                            setTimeout(() => {
+                                window.location.reload();
+                            }, 1500);
+                            return { success: false }; // 返回一个失败对象以避免下一步再次显示提示
+                        }
+                        throw new Error('无法解析服务器响应');
+                    }
+                });
+            })
+            .then(data => {
+                if (data && data.success) {
+                    showToast('保存成功！', 'success');
+                    
+                    // 重新加载页面（可选）
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 1500);
+                } else if (data && data.message) {
+                    showToast(data.message, 'error');
+                    
+                    // 显示错误信息
+                    if (data.errors) {
+                        displayErrors(data.errors);
+                    }
+                }
+                // 如果data.success为false但没有message，说明我们已经在前面处理过了，不需要再显示提示
+            })
+            .catch(error => {
+                console.error('提交表单时出错:', error);
+                showToast('提交过程中发生错误，请重试', 'error');
+            })
+            .finally(() => {
+                showLoading(false);
+            });
+        } catch (error) {
+            console.error('提交表单时出错:', error);
+            showToast('提交表单失败', 'error');
+            showLoading(false);
+        }
+    }
+
+    /**
+     * 显示错误信息
+     */
+    function displayErrors(errors) {
+        // 清除现有错误
+        document.querySelectorAll('.error-message').forEach(error => {
+            error.remove();
+        });
+        
+        // 处理条件组错误
+        if (errors.condition_groups) {
+            Object.entries(errors.condition_groups).forEach(([groupIndex, groupErrors]) => {
+                // 组级别错误
+                Object.entries(groupErrors).forEach(([field, errorMessages]) => {
+                    if (field !== 'conditions') {
+                        const input = document.querySelector(`#id_conditiongroups-${groupIndex}-${field}`);
+                        if (input) {
+                            const errorDiv = document.createElement('div');
+                            errorDiv.className = 'error-message';
+                            errorDiv.textContent = errorMessages.join(' ');
+                            input.parentNode.appendChild(errorDiv);
+                        }
+                    }
+                });
+                
+                // 条件错误
+                if (groupErrors.conditions) {
+                    Object.entries(groupErrors.conditions).forEach(([conditionIndex, conditionErrors]) => {
+                        Object.entries(conditionErrors).forEach(([field, errorMessages]) => {
+                            const input = document.querySelector(`#id_conditiongroups-${groupIndex}-conditions-${conditionIndex}-${field}`);
+                            if (input) {
+                                const errorDiv = document.createElement('div');
+                                errorDiv.className = 'error-message';
+                                errorDiv.textContent = errorMessages.join(' ');
+                                input.parentNode.appendChild(errorDiv);
+                            }
+                        });
+                    });
+                }
+            });
+        }
+        
+        // 处理动作错误
+        if (errors.actions) {
+            Object.entries(errors.actions).forEach(([actionIndex, actionErrors]) => {
+                Object.entries(actionErrors).forEach(([field, errorMessages]) => {
+                    const input = document.querySelector(`#id_actions-${actionIndex}-${field}`);
+                    if (input) {
+                        const errorDiv = document.createElement('div');
+                        errorDiv.className = 'error-message';
+                        errorDiv.textContent = errorMessages.join(' ');
+                        input.parentNode.appendChild(errorDiv);
+                    }
+                });
+            });
+        }
+    }
+
+    // ===== 工具函数 =====
+    
+    /**
+     * 显示Toast通知
+     */
+    function showToast(message, type = 'info') {
+        const container = document.getElementById('toastContainer');
+        
+        const toast = document.createElement('div');
+        toast.className = `toast ${type}`;
+        
+        const messageElement = document.createElement('div');
+        messageElement.className = 'toast-message';
+        messageElement.textContent = message;
+        
+        toast.appendChild(messageElement);
+        container.appendChild(toast);
+        
+        // 让DOM有时间绘制元素
+        setTimeout(() => {
+            toast.classList.add('show');
+        }, 10);
+        
+        // 3秒后自动消失
+        setTimeout(() => {
+            toast.classList.remove('show');
+            setTimeout(() => {
+                container.removeChild(toast);
+            }, 300);
+        }, 3000);
+    }
+
+    /**
+     * 显示/隐藏加载动画
+     */
+    function showLoading(show) {
+        const loadingOverlay = document.getElementById('loadingOverlay');
+        if (show) {
+            loadingOverlay.classList.add('show');
+        } else {
+            loadingOverlay.classList.remove('show');
+        }
+    }
+
+    // 初始化页面
+    initialize();
 });
 </script>
 {% endblock %} 

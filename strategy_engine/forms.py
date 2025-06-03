@@ -186,7 +186,7 @@ ConditionFormSet = inlineformset_factory(
     ConditionGroup,  # 父模型
     Condition,       # 子模型
     form=ConditionForm,
-    extra=1,         # 额外显示的空表单数量
+    extra=0,         # 额外显示的空表单数量
     can_delete=True, # 允许删除
 )
 
@@ -233,7 +233,7 @@ ConditionGroupFormSet = inlineformset_factory(
     ConditionGroup,   # 子模型
     form=ConditionGroupForm,
     formset=BaseConditionGroupFormSet,  # 使用自定义的基类
-    extra=1,          # 额外显示的空表单数量
+    extra=0,          # 额外显示的空表单数量
     can_delete=True,  # 允许删除
 )
 
@@ -242,7 +242,7 @@ ActionFormSet = inlineformset_factory(
     Strategy,         # 父模型
     Action,           # 子模型
     form=ActionForm,
-    extra=1,          # 额外显示的空表单数量
+    extra=0,          # 额外显示的空表单数量
     can_delete=True,  # 允许删除
     fk_name='strategy'
 ) 

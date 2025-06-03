@@ -156,23 +156,38 @@ def strategy_detail_view(request, strategy_id):
         # 根据验证结果显示成功或错误消息
         if conditions_valid and actions_valid:
             messages.success(request, '策略条件和动作已成功保存！')
-            # 刷新页面以获取最新数据
+            # 刷新页面以获取最新数据，传递参数避免添加空表单
             return redirect('strategy_engine:strategy_detail', strategy_id=strategy.id)
         elif conditions_valid:
             messages.success(request, '策略条件已成功保存，但动作保存失败。')
         elif actions_valid:
             messages.success(request, '策略动作已成功保存，但条件保存失败。')
     else:
-        # GET请求，初始化表单集
+        # GET请求，判断是否有现有的条件组和动作
+        has_condition_groups = ConditionGroup.objects.filter(strategy=strategy).exists()
+        has_actions = Action.objects.filter(strategy=strategy).exists()
+        
+        # 初始化表单集，根据是否已有内容决定extra参数
         condition_group_formset = ConditionGroupFormSet(
             instance=strategy,
-            prefix='conditiongroups'
+            prefix='conditiongroups',
         )
         
         action_formset = ActionFormSet(
             instance=strategy,
-            prefix='actions'
+            prefix='actions',
         )
+        
+        # 如果表单集没有表单，手动添加一个空表单
+        if len(condition_group_formset.forms) == 0:
+            condition_group_formset.extra = 1
+        else:
+            condition_group_formset.extra = 0
+            
+        if len(action_formset.forms) == 0:
+            action_formset.extra = 1
+        else:
+            action_formset.extra = 0
     
     return render(request, 'strategy_engine/strategy_detail.html', {
         'strategy': strategy,

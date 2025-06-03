@@ -126,11 +126,16 @@
 {% csrf_token %}
 
 <div class="container">
+    <!-- 页面头部 -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>设备详情：{{ device.name }}</h2>
+    </div>
+    
     <!-- 设备信息卡片 -->
     <div class="card shadow-sm mb-4">
         <div class="card-header d-flex justify-content-between align-items-center">
             <h4 class="card-title mb-0">设备信息</h4>
-            <a href="{% url 'iot_devices:device_update' project.project_id device.device_id %}" class="btn btn-outline-secondary btn-sm">
+            <a href="{% url 'iot_devices:device_update' project.project_id device.device_id %}" class="btn btn-outline-secondary">
                 <i class="fas fa-edit"></i> 编辑设备信息
             </a>
         </div>
@@ -208,7 +213,7 @@
     <div class="card shadow-sm mb-4">
         <div class="card-header d-flex justify-content-between align-items-center">
             <h4 class="card-title mb-0">传感器列表</h4>
-            <a href="{% url 'iot_devices:sensor_add' project.project_id device.device_id %}" class="btn btn-outline-primary btn-sm">
+            <a href="{% url 'iot_devices:sensor_add' project.project_id device.device_id %}" class="btn btn-outline-primary">
                 <i class="fas fa-plus"></i> 添加传感器
             </a>
         </div>
@@ -311,7 +316,7 @@
     <div class="card shadow-sm">
         <div class="card-header d-flex justify-content-between align-items-center">
             <h4 class="card-title mb-0">执行器列表</h4>
-            <a href="{% url 'iot_devices:actuator_add' project.project_id device.device_id %}" class="btn btn-outline-primary btn-sm">
+            <a href="{% url 'iot_devices:actuator_add' project.project_id device.device_id %}" class="btn btn-outline-primary">
                 <i class="fas fa-plus"></i> 添加执行器
             </a>
         </div>
