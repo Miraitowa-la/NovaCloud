@@ -85,18 +85,21 @@ def strategy_detail_view(request, strategy_id):
     strategy = get_object_or_404(Strategy, pk=strategy_id, owner=request.user)
     
     if request.method == 'POST':
+        # 记录原始POST数据的键，用于调试
+        print(f"接收到的POST数据键: {list(request.POST.keys())}")
+        
         # 实例化条件组表单集
         condition_group_formset = ConditionGroupFormSet(
             request.POST, 
             instance=strategy,
-            prefix='conditiongroups'
+            prefix='conditiongroup_set'  # 确保与前端JavaScript使用的前缀一致
         )
         
         # 实例化动作表单集
         action_formset = ActionFormSet(
             request.POST,
             instance=strategy,
-            prefix='actions'
+            prefix='action_set'  # 确保与前端JavaScript使用的前缀一致
         )
         
         # 记录表单验证和保存状态
@@ -106,52 +109,67 @@ def strategy_detail_view(request, strategy_id):
         # 检查条件组表单集是否有效
         if condition_group_formset.is_valid():
             try:
-                # 保存条件组
-                condition_groups = condition_group_formset.save(commit=True)
+                # 打印临时引用信息，用于调试
+                temp_refs = {}
+                for key in request.POST:
+                    if key.endswith('-temp_group_ref'):
+                        temp_refs[key] = request.POST[key]
                 
-                # 处理嵌套的条件表单集
-                for form in condition_group_formset.forms:
-                    # 如果表单未被删除且有附加的条件表单集
-                    if not condition_group_formset._should_delete_form(form) and hasattr(form, 'nested_condition_formset'):
-                        # 重新获取保存后的条件组实例
-                        if form.instance.pk:
-                            # 检查嵌套的条件表单集是否有效
-                            if form.nested_condition_formset.is_valid():
-                                # 保存条件
-                                form.nested_condition_formset.save()
-                            else:
-                                # 如果条件表单集无效，添加错误并重新渲染
-                                for condition_form in form.nested_condition_formset.forms:
-                                    for field, errors in condition_form.errors.items():
-                                        for error in errors:
-                                            messages.error(request, f"条件错误 ({field}): {error}")
-                                raise ValueError("条件表单验证失败")
-                
+                if temp_refs:
+                    print(f"发现临时组引用: {temp_refs}")
+                    
+                # 使用自定义的save_nested方法保存条件组及其嵌套的条件
+                condition_groups = condition_group_formset.save_nested(commit=True)
+                print(f"成功保存了{len(condition_groups)}个条件组")
                 conditions_valid = True
-            except ValueError as e:
+            except Exception as e:
                 # 如果有任何错误，保留表单数据，显示错误消息
+                import traceback
+                error_msg = f"保存条件失败: {str(e)}\n{traceback.format_exc()}"
+                print(error_msg)  # 在服务器控制台打印详细错误
                 messages.error(request, f"保存条件失败: {str(e)}")
         else:
             # 显示条件组表单集的错误
-            for form in condition_group_formset:
+            for form_idx, form in enumerate(condition_group_formset):
                 for field, errors in form.errors.items():
                     for error in errors:
-                        messages.error(request, f"条件组错误 ({field}): {error}")
+                        messages.error(request, f"条件组 #{form_idx+1} 错误 ({field}): {error}")
+                
+                # 检查嵌套的条件表单集错误
+                if hasattr(form, 'nested_condition_formset'):
+                    for cond_idx, cond_form in enumerate(form.nested_condition_formset):
+                        for field, errors in cond_form.errors.items():
+                            for error in errors:
+                                messages.error(request, f"条件组 #{form_idx+1} 的条件 #{cond_idx+1} 错误 ({field}): {error}")
+            
+            # 打印管理表单的错误
+            if condition_group_formset.management_form.errors:
+                print("条件组管理表单错误:", condition_group_formset.management_form.errors)
+                messages.error(request, f"条件组表单管理错误: {condition_group_formset.management_form.errors}")
         
         # 检查动作表单集是否有效
         if action_formset.is_valid():
             try:
                 # 保存动作
-                action_formset.save()
+                actions = action_formset.save()
+                print(f"成功保存了{len(actions)}个动作")
                 actions_valid = True
             except Exception as e:
+                import traceback
+                error_msg = f"保存动作失败: {str(e)}\n{traceback.format_exc()}"
+                print(error_msg)  # 在服务器控制台打印详细错误
                 messages.error(request, f"保存动作失败: {str(e)}")
         else:
             # 显示动作表单集的错误
-            for form in action_formset:
+            for form_idx, form in enumerate(action_formset):
                 for field, errors in form.errors.items():
                     for error in errors:
-                        messages.error(request, f"动作错误 ({field}): {error}")
+                        messages.error(request, f"动作 #{form_idx+1} 错误 ({field}): {error}")
+            
+            # 打印管理表单的错误
+            if action_formset.management_form.errors:
+                print("动作管理表单错误:", action_formset.management_form.errors)
+                messages.error(request, f"动作表单管理错误: {action_formset.management_form.errors}")
         
         # 根据验证结果显示成功或错误消息
         if conditions_valid and actions_valid:
@@ -170,12 +188,12 @@ def strategy_detail_view(request, strategy_id):
         # 初始化表单集，根据是否已有内容决定extra参数
         condition_group_formset = ConditionGroupFormSet(
             instance=strategy,
-            prefix='conditiongroups',
+            prefix='conditiongroup_set',
         )
         
         action_formset = ActionFormSet(
             instance=strategy,
-            prefix='actions',
+            prefix='action_set',
         )
         
         # 如果表单集没有表单，手动添加一个空表单
@@ -188,6 +206,13 @@ def strategy_detail_view(request, strategy_id):
             action_formset.extra = 1
         else:
             action_formset.extra = 0
+    
+    # 为所有嵌套表单集添加项目信息
+    if hasattr(condition_group_formset, 'forms'):
+        for form in condition_group_formset.forms:
+            if hasattr(form, 'nested_condition_formset'):
+                for condition_form in form.nested_condition_formset.forms:
+                    condition_form.project = strategy.project
     
     return render(request, 'strategy_engine/strategy_detail.html', {
         'strategy': strategy,

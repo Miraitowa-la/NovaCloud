@@ -208,7 +208,7 @@ class BaseConditionGroupFormSet(BaseInlineFormSet):
             instance=form.instance,
             data=form.data if form.is_bound else None,
             files=form.files if form.is_bound else None,
-            prefix=f'{form.prefix}-conditions',  # 确保嵌套表单集有唯一前缀
+            prefix=f'{form.prefix}-condition_set',  # 确保嵌套表单集前缀与模板一致
         )
         
         # 为嵌套表单集中的每个条件表单设置项目
@@ -218,13 +218,90 @@ class BaseConditionGroupFormSet(BaseInlineFormSet):
     
     def save_nested(self, commit=True):
         """保存嵌套的条件表单集"""
-        result = self.save(commit=commit)
+        # 首先保存条件组
+        result = super().save(commit=commit)
         
-        for form in self.forms:
+        # 记录完整的结果和条件组信息，便于调试
+        saved_groups_map = {}
+        for group in result:
+            saved_groups_map[f'conditiongroup_set-{self.forms.index(next(form for form in self.forms if form.instance == group))}'] = group
+        
+        print(f"保存条件组: {len(self.forms)}个表单, {len(result)}个保存结果")
+        print(f"保存的条件组映射: {', '.join([f'{k}->ID:{v.pk}' for k, v in saved_groups_map.items()])}")
+        
+        # 处理临时引用，找出表单中所有带有temp_group_ref的条件
+        temp_refs = {}
+        for key, value in self.data.items():
+            if key.endswith('-temp_group_ref') and value:
+                condition_prefix = key[:-len('-temp_group_ref')]
+                group_ref = value
+                temp_refs[condition_prefix] = group_ref
+                print(f"发现临时引用: 条件{condition_prefix} -> 组{group_ref}")
+        
+        # 遍历每个条件组表单
+        for form_index, form in enumerate(self.forms):
+            # 跳过已标记为删除的表单
+            if self._should_delete_form(form):
+                print(f"条件组表单 #{form_index} 已标记为删除，跳过")
+                continue
+                
             if hasattr(form, 'nested_condition_formset'):
-                if not self._should_delete_form(form):
-                    form.nested_condition_formset.save(commit=commit)
+                nested_formset = form.nested_condition_formset
+                
+                # 检查嵌套表单集的有效性
+                if nested_formset.is_valid():
+                    # 确保每个条件关联到正确的条件组
+                    for condition_form in nested_formset.forms:
+                        # 跳过已标记为删除的条件
+                        if nested_formset._should_delete_form(condition_form):
+                            continue
+                            
+                        # 设置条件的group为当前条件组实例
+                        condition_form.instance.group = form.instance
+                        
+                        # 打印调试信息
+                        print(f"设置条件[{condition_form.prefix}]的group为条件组ID:{form.instance.pk}")
+                    
+                    # 保存条件
+                    conditions = nested_formset.save(commit=commit)
+                    print(f"已保存{len(conditions)}个条件")
+                    
+                    # 处理可能有的临时引用条件（前端特殊处理）
+                    group_prefix = f'conditiongroup_set-{form_index}'
+                    for condition_prefix, ref_prefix in temp_refs.items():
+                        if ref_prefix == group_prefix:
+                            # 找到对应的条件
+                            condition_data_keys = [k for k in self.data.keys() if k.startswith(f'{condition_prefix}-') and not k.endswith('-DELETE')]
+                            if condition_data_keys:
+                                # 提取条件ID（如果有）
+                                condition_id = None
+                                for key in condition_data_keys:
+                                    if key.endswith('-id'):
+                                        try:
+                                            condition_id = int(self.data[key])
+                                            break
+                                        except (ValueError, TypeError):
+                                            pass
+                                
+                                if condition_id:
+                                    # 尝试从数据库更新条件的group字段
+                                    try:
+                                        from .models import Condition
+                                        condition = Condition.objects.get(pk=condition_id)
+                                        if condition.group != form.instance:
+                                            condition.group = form.instance
+                                            condition.save(update_fields=['group'])
+                                            print(f"已更新条件ID:{condition_id}的group为{form.instance.pk}")
+                                    except Exception as e:
+                                        print(f"更新条件ID:{condition_id}的group时出错: {str(e)}")
+                else:
+                    # 记录验证失败的错误
+                    print(f"条件表单集验证失败: {nested_formset.errors}")
+                    for i, error_form in enumerate(nested_formset.forms):
+                        if error_form.errors:
+                            print(f"条件 #{i} 错误: {error_form.errors}")
         
+        # 返回保存的条件组列表
         return result
 
 # 定义条件组的内联表单集
