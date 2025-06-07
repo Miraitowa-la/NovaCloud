@@ -483,11 +483,25 @@ def user_hierarchy_view(request):
                 user.profile.parent_user_id == admin.id):
                 admin_direct_children[admin.id].append(user)
     
+    # 获取既不是超级管理员、又没有上级用户的孤立用户
+    # 1. 不是超级管理员
+    # 2. 没有上级用户 (profile__parent_user为空)
+    # 3. 不在根节点列表中 (可能已经在其他地方显示)
+    orphan_users = User.objects.filter(
+        is_staff=False,
+        profile__parent_user__isnull=True
+    ).exclude(
+        id__in=admin_ids  # 排除超级管理员
+    ).exclude(
+        id__in=root_nodes.values_list('id', flat=True)  # 排除根节点
+    ).select_related('profile').prefetch_related('profile__role').distinct().order_by('username')
+    
     context = {
         'super_admins': super_admins,
         'root_nodes': root_nodes,
         'user_hierarchy': user_hierarchy,
         'admin_direct_children': admin_direct_children,
+        'orphan_users': orphan_users,  # 添加孤立用户到上下文
         'admin_page_title': '用户层级树'
     }
     
