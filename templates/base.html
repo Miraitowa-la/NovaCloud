@@ -48,12 +48,12 @@
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link {% if 'iot_devices:project_list' in request.resolver_match.view_name %}active{% endif %}" href="{% url 'iot_devices:project_list' %}">
+                        <a class="nav-link {% if 'iot_devices:' in request.resolver_match.view_name %}active{% endif %}" href="{% url 'iot_devices:project_list' %}">
                             <i class="fas fa-cubes"></i> 项目
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link {% if 'strategy_engine:strategy_list' in request.resolver_match.view_name %}active{% endif %}" href="{% url 'strategy_engine:strategy_list' %}">
+                        <a class="nav-link {% if 'strategy_engine:' in request.resolver_match.view_name %}active{% endif %}" href="{% url 'strategy_engine:strategy_list' %}">
                             <i class="fas fa-sitemap"></i> 策略
                         </a>
                     </li>

@@ -41,7 +41,18 @@
                     
                     <!-- 密码字段 -->
                     <div class="form-group">
-                        <label for="{{ form.password1.id_for_label }}" class="form-label">密码</label>
+                        <label for="{{ form.password1.id_for_label }}" class="form-label">
+                            密码
+                            {% if form.password1.help_text %}
+                            <i class="fas fa-info-circle ml-1 text-primary password-help-icon" 
+                               data-toggle="tooltip" 
+                               data-placement="right" 
+                               title="密码不能与你的个人信息太相似。
+密码必须包含至少 8 个字符。
+密码不能是一个常见密码。
+密码不能全都是数字。"></i>
+                            {% endif %}
+                        </label>
                         {{ form.password1 }}
                         {% if form.password1.errors %}
                             <small class="text-danger">
@@ -49,8 +60,6 @@
                                     {{ error }}
                                 {% endfor %}
                             </small>
-                        {% else %}
-                            <small class="text-muted">{{ form.password1.help_text }}</small>
                         {% endif %}
                     </div>
                     
@@ -64,8 +73,6 @@
                                     {{ error }}
                                 {% endfor %}
                             </small>
-                        {% else %}
-                            <small class="text-muted">{{ form.password2.help_text }}</small>
                         {% endif %}
                     </div>
                     
@@ -106,4 +113,60 @@
         </p>
     </div>
 </div>
-{% endblock content %} 
+{% endblock content %}
+
+<style>
+    /* 密码提示图标样式 */
+    .password-help-icon {
+        cursor: help;
+    }
+</style>
+
+<script>
+    // 初始化提示工具
+    document.addEventListener('DOMContentLoaded', function() {
+        // 如果页面上有jQuery和Bootstrap的Tooltip
+        if (typeof $ !== 'undefined' && typeof $.fn.tooltip !== 'undefined') {
+            $('.password-help-icon').tooltip();
+        } else {
+            // 简单的原生JavaScript提示实现
+            const tooltipElements = document.querySelectorAll('.password-help-icon');
+            tooltipElements.forEach(function(element) {
+                const title = element.getAttribute('title');
+                
+                // 鼠标悬停显示提示
+                element.addEventListener('mouseenter', function(e) {
+                    const tooltip = document.createElement('div');
+                    tooltip.classList.add('password-tooltip');
+                    tooltip.textContent = title;
+                    document.body.appendChild(tooltip);
+                    
+                    // 计算位置 - 在图标右侧
+                    const rect = element.getBoundingClientRect();
+                    tooltip.style.position = 'absolute';
+                    tooltip.style.left = (rect.right + 10) + 'px';
+                    tooltip.style.top = (rect.top - 5) + 'px';
+                    tooltip.style.zIndex = '1000';
+                    tooltip.style.backgroundColor = 'rgba(0, 0, 0, 0.8)';
+                    tooltip.style.color = 'white';
+                    tooltip.style.padding = '8px 12px';
+                    tooltip.style.borderRadius = '4px';
+                    tooltip.style.fontSize = '0.875rem';
+                    tooltip.style.whiteSpace = 'pre-line';
+                    tooltip.style.maxWidth = '250px';
+                    
+                    // 保存引用以便移除
+                    element.tooltip = tooltip;
+                });
+                
+                // 鼠标移开隐藏提示
+                element.addEventListener('mouseleave', function(e) {
+                    if (element.tooltip) {
+                        element.tooltip.remove();
+                        element.tooltip = null;
+                    }
+                });
+            });
+        }
+    });
+</script> 

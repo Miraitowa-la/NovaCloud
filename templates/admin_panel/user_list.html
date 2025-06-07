@@ -45,20 +45,19 @@
                 </div>
                 
                 <!-- 搜索行，优化按钮布局 -->
-                <div class="row">
-                    <div class="col">
-                        <div class="input-group">
-                            <input type="text" name="search" class="form-control" placeholder="搜索用户名或邮箱..." value="{{ search_query }}">
-                            <div class="input-group-append">
-                                <button class="btn btn-primary search-action-btn" type="submit">
-                                    <i class="fas fa-search mr-1"></i> 搜索
-                                </button>
-                                <a href="{% url 'admin_panel:user_list' %}" class="btn btn-secondary search-action-btn">
-                                    <i class="fas fa-redo-alt mr-1"></i> 重置
-                                </a>
-                            </div>
-                        </div>
+                <div class="d-flex align-items-center">
+                    <!-- 搜索输入框占满剩余宽度 -->
+                    <div class="flex-grow-1 mr-2">
+                        <input type="text" name="search" class="form-control" placeholder="搜索用户名或邮箱..." value="{{ search_query }}">
                     </div>
+                    <!-- 搜索按钮 -->
+                    <button class="btn btn-primary mr-2" type="submit">
+                        <i class="fas fa-search mr-1"></i> 搜索
+                    </button>
+                    <!-- 重置按钮 -->
+                    <a href="{% url 'admin_panel:user_list' %}" class="btn btn-secondary">
+                        <i class="fas fa-redo-alt mr-1"></i> 重置
+                    </a>
                 </div>
             </form>
         </div>

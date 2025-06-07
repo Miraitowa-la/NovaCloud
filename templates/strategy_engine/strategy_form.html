@@ -1,7 +1,7 @@
 {% extends 'base.html' %}
 
 {% block title %}
-    {% if strategy %}编辑策略：{{ strategy.name }}{% else %}创建新策略{% endif %} - NovaCloud
+    {% if strategy %}编辑策略：{{ strategy.name }}{% else %}创建策略{% endif %} - NovaCloud
 {% endblock %}
 
 {% block content %}
@@ -11,7 +11,7 @@
             <div class="card shadow-sm">
                 <div class="card-header">
                     <h4 class="card-title mb-0">
-                        {% if strategy %}编辑策略：{{ strategy.name }}{% else %}创建新策略{% endif %}
+                        {% if strategy %}编辑策略：{{ strategy.name }}{% else %}创建策略{% endif %}
                     </h4>
                 </div>
                 <div class="card-body">
