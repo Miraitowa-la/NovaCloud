@@ -25,7 +25,7 @@
     <div class="row mb-4">
         <!-- 用户统计卡片 -->
         <div class="col-md-4 mb-4">
-            <div class="card h-100 shadow-sm">
+            <div class="card h-100 shadow-sm hover-card">
                 <div class="card-header">
                     <h5 class="card-title mb-0"><i class="fas fa-users text-primary mr-2"></i>用户统计</h5>
                 </div>
@@ -33,15 +33,15 @@
                     <div class="admin-attributes">
                         <div class="attribute-item border p-2 mb-2">
                             <i class="fas fa-users"></i> <span class="attribute-label">总用户数：</span>
-                            <span class="attribute-value">{{ user_count|default:"-- 开发中 --" }}</span>
+                            <span class="attribute-value">{{ user_count }}</span>
                         </div>
                         <div class="attribute-item border p-2 mb-2">
                             <i class="fas fa-user-check"></i> <span class="attribute-label">活跃用户：</span>
-                            <span class="attribute-value">{{ active_user_count|default:"-- 开发中 --" }}</span>
+                            <span class="attribute-value">{{ active_user_count }}</span>
                         </div>
                         <div class="attribute-item border p-2 mb-2">
                             <i class="fas fa-user-plus"></i> <span class="attribute-label">新注册用户：</span>
-                            <span class="attribute-value">{{ new_user_count|default:"-- 开发中 --" }}</span>
+                            <span class="attribute-value">{{ new_user_count }} <small class="text-muted">(近7天)</small></span>
                         </div>
                     </div>
                 </div>
@@ -57,7 +57,7 @@
 
         <!-- 角色统计卡片 -->
         <div class="col-md-4 mb-4">
-            <div class="card h-100 shadow-sm">
+            <div class="card h-100 shadow-sm hover-card">
                 <div class="card-header">
                     <h5 class="card-title mb-0"><i class="fas fa-shield-alt text-primary mr-2"></i>角色统计</h5>
                 </div>
@@ -65,15 +65,15 @@
                     <div class="admin-attributes">
                         <div class="attribute-item border p-2 mb-2">
                             <i class="fas fa-shield-alt"></i> <span class="attribute-label">角色总数：</span>
-                            <span class="attribute-value">{{ role_count|default:"-- 开发中 --" }}</span>
+                            <span class="attribute-value">{{ role_count }}</span>
                         </div>
                         <div class="attribute-item border p-2 mb-2">
                             <i class="fas fa-key"></i> <span class="attribute-label">系统权限总数：</span>
-                            <span class="attribute-value">{{ permission_count|default:"-- 开发中 --" }}</span>
+                            <span class="attribute-value">{{ permission_count }}</span>
                         </div>
                         <div class="attribute-item border p-2 mb-2">
                             <i class="fas fa-user-tag"></i> <span class="attribute-label">自定义角色：</span>
-                            <span class="attribute-value">{{ custom_role_count|default:"-- 开发中 --" }}</span>
+                            <span class="attribute-value">{{ custom_role_count }}</span>
                         </div>
                     </div>
                 </div>
@@ -89,7 +89,7 @@
 
         <!-- 审计日志统计卡片 -->
         <div class="col-md-4 mb-4">
-            <div class="card h-100 shadow-sm">
+            <div class="card h-100 shadow-sm hover-card">
                 <div class="card-header">
                     <h5 class="card-title mb-0"><i class="fas fa-history text-primary mr-2"></i>审计日志</h5>
                 </div>
@@ -97,15 +97,15 @@
                     <div class="admin-attributes">
                         <div class="attribute-item border p-2 mb-2">
                             <i class="fas fa-history"></i> <span class="attribute-label">今日日志：</span>
-                            <span class="attribute-value">{{ today_log_count|default:"-- 开发中 --" }}</span>
+                            <span class="attribute-value">{{ today_log_count }}</span>
                         </div>
                         <div class="attribute-item border p-2 mb-2">
                             <i class="fas fa-history"></i> <span class="attribute-label">近7天日志：</span>
-                            <span class="attribute-value">{{ week_log_count|default:"-- 开发中 --" }}</span>
+                            <span class="attribute-value">{{ week_log_count }}</span>
                         </div>
                         <div class="attribute-item border p-2 mb-2">
                             <i class="fas fa-history"></i> <span class="attribute-label">总日志数：</span>
-                            <span class="attribute-value">{{ total_log_count|default:"-- 开发中 --" }}</span>
+                            <span class="attribute-value">{{ total_log_count }}</span>
                         </div>
                     </div>
                 </div>
@@ -121,31 +121,50 @@
     </div>
 
     <!-- 最近活动 -->
-    <div class="card shadow-sm">
+    <div class="card shadow-sm hover-card">
         <div class="card-header">
             <h5 class="card-title mb-0"><i class="fas fa-chart-line text-primary mr-2"></i>最近活动</h5>
         </div>
         <div class="card-body">
             <div class="admin-attributes">
-                <div class="attribute-item border p-2 mb-2">
-                    <i class="fas fa-user-plus text-success"></i> 
-                    <span class="attribute-label">用户注册：</span>
-                    <span class="attribute-value">新用户注册 (2023-06-01 12:30)</span>
-                </div>
-                <div class="attribute-item border p-2 mb-2">
-                    <i class="fas fa-sign-in-alt text-primary"></i> 
-                    <span class="attribute-label">用户登录：</span>
-                    <span class="attribute-value">管理员登录系统 (2023-06-01 10:15)</span>
-                </div>
-                <div class="attribute-item border p-2 mb-2">
-                    <i class="fas fa-shield-alt text-info"></i> 
-                    <span class="attribute-label">角色更新：</span>
-                    <span class="attribute-value">修改了管理员角色权限 (2023-06-01 09:45)</span>
-                </div>
+                {% if recent_activities %}
+                    {% for activity in recent_activities %}
+                        <div class="attribute-item border p-2 mb-2">
+                            {% if 'user' in activity.action_type %}
+                                <i class="fas fa-user-edit text-primary"></i>
+                            {% elif 'role' in activity.action_type %}
+                                <i class="fas fa-shield-alt text-info"></i>
+                            {% elif 'project' in activity.action_type %}
+                                <i class="fas fa-project-diagram text-success"></i>
+                            {% elif 'device' in activity.action_type %}
+                                <i class="fas fa-microchip text-warning"></i>
+                            {% elif 'strategy' in activity.action_type %}
+                                <i class="fas fa-cogs text-danger"></i>
+                            {% else %}
+                                <i class="fas fa-history text-secondary"></i>
+                            {% endif %} 
+                            <span class="attribute-label">{{ activity.get_action_type_display }}：</span>
+                            <span class="attribute-value">
+                                {% if activity.user %}{{ activity.user.username }}{% else %}系统{% endif %} - 
+                                {{ activity.target_object_repr|default:"未指定目标" }} 
+                                <small class="text-muted">({{ activity.timestamp|date:"Y-m-d H:i" }})</small>
+                            </span>
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="text-center text-muted py-4">
+                        <i class="fas fa-info-circle mr-2"></i> 暂无活动记录
+                    </div>
+                {% endif %}
             </div>
-            <div class="alert alert-info mt-3">
-                <i class="fas fa-info-circle mr-2"></i> 管理功能将在后续开发中逐步完善。敬请期待！
-            </div>
+            
+            {% if recent_activities %}
+                <div class="d-flex justify-content-end mt-3">
+                    <a href="{% url 'admin_panel:audit_log_list' %}" class="btn btn-sm btn-outline-primary">
+                        <i class="fas fa-list"></i> 查看所有日志记录
+                    </a>
+                </div>
+            {% endif %}
         </div>
     </div>
 </div>

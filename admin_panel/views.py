@@ -1,6 +1,6 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
-from django.contrib.auth.models import User
+from django.contrib.auth.models import User, Permission
 from django.contrib import messages
 from django.core.paginator import Paginator
 from django.db.models import Q, Count
@@ -8,7 +8,7 @@ from django.urls import reverse
 from django.views.decorators.http import require_POST
 from django.utils import timezone
 from datetime import datetime, timedelta
-from accounts.models import UserProfile, Role
+from accounts.models import UserProfile, Role, InvitationCode
 from core.models import AuditLog
 from core.constants import AuditActionType, AUDIT_ACTION_CHOICES
 from .decorators import admin_required
@@ -17,16 +17,56 @@ from .forms import AdminUserCreationForm, AdminUserChangeForm, RoleForm, AuditLo
 # Create your views here.
 
 @login_required
+@admin_required
 def dashboard_view(request):
     """
     管理首页
     """
-    # 权限检查逻辑应在这里或装饰器中实现
-    # if not request.user.is_staff and not request.user.userprofile.role_has_permission('can_access_admin_panel'):
-    #     return HttpResponseForbidden("您没有权限访问该页面")
+    # 用户统计数据
+    user_count = User.objects.count()
+    active_user_count = User.objects.filter(is_active=True).count()
+    
+    # 新注册用户（过去7天）
+    one_week_ago = timezone.now() - timedelta(days=7)
+    new_user_count = User.objects.filter(date_joined__gte=one_week_ago).count()
+    
+    # 角色统计数据
+    role_count = Role.objects.count()
+    permission_count = Permission.objects.count()
+    
+    # 自定义角色（排除可能的系统角色，如管理员、普通用户）
+    # 假设ID小于等于2的是系统默认角色
+    custom_role_count = Role.objects.filter(id__gt=2).count()
+    
+    # 审计日志统计
+    total_log_count = AuditLog.objects.count()
+    
+    # 今日日志
+    today_start = timezone.now().replace(hour=0, minute=0, second=0, microsecond=0)
+    today_log_count = AuditLog.objects.filter(timestamp__gte=today_start).count()
+    
+    # 近7天日志
+    week_log_count = AuditLog.objects.filter(timestamp__gte=one_week_ago).count()
+    
+    # 最近活动（获取最新的5条审计日志）
+    recent_activities = AuditLog.objects.select_related('user').all()[:5]
     
     context = {
-        'admin_page_title': '系统管理'
+        'admin_page_title': '系统管理',
+        # 用户统计
+        'user_count': user_count,
+        'active_user_count': active_user_count,
+        'new_user_count': new_user_count,
+        # 角色统计
+        'role_count': role_count, 
+        'permission_count': permission_count,
+        'custom_role_count': custom_role_count,
+        # 审计日志统计
+        'total_log_count': total_log_count,
+        'today_log_count': today_log_count,
+        'week_log_count': week_log_count,
+        # 最近活动
+        'recent_activities': recent_activities
     }
     return render(request, 'admin_panel/dashboard.html', context)
 
