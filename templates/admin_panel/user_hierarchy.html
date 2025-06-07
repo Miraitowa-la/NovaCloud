@@ -79,6 +79,31 @@
         background-color: var(--color-primary-transparent);
     }
     
+    /* 允许接收拖入的节点样式 */
+    .droppable-node {
+        position: relative;
+    }
+    
+    .droppable-node:after {
+        content: "";
+        position: absolute;
+        top: 0;
+        right: 0;
+        width: 8px;
+        height: 8px;
+        background-color: var(--color-primary-transparent);
+        border-radius: 0 var(--border-radius-md) 0 var(--border-radius-md);
+        transition: all 0.2s ease;
+        opacity: 0.7;
+    }
+    
+    .droppable-node:hover:after {
+        width: 10px;
+        height: 10px;
+        background-color: var(--color-primary);
+        opacity: 1;
+    }
+    
     /* 展开/折叠按钮 */
     .toggle-children {
         background: none;
@@ -176,6 +201,16 @@
         margin-left: 0.75rem;
     }
     
+    /* 超级管理员标签 */
+    .role-tag.admin-tag {
+        background-color: rgba(255, 193, 7, 0.2);
+        color: #e3a008;
+        font-size: 0.7rem;
+        padding: 0.2rem 0.5rem;
+        border-radius: 1rem;
+        font-weight: 500;
+    }
+    
     /* 操作按钮 */
     .user-actions {
         display: flex;
@@ -223,6 +258,41 @@
         width: 1.25rem;
         height: 2px;
         background-color: var(--border-default);
+    }
+    
+    /* 超级管理员和根节点的连接线使用特殊颜色 */
+    .super-admin-node > ul > li:before,
+    .super-admin-node > ul > li:after {
+        background-color: var(--color-primary);
+    }
+    
+    .super-admin-node > ul > li:last-child:before {
+        background: linear-gradient(to bottom, 
+            transparent 0px,
+            var(--color-primary) 0px,
+            var(--color-primary) 1.5rem,
+            transparent 1.5rem
+        );
+    }
+    
+    /* 根节点参考标签 */
+    .user-level-indicator {
+        font-size: 0.7rem;
+        padding: 0.2rem 0.5rem;
+        border-radius: 1rem;
+        background-color: var(--color-primary-transparent);
+        color: var(--color-primary);
+        font-weight: 500;
+    }
+    
+    /* 无子节点提示样式 */
+    .no-children-message {
+        padding: 0.5rem 0 0.5rem 2rem;
+    }
+    
+    .no-children-message .alert {
+        padding: 0.5rem 0.75rem;
+        font-size: 0.85rem;
     }
     
     /* 展开/折叠动画 */
@@ -438,6 +508,77 @@
             padding-left: 1rem;
         }
     }
+    
+    .super-admin-node > .user-tree-node {
+        background-color: var(--color-primary-transparent);
+        border-color: var(--color-primary);
+    }
+    
+    .super-admin-node .user-name i.fa-crown {
+        color: #ffc107; /* 金色 */
+    }
+    
+    .root-node > .user-tree-node {
+        background-color: var(--background-secondary);
+        border-width: 2px;
+    }
+    
+    .root-node-reference .user-tree-node {
+        background-color: var(--background-light);
+    }
+    
+    .user-tree-node.not-draggable {
+        cursor: default;
+    }
+    
+    /* 为不同层级的节点添加不同的边框颜色 */
+    .root-node > .user-tree-node {
+        border-left: 4px solid var(--color-primary);
+    }
+    
+    .user-tree-item .user-tree-item > .user-tree-node {
+        border-left: 4px solid var(--color-secondary);
+    }
+    
+    .user-tree-item .user-tree-item .user-tree-item > .user-tree-node {
+        border-left: 4px solid var(--color-success);
+    }
+    
+    .user-tree-item .user-tree-item .user-tree-item .user-tree-item > .user-tree-node {
+        border-left: 4px solid var(--color-warning);
+    }
+    
+    /* 上级用户标签样式 */
+    .user-meta-item i.fa-user-shield {
+        color: var(--color-primary);
+    }
+    
+    /* 全部折叠/展开按钮明暗模式适配 */
+    html[data-theme="dark"] .btn-outline-secondary,
+    body.dark-mode .btn-outline-secondary {
+        color: var(--text-default);
+        border-color: var(--border-default);
+    }
+    
+    html[data-theme="dark"] .btn-outline-secondary:hover,
+    body.dark-mode .btn-outline-secondary:hover {
+        background-color: var(--background-hover);
+        color: var(--text-default);
+    }
+    
+    html[data-theme="dark"] .btn-outline-secondary:disabled,
+    body.dark-mode .btn-outline-secondary:disabled {
+        color: var(--text-muted);
+        background-color: transparent;
+        border-color: var(--border-light);
+    }
+    
+    html[data-theme="dark"] .btn-secondary,
+    body.dark-mode .btn-secondary {
+        background-color: var(--background-secondary);
+        border-color: var(--background-secondary);
+        color: var(--text-default);
+    }
 </style>
 {% endblock %}
 
@@ -470,19 +611,152 @@
             </div>
         </div>
         <div class="card-body">
-            <div class="alert alert-info">
-                <i class="fas fa-info-circle mr-1"></i> 您可以拖拽用户卡片来调整用户的上下级关系。只有管理员可以执行此操作。
-            </div>
-            {% if root_users %}
-                <ul class="user-tree">
-                    {% for root_user in root_users %}
-                        {% include "admin_panel/partials/user_tree_item.html" with user=root_user user_hierarchy=user_hierarchy level="根节点" %}
-                    {% endfor %}
-                </ul>
+            {% if super_admins or root_nodes %}
+                <!-- 第一部分：超级管理员视图 -->
+                {% if super_admins %}
+                    <h5 class="mb-4 border-bottom pb-2"><i class="fas fa-user-shield text-primary mr-2"></i>超级管理员及其直属节点</h5>
+                    <ul class="user-tree mb-4">
+                        {% for admin in super_admins %}
+                            <li class="user-tree-item super-admin-node" data-user-id="{{ admin.id }}">
+                                <div class="user-tree-node not-draggable droppable-node">
+                                    <button class="toggle-children {% if admin_direct_children|get_item:admin.id %}{% else %}no-children{% endif %}">
+                                        <i class="fas {% if admin_direct_children|get_item:admin.id %}fa-minus-circle{% else %}fa-circle{% endif %}"></i>
+                                    </button>
+                                    <div class="user-tree-content">
+                                        <div class="user-name">
+                                            <i class="fas fa-user-shield text-primary"></i>
+                                            {{ admin.username }}
+                                            <span class="role-tag admin-tag">超级管理员</span>
+                                        </div>
+                                        <div class="user-meta">
+                                            <div class="user-meta-item">
+                                                <i class="fas fa-envelope"></i>
+                                                {{ admin.email|default:"未设置邮箱" }}
+                                            </div>
+                                            <div class="user-meta-item">
+                                                <i class="fas fa-calendar-alt"></i>
+                                                注册于 {{ admin.date_joined|date:"Y-m-d" }}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="user-actions">
+                                        <a href="{% url 'admin_panel:user_update' admin.id %}" class="btn btn-outline-primary user-action-btn">
+                                            <i class="fas fa-edit mr-1"></i> 编辑
+                                        </a>
+                                    </div>
+                                </div>
+                                {% if admin_direct_children|get_item:admin.id %}
+                                    <ul>
+                                        {% for child in admin_direct_children|get_item:admin.id %}
+                                            <li class="user-tree-item root-node-reference" data-user-id="{{ child.id }}">
+                                                <div class="user-tree-node" draggable="true">
+                                                    <button class="toggle-children no-children">
+                                                        <i class="fas fa-folder"></i>
+                                                    </button>
+                                                    <div class="user-tree-content">
+                                                        <div class="user-name">
+                                                            <i class="fas fa-layer-group text-primary"></i>
+                                                            {{ child.username }}
+                                                            <span class="user-level-indicator">根节点</span>
+                                                            {% if child.profile.role %}
+                                                                <span class="role-tag">{{ child.profile.role.name }}</span>
+                                                            {% endif %}
+                                                        </div>
+                                                        <div class="user-meta">
+                                                            <div class="user-meta-item">
+                                                                <i class="fas fa-envelope"></i>
+                                                                {{ child.email|default:"未设置邮箱" }}
+                                                            </div>
+                                                            <div class="user-meta-item">
+                                                                <i class="fas fa-user-shield"></i>
+                                                                上级: {{ admin.username }}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="user-actions">
+                                                        <a href="{% url 'admin_panel:user_update' child.id %}" class="btn btn-outline-primary user-action-btn">
+                                                            <i class="fas fa-edit mr-1"></i> 编辑
+                                                        </a>
+                                                    </div>
+                                                </div>
+                                            </li>
+                                        {% empty %}
+                                            <li class="no-children-message">
+                                                <div class="alert alert-info mb-0">
+                                                    <i class="fas fa-info-circle mr-2"></i>
+                                                    该超级管理员下没有根节点用户
+                                                </div>
+                                            </li>
+                                        {% endfor %}
+                                    </ul>
+                                {% endif %}
+                            </li>
+                        {% endfor %}
+                    </ul>
+                {% endif %}
+                
+                <!-- 第二部分：根节点完整视图 -->
+                {% if root_nodes %}
+                    <h5 class="mb-4 border-bottom pb-2"><i class="fas fa-layer-group text-primary mr-2"></i>超级管理员下级用户及其完整结构</h5>
+                    <ul class="user-tree">
+                        {% for root_node in root_nodes %}
+                            <li class="user-tree-item root-node" data-user-id="{{ root_node.id }}">
+                                <div class="user-tree-node not-draggable droppable-node">
+                                    <button class="toggle-children {% if user_hierarchy|get_item:root_node.id|get_item:'children' %}{% else %}no-children{% endif %}">
+                                        <i class="fas {% if user_hierarchy|get_item:root_node.id|get_item:'children' %}fa-minus-circle{% else %}fa-dot-circle{% endif %}"></i>
+                                    </button>
+                                    <div class="user-tree-content">
+                                        <div class="user-name">
+                                            <i class="fas fa-layer-group text-primary"></i>
+                                            {{ root_node.username }}
+                                            <span class="user-level-indicator">根节点</span>
+                                            {% if root_node.profile.role %}
+                                                <span class="role-tag">{{ root_node.profile.role.name }}</span>
+                                            {% endif %}
+                                        </div>
+                                        <div class="user-meta">
+                                            <div class="user-meta-item">
+                                                <i class="fas fa-envelope"></i>
+                                                {{ root_node.email|default:"未设置邮箱" }}
+                                            </div>
+                                            <div class="user-meta-item">
+                                                <i class="fas fa-calendar-alt"></i>
+                                                注册于 {{ root_node.date_joined|date:"Y-m-d" }}
+                                            </div>
+                                            {% if root_node.profile.parent_user %}
+                                                <div class="user-meta-item">
+                                                    <i class="fas fa-user-shield"></i>
+                                                    上级用户: {{ root_node.profile.parent_user.username }}
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    <div class="user-actions">
+                                        <a href="{% url 'admin_panel:user_update' root_node.id %}" class="btn btn-outline-primary user-action-btn">
+                                            <i class="fas fa-edit mr-1"></i> 编辑
+                                        </a>
+                                    </div>
+                                </div>
+                                {% if user_hierarchy|get_item:root_node.id|get_item:'children' %}
+                                    <ul>
+                                        {% for child in user_hierarchy|get_item:root_node.id|get_item:'children' %}
+                                            {% include "admin_panel/partials/user_tree_item.html" with user=child user_hierarchy=user_hierarchy %}
+                                        {% endfor %}
+                                    </ul>
+                                {% endif %}
+                            </li>
+                        {% endfor %}
+                    </ul>
+                {% else %}
+                    <div class="alert alert-info mt-4">
+                        <i class="fas fa-info-circle mr-2"></i>
+                        暂无超级管理员下级用户。您可以在用户编辑页面设置用户的上级关系。
+                    </div>
+                {% endif %}
             {% else %}
                 <div class="no-users-message">
                     <i class="fas fa-users-slash"></i>
-                    <p>暂无用户记录，或所有用户均有上级关联</p>
+                    <p>暂无用户记录</p>
                     <a href="{% url 'admin_panel:user_create' %}" class="btn btn-primary">
                         <i class="fas fa-user-plus mr-1"></i> 创建用户
                     </a>
@@ -544,11 +818,7 @@
 {% block extra_body_js %}
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        // 初始时所有子树都是折叠状态
-        const allChildLists = document.querySelectorAll('.user-tree ul');
-        allChildLists.forEach(list => {
-            list.classList.add('collapsed');
-        });
+        // 默认全部展开状态 (规格要求)
         
         // 切换展开/折叠状态
         document.querySelectorAll('.toggle-children:not(.no-children)').forEach(toggle => {
@@ -602,6 +872,9 @@
                     toggleBtn.style.transform = '';
                 }, 200);
             }
+            
+            // 检查全部折叠按钮状态
+            updateCollapseButtonState();
         }
         
         // 全部展开
@@ -617,6 +890,9 @@
                     icon.classList.replace('fa-plus-circle', 'fa-minus-circle');
                 }
             });
+            
+            // 更新折叠按钮状态
+            updateCollapseButtonState();
         }
         
         // 全部折叠
@@ -632,62 +908,93 @@
                     icon.classList.replace('fa-minus-circle', 'fa-plus-circle');
                 }
             });
+            
+            // 更新折叠按钮状态
+            updateCollapseButtonState();
+        }
+        
+        // 更新折叠按钮状态
+        function updateCollapseButtonState() {
+            const collapseBtn = document.getElementById('collapseAllBtn');
+            // 检查是否有任何展开的节点
+            const hasExpandedNodes = document.querySelector('.user-tree ul:not(.collapsed)') !== null;
+            
+            // 更新按钮状态
+            if (hasExpandedNodes) {
+                collapseBtn.disabled = false;
+                collapseBtn.classList.remove('disabled');
+            } else {
+                collapseBtn.disabled = true;
+                collapseBtn.classList.add('disabled');
+            }
         }
         
         // ===== 拖放功能实现 =====
         let draggedNode = null;
         let draggedUserId = null;
         let targetUserId = null;
-        let isStaffUser = false;
         
-        // 获取所有用户节点
-        const userNodes = document.querySelectorAll('.user-tree-node');
+        // 获取所有可拖动的用户节点（根据规则排除特定节点）
+        const draggableNodes = document.querySelectorAll('.user-tree-node:not(.not-draggable)');
         
-        // 为每个用户节点添加拖放事件处理器
-        userNodes.forEach(node => {
-            // 使节点可拖动
-            node.setAttribute('draggable', 'true');
-            
-            // 拖动开始事件
-            node.addEventListener('dragstart', function(e) {
-                // 阻止按钮等元素的拖动事件冒泡
-                if (e.target.closest('.user-actions') || e.target.closest('.toggle-children')) {
-                    e.preventDefault();
-                    return false;
-                }
+        // 为每个可拖动的用户节点添加拖放事件处理器
+        draggableNodes.forEach(node => {
+            // 如果节点可拖动
+            if (!node.closest('.user-tree-item').classList.contains('super-admin-node') && 
+                !node.closest('.user-tree-item').classList.contains('root-node')) {
                 
-                draggedNode = this;
-                draggedUserId = this.closest('.user-tree-item').dataset.userId;
-                isStaffUser = this.closest('.user-tree-item').classList.contains('is-staff');
+                // 使节点可拖动
+                node.setAttribute('draggable', 'true');
                 
-                // 存储拖动数据
-                e.dataTransfer.setData('text/plain', draggedUserId);
-                
-                // 添加拖动样式
-                setTimeout(() => {
-                    this.classList.add('dragging');
-                }, 0);
-                
-                // 创建所有放置指示器
-                createDropIndicators();
-            });
-            
-            // 拖动结束事件
-            node.addEventListener('dragend', function() {
-                this.classList.remove('dragging');
-                
-                // 移除所有放置指示器
-                removeDropIndicators();
-                
-                // 移除所有目标高亮
-                document.querySelectorAll('.drop-target').forEach(el => {
-                    el.classList.remove('drop-target');
+                // 拖动开始事件
+                node.addEventListener('dragstart', function(e) {
+                    // 阻止按钮等元素的拖动事件冒泡
+                    if (e.target.closest('.user-actions') || e.target.closest('.toggle-children')) {
+                        e.preventDefault();
+                        return false;
+                    }
+                    
+                    draggedNode = this;
+                    draggedUserId = this.closest('.user-tree-item').dataset.userId;
+                    
+                    // 存储拖动数据
+                    e.dataTransfer.setData('text/plain', draggedUserId);
+                    
+                    // 添加拖动样式
+                    setTimeout(() => {
+                        this.classList.add('dragging');
+                    }, 0);
+                    
+                    // 创建所有放置指示器
+                    createDropIndicators();
                 });
-            });
-            
+                
+                // 拖动结束事件
+                node.addEventListener('dragend', function() {
+                    this.classList.remove('dragging');
+                    
+                    // 移除所有放置指示器
+                    removeDropIndicators();
+                    
+                    // 移除所有目标高亮
+                    document.querySelectorAll('.drop-target').forEach(el => {
+                        el.classList.remove('drop-target');
+                    });
+                });
+            }
+        });
+        
+        // 为每个用户节点添加拖放目标事件
+        document.querySelectorAll('.user-tree-node').forEach(node => {
             // 拖动经过事件
             node.addEventListener('dragover', function(e) {
+                // 阻止默认行为以允许放置
                 e.preventDefault();
+                
+                // 如果是不可放置的节点，则跳过
+                if (!node.classList.contains('droppable-node') && node.classList.contains('not-draggable')) {
+                    return false;
+                }
                 
                 // 防止拖放到自己
                 if (draggedUserId === this.closest('.user-tree-item').dataset.userId) {
@@ -707,6 +1014,11 @@
             node.addEventListener('drop', function(e) {
                 e.preventDefault();
                 
+                // 如果是不可放置的节点，则跳过
+                if (!node.classList.contains('droppable-node') && node.classList.contains('not-draggable')) {
+                    return false;
+                }
+                
                 // 移除目标高亮
                 this.classList.remove('drop-target');
                 
@@ -722,33 +1034,17 @@
                 const draggedUserName = draggedNode.querySelector('.user-name').textContent.trim();
                 const targetUserName = this.querySelector('.user-name').textContent.trim();
                 
+                // 检查是否是将上级拖动到下级上（通过检查目标节点是否在拖动节点的子树中）
+                const draggedItem = draggedNode.closest('.user-tree-item');
+                const targetItem = this.closest('.user-tree-item');
+                
+                if (isDescendantNode(draggedItem, targetItem)) {
+                    alert('不能将上级用户移动到下级用户下');
+                    return false;
+                }
+                
                 // 显示确认模态框
                 showHierarchyConfirmModal(draggedUserName, targetUserName, draggedUserId, targetUserId);
-            });
-        });
-        
-        // 为空的放置区域添加拖放事件
-        document.querySelectorAll('.user-tree').forEach(tree => {
-            tree.addEventListener('dragover', function(e) {
-                // 如果拖动到列表的空白处，允许放置
-                if (e.target === this) {
-                    e.preventDefault();
-                }
-            });
-            
-            tree.addEventListener('drop', function(e) {
-                // 如果放置在列表的空白处，表示移动到根级别
-                if (e.target === this) {
-                    e.preventDefault();
-                    
-                    targetUserId = null; // 表示移动到根级别
-                    
-                    // 获取拖动用户的数据
-                    const draggedUserName = draggedNode.querySelector('.user-name').textContent.trim();
-                    
-                    // 显示确认模态框
-                    showHierarchyConfirmModal(draggedUserName, "根级别", draggedUserId, targetUserId);
-                }
             });
         });
         
@@ -756,6 +1052,16 @@
         function createDropIndicators() {
             // 在每个用户项前后添加放置指示器
             document.querySelectorAll('.user-tree-item').forEach(item => {
+                // 只在可拖动节点的父节点下创建指示器
+                // 包括：超级管理员节点和根节点下可以有放置指示器
+                if (!item.querySelector('.user-tree-node.droppable-node') && 
+                    !item.parentElement.closest('.super-admin-node') && 
+                    !item.parentElement.closest('.root-node') &&
+                    !item.classList.contains('super-admin-node') && 
+                    !item.classList.contains('root-node')) {
+                    return;
+                }
+                
                 // 在每个项目前后添加放置指示器
                 const beforeIndicator = document.createElement('div');
                 beforeIndicator.className = 'drop-indicator';
@@ -789,15 +1095,35 @@
                         const position = this.dataset.position;
                         const adjacentUserId = this.dataset.userId;
                         
-                        // 这里可以实现更复杂的放置逻辑，如"放置在某用户之前/之后"
-                        // 简化版本：放置到根级别
-                        targetUserId = null;
+                        // 获取相邻节点的父节点
+                        const adjacentItem = document.querySelector(`.user-tree-item[data-user-id="${adjacentUserId}"]`);
+                        const parentItem = adjacentItem.parentElement.closest('.user-tree-item');
                         
-                        // 获取拖动用户的数据
-                        const draggedUserName = draggedNode.querySelector('.user-name').textContent.trim();
-                        
-                        // 显示确认模态框
-                        showHierarchyConfirmModal(draggedUserName, "根级别", draggedUserId, targetUserId);
+                        if (parentItem) {
+                            targetUserId = parentItem.dataset.userId;
+                            
+                            // 获取目标用户的数据
+                            const targetUserName = parentItem.querySelector('.user-name').textContent.trim();
+                            const draggedUserName = draggedNode.querySelector('.user-name').textContent.trim();
+                            
+                            // 检查是否会导致循环引用
+                            if (isDescendantNode(draggedNode.closest('.user-tree-item'), parentItem)) {
+                                alert('不能将上级用户移动到下级用户下');
+                                return false;
+                            }
+                            
+                            // 显示确认模态框
+                            showHierarchyConfirmModal(draggedUserName, targetUserName, draggedUserId, targetUserId);
+                        } else {
+                            // 放置到根级别
+                            targetUserId = null;
+                            
+                            // 获取拖动用户的数据
+                            const draggedUserName = draggedNode.querySelector('.user-name').textContent.trim();
+                            
+                            // 显示确认模态框
+                            showHierarchyConfirmModal(draggedUserName, "根级别", draggedUserId, targetUserId);
+                        }
                     });
                 });
             });
@@ -912,6 +1238,46 @@
         function getCsrfToken() {
             return document.querySelector('[name=csrfmiddlewaretoken]').value;
         }
+        
+        // 辅助函数：检查一个DOM节点是否是另一个节点的后代
+        function isDescendantNode(possibleAncestor, possibleDescendant) {
+            // 检查是否是将上级拖到下级下
+            // 获取可能后代节点的所有父节点
+            let parent = possibleDescendant.parentElement;
+            
+            // 向上遍历DOM树直到找到根节点或可能的祖先节点
+            while (parent && !parent.classList.contains('user-tree')) {
+                if (parent === possibleAncestor) {
+                    return true;
+                }
+                parent = parent.parentElement;
+            }
+            
+            // 如果在DOM树中没有找到，再检查数据关系
+            const ancestorId = possibleAncestor.dataset.userId;
+            const descendantId = possibleDescendant.dataset.userId;
+            
+            // 使用服务器端函数检查
+            return isAncestorOf(ancestorId, descendantId);
+        }
+        
+        // 检查一个用户是否是另一个用户的祖先（基于用户ID）
+        function isAncestorOf(ancestorId, descendantId) {
+            // 这只是一个前端检查，完整检查在后端完成
+            // 在本示例中，我们简单地通过DOM结构来推断
+            const ancestorElement = document.querySelector(`.user-tree-item[data-user-id="${ancestorId}"]`);
+            const descendantElement = document.querySelector(`.user-tree-item[data-user-id="${descendantId}"]`);
+            
+            if (!ancestorElement || !descendantElement) {
+                return false;
+            }
+            
+            // 检查descendantElement是否包含在ancestorElement内部
+            return ancestorElement.contains(descendantElement);
+        }
+        
+        // 初始化：检查折叠按钮状态
+        updateCollapseButtonState();
     });
 </script>
 {% endblock %} 

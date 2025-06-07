@@ -2,12 +2,12 @@
 {% load admin_tags %}
 
 <li class="user-tree-item {% if not user.is_active %}inactive-user{% endif %} {% if user.is_staff %}is-staff{% endif %}" data-user-id="{{ user.id }}">
-    <div class="user-tree-node">
+    <div class="user-tree-node" draggable="true">
         <!-- 展开/折叠按钮 -->
         {% with children=user_hierarchy|get_item:user.id|get_item:"children" %}
             {% if children|length > 0 %}
                 <button class="toggle-children" title="展开/折叠下级用户">
-                    <i class="fas fa-plus-circle"></i>
+                    <i class="fas fa-minus-circle"></i>
                 </button>
             {% else %}
                 <button class="toggle-children no-children" title="无下级用户" disabled>
@@ -20,31 +20,25 @@
         <div class="user-tree-content">
             <div class="user-name">
                 {% if user.is_staff %}
-                    <i class="fas fa-user-shield admin-icon" title="管理员"></i>
+                    <i class="fas fa-user-shield text-primary" title="管理员"></i>
                 {% else %}
-                    <i class="fas fa-user" title="普通用户"></i>
+                    <i class="fas fa-user text-secondary" title="普通用户"></i>
                 {% endif %}
                 {{ user.username }}
                 {% if level %}
-                    <span class="user-level-indicator">{{ level }}</span>
+                    <!-- 移除下级标签 -->
                 {% endif %}
                 {% if not user.is_active %}
                     <span class="badge badge-danger ml-2">已禁用</span>
+                {% endif %}
+                {% if user.profile.role %}
+                    <span class="role-tag">{{ user.profile.role.name }}</span>
                 {% endif %}
             </div>
             <div class="user-meta">
                 <div class="user-meta-item">
                     <i class="fas fa-envelope"></i>
-                    {{ user.email }}
-                </div>
-                <div class="user-meta-item">
-                    <i class="fas fa-user-tag"></i>
-                    {% if user.profile.role %}
-                        {{ user.profile.role.name }}
-                        <span class="role-tag">{{ user.profile.role.codename }}</span>
-                    {% else %}
-                        <span>无角色</span>
-                    {% endif %}
+                    {{ user.email|default:"未设置邮箱" }}
                 </div>
                 <div class="user-meta-item">
                     <i class="fas fa-calendar-alt"></i>
@@ -53,7 +47,7 @@
                 {% if user.last_login %}
                 <div class="user-meta-item">
                     <i class="fas fa-sign-in-alt"></i>
-                    最近登录: {{ user.last_login|date:"Y-m-d H:i" }}
+                    最近登录: {{ user.last_login|timesince }}前
                 </div>
                 {% endif %}
             </div>
@@ -61,7 +55,7 @@
         
         <!-- 操作按钮 -->
         <div class="user-actions">
-            <a href="{% url 'admin_panel:user_update' user.id %}" class="btn btn-outline-primary user-action-btn" title="编辑用户">
+            <a href="{% url 'admin_panel:user_update' user.id %}" class="btn btn-sm btn-outline-primary user-action-btn" title="编辑用户">
                 <i class="fas fa-edit mr-1"></i> 编辑
             </a>
         </div>

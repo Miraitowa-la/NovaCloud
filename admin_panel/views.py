@@ -436,23 +436,22 @@ def audit_log_detail_view(request, log_id):
 
 @admin_required
 def user_hierarchy_view(request):
-    """用户层级树视图"""
-    # 获取顶级用户（没有上级的用户）- 先显示管理员
-    staff_root_users = User.objects.filter(
-        profile__parent_user__isnull=True,
+    """用户层级树视图 - 组织架构"""
+    # 获取所有超级管理员（staff用户）
+    super_admins = User.objects.filter(
         is_staff=True
     ).select_related('profile').prefetch_related('profile__role').order_by('username')
     
-    # 再获取非管理员根用户
-    non_staff_root_users = User.objects.filter(
-        profile__parent_user__isnull=True,
+    # 获取超级管理员的ID列表
+    admin_ids = list(super_admins.values_list('id', flat=True))
+    
+    # 获取根节点（超级管理员直接下级的用户）
+    root_nodes = User.objects.filter(
+        profile__parent_user__in=admin_ids,
         is_staff=False
-    ).select_related('profile').prefetch_related('profile__role').order_by('username')
+    ).select_related('profile').prefetch_related('profile__role').distinct().order_by('username')
     
-    # 合并两个查询集
-    root_users = list(staff_root_users) + list(non_staff_root_users)
-    
-    # 获取所有用户以及其下级关系，用于构建完整的层级树
+    # 获取所有用户
     all_users = User.objects.select_related('profile').prefetch_related('profile__role').all()
     
     # 构建用户层级数据结构
@@ -461,7 +460,7 @@ def user_hierarchy_view(request):
     # 先建立用户ID到用户对象的映射
     user_map = {user.id: user for user in all_users}
     
-    # 记录每个用户的直接下级
+    # 为每个用户创建层级结构条目
     for user in all_users:
         user_hierarchy[user.id] = {
             'user': user,
@@ -475,9 +474,20 @@ def user_hierarchy_view(request):
             if parent_id in user_hierarchy:
                 user_hierarchy[parent_id]['children'].append(user)
     
+    # 为超级管理员找到直接下级（根节点）
+    admin_direct_children = {}
+    for admin in super_admins:
+        admin_direct_children[admin.id] = []
+        for user in all_users:
+            if (hasattr(user, 'profile') and 
+                user.profile.parent_user_id == admin.id):
+                admin_direct_children[admin.id].append(user)
+    
     context = {
-        'root_users': root_users,
+        'super_admins': super_admins,
+        'root_nodes': root_nodes,
         'user_hierarchy': user_hierarchy,
+        'admin_direct_children': admin_direct_children,
         'admin_page_title': '用户层级树'
     }
     
@@ -516,6 +526,10 @@ def update_user_hierarchy_view(request):
             # 检查是否会导致循环引用（目标用户不能是源用户的下级）
             if is_descendant(target_user_id, source_user_id):
                 return JsonResponse({'success': False, 'message': '不能将用户移动到自己的下级用户下'})
+            
+            # 检查是否会导致互为上下级的情况（源用户不能是目标用户的上级）
+            if is_ancestor(source_user_id, target_user_id):
+                return JsonResponse({'success': False, 'message': '不能将上级用户移动到下级用户下'})
         
         # 更新用户层级关系
         with transaction.atomic():
@@ -576,6 +590,11 @@ def is_descendant(user_id, potential_ancestor_id):
     
     # 递归检查父级是否是潜在祖先的后代
     return is_descendant(user.parent_user_id, potential_ancestor_id)
+
+def is_ancestor(user_id, potential_descendant_id):
+    """检查用户是否是另一个用户的祖先（上级）"""
+    # 直接利用已有的is_descendant函数
+    return is_descendant(potential_descendant_id, user_id)
 
 def get_client_ip(request):
     """获取客户端IP地址"""
