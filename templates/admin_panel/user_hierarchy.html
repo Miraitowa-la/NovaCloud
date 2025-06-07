@@ -6,6 +6,30 @@
 
 {% block extra_head_css %}
 <style>
+    /* 添加缺失的CSS变量 */
+    :root {
+        --color-primary-transparent: rgba(var(--color-primary-rgb), 0.2);
+        --background-card: var(--background-default);
+        --border-light: var(--border-muted);
+        --background-secondary: var(--background-muted);
+        --background-light: var(--background-muted);
+        --background-danger-light: rgba(var(--color-danger-rgb), 0.1);
+        --color-danger-transparent: rgba(var(--color-danger-rgb), 0.3);
+    }
+    
+    /* 为暗色模式提供相同的变量 */
+    body.dark-mode,
+    html.theme-dark,
+    html[data-theme='dark'] {
+        --color-primary-transparent: rgba(var(--color-primary-rgb), 0.2);
+        --background-card: var(--background-default);
+        --border-light: var(--border-muted);
+        --background-secondary: var(--background-muted);
+        --background-light: var(--background-muted);
+        --background-danger-light: rgba(var(--color-danger-rgb), 0.1);
+        --color-danger-transparent: rgba(var(--color-danger-rgb), 0.3);
+    }
+
     /* 基础树形结构 */
     .user-tree {
         margin-left: 0;
@@ -44,7 +68,7 @@
         display: flex;
         align-items: center;
         padding: 0.85rem 1.25rem;
-        background-color: var(--background-card);
+        background-color: var(--background-default);
         border: 1px solid var(--border-default);
         border-radius: var(--border-radius-md);
         box-shadow: var(--shadow-sm);
@@ -148,24 +172,24 @@
         border-radius: 50%;
         transition: all 0.25s;
         background-color: var(--background-default);
-        border: 1px solid var(--border-light);
+        border: 1px solid var(--border-muted);
     }
     
     .toggle-children:hover {
-        background-color: var(--color-primary-transparent);
+        background-color: rgba(var(--color-primary-rgb), 0.2);
         transform: rotate(15deg);
     }
     
     .toggle-children:focus {
         outline: none;
-        box-shadow: 0 0 0 2px var(--color-primary-transparent);
+        box-shadow: 0 0 0 2px rgba(var(--color-primary-rgb), 0.2);
     }
     
     .toggle-children.no-children {
         color: var(--text-muted);
         cursor: default;
         background-color: var(--background-muted);
-        border-color: var(--border-light);
+        border-color: var(--border-muted);
         opacity: 0.7;
     }
     
@@ -384,8 +408,8 @@
     
     /* 禁用状态高亮 */
     .inactive-user .user-tree-node {
-        border-color: var(--color-danger-transparent);
-        background-color: var(--background-danger-light);
+        border-color: rgba(var(--color-danger-rgb), 0.3);
+        background-color: rgba(var(--color-danger-rgb), 0.1);
     }
     
     /* 用户级别指示 */
@@ -541,7 +565,7 @@
     }
     
     .super-admin-node > .user-tree-node {
-        background-color: var(--color-primary-transparent);
+        background-color: rgba(var(--color-primary-rgb), 0.2);
         border-color: var(--color-primary);
     }
     
@@ -550,12 +574,12 @@
     }
     
     .root-node > .user-tree-node {
-        background-color: var(--background-secondary);
+        background-color: var(--background-muted);
         border-width: 2px;
     }
     
     .root-node-reference .user-tree-node {
-        background-color: var(--background-light);
+        background-color: var(--background-muted);
     }
     
     .user-tree-node.not-draggable {
@@ -613,12 +637,12 @@
     
     /* 特殊根节点（无上级用户）样式 */
     .special-root-node > .user-tree-node {
-        background-color: var(--background-light);
+        background-color: var(--background-muted);
         border-left: 4px solid var(--color-warning);
     }
     
     .orphan-node {
-        background-color: var(--background-light);
+        background-color: var(--background-muted);
         border-left: 4px solid var(--color-info) !important;
     }
     
@@ -638,7 +662,7 @@
         right: 0;
         width: 8px;
         height: 8px;
-        background-color: var(--color-danger-transparent);
+        background-color: rgba(var(--color-danger-rgb), 0.3);
         border-radius: 0 var(--border-radius-md) 0 var(--border-radius-md);
         transition: all 0.2s ease;
         opacity: 0.7;

@@ -16,6 +16,13 @@
     --color-warning: #ffc107;
     --color-info: #17a2b8;
     
+    /* RGB变量，用于透明效果 */
+    --color-secondary-rgb: 108, 117, 125;
+    --color-success-rgb: 40, 167, 69;
+    --color-danger-rgb: 220, 53, 69;
+    --color-warning-rgb: 255, 193, 7;
+    --color-info-rgb: 23, 162, 184;
+    
     /* 背景 */
     --background-body: #f6f8fa;
     --background-default: #ffffff;
@@ -71,6 +78,13 @@ html[data-theme='dark'] {
     --color-primary-hover: #79b6ff;
     --color-primary-active: #388bfd;
     --color-primary-rgb: 88, 166, 255;
+    
+    /* RGB变量，用于透明效果 */
+    --color-secondary-rgb: 108, 117, 125;
+    --color-success-rgb: 40, 167, 69;
+    --color-danger-rgb: 220, 53, 69;
+    --color-warning-rgb: 255, 193, 7;
+    --color-info-rgb: 23, 162, 184;
     
     /* 背景 */
     --background-body: #0d1117;
