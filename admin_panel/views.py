@@ -13,6 +13,9 @@ from core.models import AuditLog
 from core.constants import AuditActionType, AUDIT_ACTION_CHOICES
 from .decorators import admin_required
 from .forms import AdminUserCreationForm, AdminUserChangeForm, RoleForm, AuditLogFilterForm
+from django.http import JsonResponse
+from django.db import transaction
+import json
 
 # Create your views here.
 
@@ -430,3 +433,155 @@ def audit_log_detail_view(request, log_id):
     }
     
     return render(request, 'admin_panel/audit_log_detail.html', context)
+
+@admin_required
+def user_hierarchy_view(request):
+    """用户层级树视图"""
+    # 获取顶级用户（没有上级的用户）- 先显示管理员
+    staff_root_users = User.objects.filter(
+        profile__parent_user__isnull=True,
+        is_staff=True
+    ).select_related('profile').prefetch_related('profile__role').order_by('username')
+    
+    # 再获取非管理员根用户
+    non_staff_root_users = User.objects.filter(
+        profile__parent_user__isnull=True,
+        is_staff=False
+    ).select_related('profile').prefetch_related('profile__role').order_by('username')
+    
+    # 合并两个查询集
+    root_users = list(staff_root_users) + list(non_staff_root_users)
+    
+    # 获取所有用户以及其下级关系，用于构建完整的层级树
+    all_users = User.objects.select_related('profile').prefetch_related('profile__role').all()
+    
+    # 构建用户层级数据结构
+    user_hierarchy = {}
+    
+    # 先建立用户ID到用户对象的映射
+    user_map = {user.id: user for user in all_users}
+    
+    # 记录每个用户的直接下级
+    for user in all_users:
+        user_hierarchy[user.id] = {
+            'user': user,
+            'children': []
+        }
+    
+    # 构建层级关系
+    for user in all_users:
+        if hasattr(user, 'profile') and user.profile.parent_user_id:
+            parent_id = user.profile.parent_user_id
+            if parent_id in user_hierarchy:
+                user_hierarchy[parent_id]['children'].append(user)
+    
+    context = {
+        'root_users': root_users,
+        'user_hierarchy': user_hierarchy,
+        'admin_page_title': '用户层级树'
+    }
+    
+    return render(request, 'admin_panel/user_hierarchy.html', context)
+
+@admin_required
+def update_user_hierarchy_view(request):
+    """更新用户层级关系的API"""
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'message': '只允许POST请求'})
+    
+    try:
+        # 解析JSON数据
+        data = json.loads(request.body)
+        source_user_id = data.get('source_user_id')
+        target_user_id = data.get('target_user_id')  # None表示移动到根级别
+        
+        # 验证用户ID
+        if not source_user_id:
+            return JsonResponse({'success': False, 'message': '缺少源用户ID'})
+        
+        # 获取源用户
+        try:
+            source_user = User.objects.get(id=source_user_id)
+        except User.DoesNotExist:
+            return JsonResponse({'success': False, 'message': '源用户不存在'})
+        
+        # 获取目标用户（如果有）
+        target_user = None
+        if target_user_id:
+            try:
+                target_user = User.objects.get(id=target_user_id)
+            except User.DoesNotExist:
+                return JsonResponse({'success': False, 'message': '目标用户不存在'})
+            
+            # 检查是否会导致循环引用（目标用户不能是源用户的下级）
+            if is_descendant(target_user_id, source_user_id):
+                return JsonResponse({'success': False, 'message': '不能将用户移动到自己的下级用户下'})
+        
+        # 更新用户层级关系
+        with transaction.atomic():
+            source_profile = UserProfile.objects.get(user=source_user)
+            old_parent = source_profile.parent_user
+            
+            # 更新父级用户
+            source_profile.parent_user = target_user
+            source_profile.save()
+            
+            # 记录审计日志
+            log_message = f"用户层级变更: "
+            if old_parent:
+                log_message += f"从 '{old_parent.username}' 的下级"
+            else:
+                log_message += "从根级别"
+                
+            if target_user:
+                log_message += f" 移动到 '{target_user.username}' 的下级"
+            else:
+                log_message += " 移动到根级别"
+            
+            AuditLog.objects.create(
+                user=request.user,
+                action_type=AuditActionType.USER_UPDATE,
+                target_object_id=source_user.id,
+                target_object_repr=f"User: {source_user.username}",
+                details=log_message,
+                ip_address=get_client_ip(request)
+            )
+        
+        # 构建成功消息
+        message = f"用户 '{source_user.username}' 已"
+        if target_user:
+            message += f"成为 '{target_user.username}' 的下级"
+        else:
+            message += "移动到根级别"
+            
+        return JsonResponse({'success': True, 'message': message})
+        
+    except Exception as e:
+        return JsonResponse({'success': False, 'message': f'发生错误: {str(e)}'})
+
+def is_descendant(user_id, potential_ancestor_id):
+    """检查用户是否是另一个用户的后代（下级）"""
+    try:
+        user = UserProfile.objects.get(user_id=user_id)
+    except UserProfile.DoesNotExist:
+        return False
+    
+    # 如果没有父级，则不是任何人的后代
+    if not user.parent_user_id:
+        return False
+    
+    # 如果直接父级就是潜在祖先，则是后代
+    if user.parent_user_id == potential_ancestor_id:
+        return True
+    
+    # 递归检查父级是否是潜在祖先的后代
+    return is_descendant(user.parent_user_id, potential_ancestor_id)
+
+def get_client_ip(request):
+    """获取客户端IP地址"""
+    x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+    if x_forwarded_for:
+        ip = x_forwarded_for.split(',')[0]
+    else:
+        ip = request.META.get('REMOTE_ADDR')
+    return ip

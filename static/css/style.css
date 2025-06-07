@@ -1625,7 +1625,7 @@ html, body {
 .table-title i {
     margin-right: 0.5rem;
     color: var(--color-primary);
-}
+    }
 
 /* 表格卡片容器 */
 .table-card {

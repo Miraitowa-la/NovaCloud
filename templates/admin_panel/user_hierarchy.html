@@ -1,0 +1,917 @@
+{% extends "admin_panel/base_admin.html" %}
+{% load static %}
+{% load admin_tags %}
+
+{% block admin_page_title %}{{ admin_page_title }}{% endblock %}
+
+{% block extra_head_css %}
+<style>
+    /* 基础树形结构 */
+    .user-tree {
+        margin-left: 0;
+        padding-left: 0;
+    }
+    
+    .user-tree, .user-tree ul {
+        list-style-type: none;
+    }
+    
+    .user-tree ul {
+        padding-left: 2.5rem;
+        margin-top: 0.75rem;
+    }
+    
+    /* 节点项 */
+    .user-tree-item {
+        position: relative;
+        margin-bottom: 1rem;
+        transition: all 0.3s ease;
+    }
+    
+    /* 节点卡片 */
+    .user-tree-node {
+        display: flex;
+        align-items: center;
+        padding: 0.85rem 1.25rem;
+        background-color: var(--background-card);
+        border: 1px solid var(--border-default);
+        border-radius: var(--border-radius-md);
+        box-shadow: var(--shadow-sm);
+        transition: all 0.25s ease;
+        cursor: grab;
+    }
+    
+    .user-tree-node:hover {
+        background-color: var(--background-hover);
+        box-shadow: var(--shadow-md);
+        transform: translateY(-2px);
+    }
+    
+    .user-tree-node.dragging {
+        opacity: 0.7;
+        cursor: grabbing;
+        box-shadow: var(--shadow-lg);
+    }
+    
+    /* 拖放目标指示器 */
+    .drop-indicator {
+        height: 4px;
+        background-color: var(--color-primary);
+        margin: 8px 0;
+        border-radius: 2px;
+        display: none;
+    }
+    
+    .drop-indicator.active {
+        display: block;
+        animation: pulse 1.5s infinite;
+    }
+    
+    @keyframes pulse {
+        0% { opacity: 0.6; }
+        50% { opacity: 1; }
+        100% { opacity: 0.6; }
+    }
+    
+    /* 拖放目标高亮 */
+    .user-tree-node.drop-target {
+        border: 2px dashed var(--color-primary);
+        background-color: var(--color-primary-transparent);
+    }
+    
+    /* 展开/折叠按钮 */
+    .toggle-children {
+        background: none;
+        border: none;
+        color: var(--color-primary);
+        margin-right: 1rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 28px;
+        height: 28px;
+        font-size: 1rem;
+        cursor: pointer;
+        border-radius: 50%;
+        transition: all 0.25s;
+        background-color: var(--background-default);
+        border: 1px solid var(--border-light);
+    }
+    
+    .toggle-children:hover {
+        background-color: var(--color-primary-transparent);
+        transform: rotate(15deg);
+    }
+    
+    .toggle-children:focus {
+        outline: none;
+        box-shadow: 0 0 0 2px var(--color-primary-transparent);
+    }
+    
+    .toggle-children.no-children {
+        color: var(--text-muted);
+        cursor: default;
+        background-color: var(--background-muted);
+        border-color: var(--border-light);
+        opacity: 0.7;
+    }
+    
+    .toggle-children.no-children:hover {
+        background-color: var(--background-muted);
+        transform: none;
+    }
+    
+    /* 用户信息区域 */
+    .user-tree-content {
+        flex-grow: 1;
+        padding: 0.25rem 0;
+    }
+    
+    .user-name {
+        font-weight: 600;
+        margin-bottom: 0.35rem;
+        color: var(--text-default);
+        display: flex;
+        align-items: center;
+    }
+    
+    .user-name i {
+        margin-right: 0.5rem;
+    }
+    
+    /* 用户元数据 */
+    .user-meta {
+        display: flex;
+        flex-wrap: wrap;
+        font-size: 0.85rem;
+        color: var(--text-muted);
+        margin-top: 0.25rem;
+    }
+    
+    .user-meta-item {
+        margin-right: 1.25rem;
+        margin-bottom: 0.25rem;
+        display: flex;
+        align-items: center;
+        padding: 0.25rem 0;
+    }
+    
+    .user-meta-item i {
+        margin-right: 0.4rem;
+        font-size: 0.85rem;
+        color: var(--text-muted);
+        opacity: 0.8;
+    }
+    
+    /* 角色标签 */
+    .role-tag {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.2rem 0.65rem;
+        font-size: 0.75rem;
+        font-weight: 500;
+        border-radius: 1rem;
+        background-color: var(--color-primary-transparent);
+        color: var(--color-primary);
+        margin-left: 0.75rem;
+    }
+    
+    /* 操作按钮 */
+    .user-actions {
+        display: flex;
+        pointer-events: auto;
+    }
+    
+    .user-action-btn {
+        margin-left: 0.5rem;
+    }
+    
+    /* 连接线样式 - 更科学美观的树形连线 */
+    .user-tree ul li {
+        position: relative;
+    }
+    
+    .user-tree ul li:before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: -1.5rem;
+        width: 2px;
+        height: 100%;
+        background: linear-gradient(to bottom, 
+            transparent 0px,
+            var(--border-default) 0px,
+            var(--border-default) calc(100% - 0.5rem),
+            transparent calc(100% - 0.5rem)
+        );
+    }
+    
+    .user-tree ul li:last-child:before {
+        background: linear-gradient(to bottom, 
+            transparent 0px,
+            var(--border-default) 0px,
+            var(--border-default) 1.5rem,
+            transparent 1.5rem
+        );
+    }
+    
+    .user-tree ul li:after {
+        content: "";
+        position: absolute;
+        top: 1.25rem;
+        left: -1.5rem;
+        width: 1.25rem;
+        height: 2px;
+        background-color: var(--border-default);
+    }
+    
+    /* 展开/折叠动画 */
+    .user-tree ul {
+        max-height: 2000px;
+        transition: max-height 0.4s cubic-bezier(0.215, 0.61, 0.355, 1);
+        overflow: hidden;
+        opacity: 1;
+    }
+    
+    .user-tree ul.collapsed {
+        max-height: 0;
+        opacity: 0;
+        margin-top: 0;
+    }
+    
+    /* 空状态 */
+    .no-users-message {
+        text-align: center;
+        padding: 3rem 2rem;
+        background-color: var(--background-card);
+        border-radius: var(--border-radius-md);
+        border: 1px dashed var(--border-default);
+    }
+    
+    .no-users-message i {
+        font-size: 3.5rem;
+        color: var(--text-muted);
+        margin-bottom: 1.5rem;
+        display: block;
+        opacity: 0.6;
+    }
+    
+    .no-users-message p {
+        margin-bottom: 1.5rem;
+        color: var(--text-muted);
+        font-size: 1.1rem;
+    }
+    
+    /* 卡片标题栏按钮 */
+    .card-header-actions {
+        display: flex;
+        align-items: center;
+    }
+    
+    .card-header-actions .btn {
+        margin-left: 0.5rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    /* 管理员标识 */
+    .admin-icon {
+        color: var(--color-primary);
+        margin-right: 0.5rem;
+    }
+    
+    /* 禁用状态高亮 */
+    .inactive-user .user-tree-node {
+        border-color: var(--color-danger-transparent);
+        background-color: var(--background-danger-light);
+    }
+    
+    /* 用户级别指示 */
+    .user-level-indicator {
+        display: inline-flex;
+        align-items: center;
+        font-size: 0.7rem;
+        padding: 0.15rem 0.5rem;
+        border-radius: 1rem;
+        margin-left: 0.75rem;
+        font-weight: 500;
+        background-color: var(--background-muted);
+        color: var(--text-muted);
+    }
+    
+    /* 模态框样式 */
+    .modal {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+        z-index: 1000;
+        align-items: center;
+        justify-content: center;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+    }
+    
+    .modal.show {
+        display: flex;
+        opacity: 1;
+    }
+    
+    .modal-content {
+        background-color: var(--background-default);
+        border-radius: var(--border-radius-lg);
+        box-shadow: var(--shadow-lg);
+        width: 90%;
+        max-width: 500px;
+        max-height: 90vh;
+        overflow-y: auto;
+        transform: translateY(-20px);
+        transition: transform 0.3s ease;
+    }
+    
+    .modal.show .modal-content {
+        transform: translateY(0);
+    }
+    
+    .modal-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 1rem 1.5rem;
+        border-bottom: 1px solid var(--border-default);
+    }
+    
+    .modal-title {
+        font-size: 1.25rem;
+        font-weight: 600;
+        margin: 0;
+    }
+    
+    .modal-close {
+        background: none;
+        border: none;
+        font-size: 1.5rem;
+        cursor: pointer;
+        color: var(--text-muted);
+    }
+    
+    .modal-body {
+        padding: 1.5rem;
+    }
+    
+    .modal-footer {
+        padding: 1rem 1.5rem;
+        display: flex;
+        justify-content: flex-end;
+        border-top: 1px solid var(--border-default);
+    }
+    
+    .modal-footer .btn {
+        margin-left: 0.5rem;
+    }
+    
+    .hierarchy-change {
+        padding: 1rem;
+        background-color: var(--background-card);
+        border-radius: var(--border-radius-md);
+        margin-bottom: 1rem;
+    }
+    
+    .hierarchy-change-users {
+        display: flex;
+        align-items: center;
+        margin: 1rem 0;
+    }
+    
+    .hierarchy-change-user {
+        padding: 0.5rem 1rem;
+        background-color: var(--background-muted);
+        border-radius: var(--border-radius-md);
+        font-weight: 500;
+    }
+    
+    .hierarchy-change-arrow {
+        margin: 0 1rem;
+        font-size: 1.5rem;
+        color: var(--text-muted);
+    }
+    
+    /* 响应式调整 */
+    @media (max-width: 768px) {
+        .user-tree ul {
+            padding-left: 1.5rem;
+        }
+        
+        .user-meta {
+            flex-direction: column;
+        }
+        
+        .user-meta-item {
+            margin-right: 0;
+            margin-bottom: 0.5rem;
+        }
+        
+        .user-tree-node {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+        
+        .user-actions {
+            margin-top: 0.75rem;
+            align-self: flex-end;
+        }
+        
+        .toggle-children {
+            position: absolute;
+            top: 1rem;
+            left: -0.75rem;
+            margin-right: 0;
+            z-index: 1;
+        }
+        
+        .user-tree-content {
+            width: 100%;
+            padding-left: 1rem;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block admin_content_main %}
+<!-- CSRF令牌 -->
+{% csrf_token %}
+
+<div class="container">
+    <!-- 页面标题和操作栏 -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>用户层级树</h2>
+        <div class="d-flex">
+            <a href="{% url 'admin_panel:user_list' %}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left mr-1"></i> 返回用户列表
+            </a>
+        </div>
+    </div>
+
+    <!-- 用户层级树 -->
+    <div class="card shadow-sm">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="card-title mb-0"><i class="fas fa-sitemap text-primary mr-2"></i>用户层级结构</h5>
+            <div class="card-header-actions">
+                <button id="expandAllBtn" class="btn btn-outline-primary">
+                    <i class="fas fa-expand-arrows-alt mr-1"></i> 全部展开
+                </button>
+                <button id="collapseAllBtn" class="btn btn-outline-secondary">
+                    <i class="fas fa-compress-arrows-alt mr-1"></i> 全部折叠
+                </button>
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle mr-1"></i> 您可以拖拽用户卡片来调整用户的上下级关系。只有管理员可以执行此操作。
+            </div>
+            {% if root_users %}
+                <ul class="user-tree">
+                    {% for root_user in root_users %}
+                        {% include "admin_panel/partials/user_tree_item.html" with user=root_user user_hierarchy=user_hierarchy level="根节点" %}
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <div class="no-users-message">
+                    <i class="fas fa-users-slash"></i>
+                    <p>暂无用户记录，或所有用户均有上级关联</p>
+                    <a href="{% url 'admin_panel:user_create' %}" class="btn btn-primary">
+                        <i class="fas fa-user-plus mr-1"></i> 创建用户
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- 层级变更确认模态框 -->
+<div id="hierarchyModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h5 class="modal-title">确认用户层级变更</h5>
+            <button type="button" class="modal-close" id="closeModal">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div class="hierarchy-change">
+                <p><strong>您即将更改以下用户的层级关系：</strong></p>
+                <div class="hierarchy-change-users">
+                    <div class="hierarchy-change-user" id="sourceUser">用户名</div>
+                    <div class="hierarchy-change-arrow">
+                        <i class="fas fa-long-arrow-alt-right"></i>
+                    </div>
+                    <div class="hierarchy-change-user" id="targetUser">新上级</div>
+                </div>
+                <p id="changeDescription">此操作将把用户 "用户名" 移动到 "新上级" 的下级。</p>
+            </div>
+            <div class="alert alert-warning">
+                <i class="fas fa-exclamation-triangle mr-1"></i> 注意：此操作会改变用户的层级关系，可能会影响相关的权限和数据访问范围。
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" id="cancelHierarchyChange">取消</button>
+            <button type="button" class="btn btn-primary" id="confirmHierarchyChange">确认变更</button>
+        </div>
+    </div>
+</div>
+
+<!-- 成功提示模态框 -->
+<div id="successModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h5 class="modal-title">操作成功</h5>
+            <button type="button" class="modal-close" id="closeSuccessModal">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div class="alert alert-success">
+                <i class="fas fa-check-circle mr-1"></i> <span id="successMessage">用户层级关系已成功更新！</span>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-primary" id="successOkBtn">确定</button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_body_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // 初始时所有子树都是折叠状态
+        const allChildLists = document.querySelectorAll('.user-tree ul');
+        allChildLists.forEach(list => {
+            list.classList.add('collapsed');
+        });
+        
+        // 切换展开/折叠状态
+        document.querySelectorAll('.toggle-children:not(.no-children)').forEach(toggle => {
+            toggle.addEventListener('click', function() {
+                toggleNode(this);
+            });
+        });
+        
+        // 全部展开按钮点击事件
+        document.getElementById('expandAllBtn').addEventListener('click', function() {
+            expandAll();
+            // 添加视觉反馈
+            this.classList.remove('btn-outline-primary');
+            this.classList.add('btn-primary');
+            setTimeout(() => {
+                this.classList.remove('btn-primary');
+                this.classList.add('btn-outline-primary');
+            }, 300);
+        });
+        
+        // 全部折叠按钮点击事件
+        document.getElementById('collapseAllBtn').addEventListener('click', function() {
+            collapseAll();
+            // 添加视觉反馈
+            this.classList.remove('btn-outline-secondary');
+            this.classList.add('btn-secondary');
+            setTimeout(() => {
+                this.classList.remove('btn-secondary');
+                this.classList.add('btn-outline-secondary');
+            }, 300);
+        });
+        
+        // 切换单个节点
+        function toggleNode(toggleBtn) {
+            const parent = toggleBtn.closest('.user-tree-item');
+            const childList = parent.querySelector('ul');
+            
+            if (childList) {
+                childList.classList.toggle('collapsed');
+                // 切换图标
+                const icon = toggleBtn.querySelector('i');
+                if (icon.classList.contains('fa-plus-circle')) {
+                    icon.classList.replace('fa-plus-circle', 'fa-minus-circle');
+                } else {
+                    icon.classList.replace('fa-minus-circle', 'fa-plus-circle');
+                }
+                
+                // 添加一个微小的动画效果
+                toggleBtn.style.transform = 'scale(1.2)';
+                setTimeout(() => {
+                    toggleBtn.style.transform = '';
+                }, 200);
+            }
+        }
+        
+        // 全部展开
+        function expandAll() {
+            // 移除所有子列表的折叠类
+            document.querySelectorAll('.user-tree ul').forEach(list => {
+                list.classList.remove('collapsed');
+            });
+            
+            // 更新所有展开/折叠按钮的图标
+            document.querySelectorAll('.toggle-children:not(.no-children) i').forEach(icon => {
+                if (icon.classList.contains('fa-plus-circle')) {
+                    icon.classList.replace('fa-plus-circle', 'fa-minus-circle');
+                }
+            });
+        }
+        
+        // 全部折叠
+        function collapseAll() {
+            // 为所有子列表添加折叠类
+            document.querySelectorAll('.user-tree ul').forEach(list => {
+                list.classList.add('collapsed');
+            });
+            
+            // 更新所有展开/折叠按钮的图标
+            document.querySelectorAll('.toggle-children:not(.no-children) i').forEach(icon => {
+                if (icon.classList.contains('fa-minus-circle')) {
+                    icon.classList.replace('fa-minus-circle', 'fa-plus-circle');
+                }
+            });
+        }
+        
+        // ===== 拖放功能实现 =====
+        let draggedNode = null;
+        let draggedUserId = null;
+        let targetUserId = null;
+        let isStaffUser = false;
+        
+        // 获取所有用户节点
+        const userNodes = document.querySelectorAll('.user-tree-node');
+        
+        // 为每个用户节点添加拖放事件处理器
+        userNodes.forEach(node => {
+            // 使节点可拖动
+            node.setAttribute('draggable', 'true');
+            
+            // 拖动开始事件
+            node.addEventListener('dragstart', function(e) {
+                // 阻止按钮等元素的拖动事件冒泡
+                if (e.target.closest('.user-actions') || e.target.closest('.toggle-children')) {
+                    e.preventDefault();
+                    return false;
+                }
+                
+                draggedNode = this;
+                draggedUserId = this.closest('.user-tree-item').dataset.userId;
+                isStaffUser = this.closest('.user-tree-item').classList.contains('is-staff');
+                
+                // 存储拖动数据
+                e.dataTransfer.setData('text/plain', draggedUserId);
+                
+                // 添加拖动样式
+                setTimeout(() => {
+                    this.classList.add('dragging');
+                }, 0);
+                
+                // 创建所有放置指示器
+                createDropIndicators();
+            });
+            
+            // 拖动结束事件
+            node.addEventListener('dragend', function() {
+                this.classList.remove('dragging');
+                
+                // 移除所有放置指示器
+                removeDropIndicators();
+                
+                // 移除所有目标高亮
+                document.querySelectorAll('.drop-target').forEach(el => {
+                    el.classList.remove('drop-target');
+                });
+            });
+            
+            // 拖动经过事件
+            node.addEventListener('dragover', function(e) {
+                e.preventDefault();
+                
+                // 防止拖放到自己
+                if (draggedUserId === this.closest('.user-tree-item').dataset.userId) {
+                    return false;
+                }
+                
+                // 高亮当前目标
+                this.classList.add('drop-target');
+            });
+            
+            // 拖动离开事件
+            node.addEventListener('dragleave', function() {
+                this.classList.remove('drop-target');
+            });
+            
+            // 放置事件
+            node.addEventListener('drop', function(e) {
+                e.preventDefault();
+                
+                // 移除目标高亮
+                this.classList.remove('drop-target');
+                
+                // 获取目标用户ID
+                targetUserId = this.closest('.user-tree-item').dataset.userId;
+                
+                // 防止拖放到自己
+                if (draggedUserId === targetUserId) {
+                    return false;
+                }
+                
+                // 获取目标和拖动用户的数据
+                const draggedUserName = draggedNode.querySelector('.user-name').textContent.trim();
+                const targetUserName = this.querySelector('.user-name').textContent.trim();
+                
+                // 显示确认模态框
+                showHierarchyConfirmModal(draggedUserName, targetUserName, draggedUserId, targetUserId);
+            });
+        });
+        
+        // 为空的放置区域添加拖放事件
+        document.querySelectorAll('.user-tree').forEach(tree => {
+            tree.addEventListener('dragover', function(e) {
+                // 如果拖动到列表的空白处，允许放置
+                if (e.target === this) {
+                    e.preventDefault();
+                }
+            });
+            
+            tree.addEventListener('drop', function(e) {
+                // 如果放置在列表的空白处，表示移动到根级别
+                if (e.target === this) {
+                    e.preventDefault();
+                    
+                    targetUserId = null; // 表示移动到根级别
+                    
+                    // 获取拖动用户的数据
+                    const draggedUserName = draggedNode.querySelector('.user-name').textContent.trim();
+                    
+                    // 显示确认模态框
+                    showHierarchyConfirmModal(draggedUserName, "根级别", draggedUserId, targetUserId);
+                }
+            });
+        });
+        
+        // 创建放置指示器
+        function createDropIndicators() {
+            // 在每个用户项前后添加放置指示器
+            document.querySelectorAll('.user-tree-item').forEach(item => {
+                // 在每个项目前后添加放置指示器
+                const beforeIndicator = document.createElement('div');
+                beforeIndicator.className = 'drop-indicator';
+                beforeIndicator.dataset.position = 'before';
+                beforeIndicator.dataset.userId = item.dataset.userId;
+                
+                const afterIndicator = document.createElement('div');
+                afterIndicator.className = 'drop-indicator';
+                afterIndicator.dataset.position = 'after';
+                afterIndicator.dataset.userId = item.dataset.userId;
+                
+                item.parentNode.insertBefore(beforeIndicator, item);
+                item.parentNode.insertBefore(afterIndicator, item.nextSibling);
+                
+                // 为指示器添加拖放事件
+                [beforeIndicator, afterIndicator].forEach(indicator => {
+                    indicator.addEventListener('dragover', function(e) {
+                        e.preventDefault();
+                        this.classList.add('active');
+                    });
+                    
+                    indicator.addEventListener('dragleave', function() {
+                        this.classList.remove('active');
+                    });
+                    
+                    indicator.addEventListener('drop', function(e) {
+                        e.preventDefault();
+                        this.classList.remove('active');
+                        
+                        // 获取放置位置和相邻用户
+                        const position = this.dataset.position;
+                        const adjacentUserId = this.dataset.userId;
+                        
+                        // 这里可以实现更复杂的放置逻辑，如"放置在某用户之前/之后"
+                        // 简化版本：放置到根级别
+                        targetUserId = null;
+                        
+                        // 获取拖动用户的数据
+                        const draggedUserName = draggedNode.querySelector('.user-name').textContent.trim();
+                        
+                        // 显示确认模态框
+                        showHierarchyConfirmModal(draggedUserName, "根级别", draggedUserId, targetUserId);
+                    });
+                });
+            });
+        }
+        
+        // 移除放置指示器
+        function removeDropIndicators() {
+            document.querySelectorAll('.drop-indicator').forEach(indicator => {
+                indicator.remove();
+            });
+        }
+        
+        // 显示层级变更确认模态框
+        function showHierarchyConfirmModal(sourceUserName, targetUserName, sourceUserId, targetUserId) {
+            const modal = document.getElementById('hierarchyModal');
+            const sourceUserElem = document.getElementById('sourceUser');
+            const targetUserElem = document.getElementById('targetUser');
+            const changeDescriptionElem = document.getElementById('changeDescription');
+            
+            // 设置模态框内容
+            sourceUserElem.textContent = sourceUserName;
+            targetUserElem.textContent = targetUserName || "根级别";
+            
+            // 描述变更
+            if (targetUserId) {
+                changeDescriptionElem.textContent = `此操作将把用户 "${sourceUserName}" 移动到 "${targetUserName}" 的下级。`;
+            } else {
+                changeDescriptionElem.textContent = `此操作将把用户 "${sourceUserName}" 移动到根级别，无上级用户。`;
+            }
+            
+            // 显示模态框
+            modal.classList.add('show');
+            
+            // 绑定确认按钮事件
+            document.getElementById('confirmHierarchyChange').onclick = function() {
+                // 调用API更新用户层级
+                updateUserHierarchy(sourceUserId, targetUserId);
+                modal.classList.remove('show');
+            };
+            
+            // 绑定取消按钮事件
+            document.getElementById('cancelHierarchyChange').onclick = function() {
+                modal.classList.remove('show');
+            };
+            
+            // 绑定关闭按钮事件
+            document.getElementById('closeModal').onclick = function() {
+                modal.classList.remove('show');
+            };
+        }
+        
+        // 调用API更新用户层级
+        function updateUserHierarchy(sourceUserId, targetUserId) {
+            // 构建请求数据
+            const data = {
+                source_user_id: sourceUserId,
+                target_user_id: targetUserId
+            };
+            
+            // 发送AJAX请求
+            fetch('{% url "admin_panel:update_user_hierarchy" %}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCsrfToken()
+                },
+                body: JSON.stringify(data)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // 显示成功模态框
+                    showSuccessModal(data.message);
+                    
+                    // 延迟后刷新页面
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 1500);
+                } else {
+                    // 显示错误
+                    alert(`操作失败: ${data.message}`);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('发生错误，请稍后再试');
+            });
+        }
+        
+        // 显示成功提示模态框
+        function showSuccessModal(message) {
+            const modal = document.getElementById('successModal');
+            const messageElem = document.getElementById('successMessage');
+            
+            // 设置消息
+            messageElem.textContent = message || '用户层级关系已成功更新！';
+            
+            // 显示模态框
+            modal.classList.add('show');
+            
+            // 绑定按钮事件
+            document.getElementById('successOkBtn').onclick = function() {
+                modal.classList.remove('show');
+            };
+            
+            document.getElementById('closeSuccessModal').onclick = function() {
+                modal.classList.remove('show');
+            };
+        }
+        
+        // 获取CSRF令牌
+        function getCsrfToken() {
+            return document.querySelector('[name=csrfmiddlewaretoken]').value;
+        }
+    });
+</script>
+{% endblock %} 
