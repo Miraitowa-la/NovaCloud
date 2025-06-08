@@ -799,7 +799,7 @@
                 {% endif %}
                 
                 <!-- 第二部分：根节点完整视图 -->
-                {% if root_nodes %}
+{#                {% if root_nodes %}#}
                     <h5 class="mb-4 border-bottom pb-2"><i class="fas fa-layer-group text-primary mr-2"></i>根节点用户</h5>
                     <ul class="user-tree mb-4">
                         {% for root_node in root_nodes %}
@@ -850,15 +850,15 @@
                             </li>
                         {% endfor %}
                     </ul>
-                {% else %}
-                    <div class="alert alert-info mt-4">
-                        <i class="fas fa-info-circle mr-2"></i>
-                        暂无超级管理员下级用户。您可以在用户编辑页面设置用户的上级关系。
-                    </div>
-                {% endif %}
-                
+{#                {% else %}#}
+{#                    <div class="alert alert-info mt-4">#}
+{#                        <i class="fas fa-info-circle mr-2"></i>#}
+{#                        暂无超级管理员下级用户。您可以在用户编辑页面设置用户的上级关系。#}
+{#                    </div>#}
+{#                {% endif %}#}
+
                 <!-- 第三部分：无上级用户的特殊根节点 -->
-                <h5 class="mb-4 border-bottom pb-2"><i class="fas fa-users text-primary mr-2"></i>无上级用户</h5>
+{#                <h5 class="mb-4 border-bottom pb-2"><i class="fas fa-users text-primary mr-2"></i>无上级用户</h5>#}
                 <ul class="user-tree">
                     <li class="user-tree-item root-node special-root-node" data-node-type="orphan-node">
                         <div class="user-tree-node not-draggable droppable-node">
