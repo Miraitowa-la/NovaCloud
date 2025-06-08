@@ -221,6 +221,29 @@ class RoleForm(forms.ModelForm):
             'name'
         )
 
+        # 限制可选的权限范围
+        if user and not self.instance.is_system:  # 如果不是系统角色
+            # 获取当前实例是否由当前用户创建
+            is_creator = self.instance.pk and self.instance.creator == user
+            
+            if not user.is_superuser and not user.is_staff:  # 如果用户不是超级用户
+                # 获取用户角色
+                try:
+                    user_role = user.profile.role
+                    if user_role:
+                        # 用户只能分配自己角色拥有的权限
+                        self.fields['permissions'].queryset = user_role.permissions.all().order_by(
+                            'content_type__app_label', 
+                            'content_type__model', 
+                            'name'
+                        )
+                    else:
+                        # 如果用户没有角色，不能分配任何权限
+                        self.fields['permissions'].queryset = Permission.objects.none()
+                except (AttributeError, UserProfile.DoesNotExist):
+                    # 如果用户没有profile，不能分配任何权限
+                    self.fields['permissions'].queryset = Permission.objects.none()
+
 class AuditLogFilterForm(forms.Form):
     """
     审计日志筛选表单

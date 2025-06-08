@@ -11,11 +11,13 @@ from datetime import datetime, timedelta
 from accounts.models import UserProfile, Role, InvitationCode
 from core.models import AuditLog
 from core.constants import AuditActionType, AUDIT_ACTION_CHOICES
+from core.utils import log_audit_event
 from .decorators import admin_required
 from .forms import AdminUserCreationForm, AdminUserChangeForm, RoleForm, AuditLogFilterForm
 from django.http import JsonResponse
 from django.db import transaction
 import json
+from django.contrib.contenttypes.models import ContentType
 
 # Create your views here.
 
@@ -328,11 +330,10 @@ def role_create_view(request):
             form.save_m2m()
             
             # 记录审计日志
-            AuditLog.objects.create(
-                user=request.user,
+            log_audit_event(
+                request=request,
                 action_type=AuditActionType.ROLE_CREATE,
-                target_object_id=role.id,
-                target_object_repr=f"角色 {role.name}",
+                target_object=role,
                 details=f"管理员 {request.user.username} 创建了角色 {role.name}"
             )
             
@@ -365,16 +366,34 @@ def role_update_view(request, role_id):
         return redirect('admin_panel:role_list')
     
     if request.method == 'POST':
+        # 保存原有权限，用于对比变化
+        old_permissions = set(role.permissions.all().values_list('id', flat=True))
+        
         form = RoleForm(request.POST, instance=role, user=request.user)
         if form.is_valid():
             role = form.save()
             
+            # 获取新权限集合
+            new_permissions = set(role.permissions.all().values_list('id', flat=True))
+            
+            # 计算被移除的权限
+            removed_permissions = old_permissions - new_permissions
+            
+            # 如果有权限被移除且不是系统角色，则需要级联更新下级用户的权限
+            if removed_permissions and not role.is_system:
+                # 找到所有使用此角色的用户
+                users_with_role = User.objects.filter(profile__role=role)
+                
+                # 对于每个使用此角色的用户，级联更新其下级用户的权限
+                for user in users_with_role:
+                    # 递归更新该用户所有下级用户的权限
+                    cascade_update_subordinate_permissions(user, removed_permissions)
+            
             # 记录审计日志
-            AuditLog.objects.create(
-                user=request.user,
+            log_audit_event(
+                request=request,
                 action_type=AuditActionType.ROLE_UPDATE,
-                target_object_id=role.id,
-                target_object_repr=f"角色 {role.name}",
+                target_object=role,
                 details=f"管理员 {request.user.username} 更新了角色 {role.name} 的信息和权限"
             )
             
@@ -746,3 +765,53 @@ def get_client_ip(request):
     else:
         ip = request.META.get('REMOTE_ADDR')
     return ip
+
+def cascade_update_subordinate_permissions(user, removed_permissions):
+    """
+    递归更新用户的下级用户权限
+    
+    Args:
+        user: 上级用户
+        removed_permissions: 被移除的权限ID集合
+    """
+    # 找出所有直接下级用户
+    subordinates = User.objects.filter(profile__parent_user=user)
+    
+    for subordinate in subordinates:
+        # 获取下级用户的角色
+        try:
+            subordinate_profile = subordinate.profile
+            subordinate_role = subordinate_profile.role
+            
+            # 如果下级用户有角色且不是系统角色
+            if subordinate_role and not subordinate_role.is_system:
+                # 获取下级用户角色当前权限
+                current_permissions = set(subordinate_role.permissions.all().values_list('id', flat=True))
+                
+                # 计算需要移除的权限（上级被移除的权限与下级当前拥有的权限的交集）
+                permissions_to_remove = current_permissions.intersection(removed_permissions)
+                
+                # 如果有需要移除的权限
+                if permissions_to_remove:
+                    # 更新权限：保留当前权限中不需要被移除的部分
+                    new_permissions = current_permissions - permissions_to_remove
+                    subordinate_role.permissions.set(Permission.objects.filter(id__in=new_permissions))
+                    
+                    # 记录权限变更
+                    content_type = ContentType.objects.get_for_model(subordinate_role)
+                    
+                    AuditLog.objects.create(
+                        user=None,  # 系统自动操作，无用户
+                        action_type=AuditActionType.ROLE_UPDATE,
+                        target_content_type=content_type,
+                        target_object_id=subordinate_role.id,
+                        target_object_repr=f"角色 {subordinate_role.name}",
+                        details=f"系统自动更新：由于上级用户权限变更，角色 {subordinate_role.name} 的权限被调整"
+                    )
+                
+                # 继续递归处理该下级用户的下级
+                cascade_update_subordinate_permissions(subordinate, removed_permissions)
+                
+        except (AttributeError, UserProfile.DoesNotExist):
+            # 如果用户没有profile，跳过
+            continue
