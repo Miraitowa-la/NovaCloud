@@ -1,0 +1,84 @@
+{% extends 'admin_panel/base_admin.html' %}
+{% load static %}
+
+{% block admin_page_title %}{{ admin_page_title }}{% endblock %}
+
+{% block admin_content_main %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow-sm">
+                <div class="card-header bg-danger text-white">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-exclamation-triangle mr-2"></i> 确认删除用户
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <p class="text-center mb-4">
+                        您确定要删除用户 <strong>"{{ user_obj.username }}"</strong> 吗？<br>
+                        此操作将<span class="text-danger">永久删除</span>该用户及其所有关联数据，且<span class="text-danger">无法恢复</span>。
+                    </p>
+                    
+                    <div class="card mb-3 border-0 shadow-sm">
+                        <div class="card-header bg-light border-bottom">
+                            <h6 class="mb-0">
+                                <i class="fas fa-info-circle text-primary mr-2"></i>用户详细信息
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="info-group mb-3">
+                                        <label class="text-muted mb-1">用户名</label>
+                                        <h6>{{ user_obj.username }}</h6>
+                                    </div>
+                                    <div class="info-group mb-3">
+                                        <label class="text-muted mb-1">邮箱</label>
+                                        <h6>{{ user_obj.email|default:"未设置" }}</h6>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="info-group mb-3">
+                                        <label class="text-muted mb-1">注册时间</label>
+                                        <h6>{{ user_obj.date_joined|date:"Y-m-d H:i" }}</h6>
+                                    </div>
+                                    <div class="info-group mb-3">
+                                        <label class="text-muted mb-1">用户角色</label>
+                                        <h6>
+                                            {% if user_obj.profile.role %}
+                                            <span class="badge badge-info">{{ user_obj.profile.role.name }}</span>
+                                            {% else %}
+                                            <span class="badge badge-secondary">无角色</span>
+                                            {% endif %}
+                                        </h6>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="alert alert-warning text-left">
+                        <div style="display:flex; align-items:flex-start;">
+                            <i class="fas fa-info-circle mt-1 mr-2"></i>
+                            <div>删除用户操作将同时删除该用户的个人资料、用户权限以及与该用户相关的所有记录。此外，如果该用户是其他用户的上级用户，这些下级用户将失去上级关联。</div>
+                        </div>
+                    </div>
+                    
+                    <form method="post" action="{% url 'admin_panel:user_delete' user_obj.id %}" class="text-center">
+                        {% csrf_token %}
+                        <div class="d-flex mt-4">
+                            <a href="{% url 'admin_panel:user_list' %}" class="btn btn-secondary flex-grow-1">
+                                <i class="fas fa-times mr-1"></i> 取消
+                            </a>
+                            <div style="width: 15px;"></div>
+                            <button type="submit" class="btn btn-danger flex-grow-1">
+                                <i class="fas fa-trash mr-1"></i> 确认删除
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

@@ -85,7 +85,7 @@
                             <th>上级用户</th>
                             <th>状态</th>
                             <th>注册日期</th>
-                            <th width="180">操作</th>
+                            <th>操作</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -121,19 +121,23 @@
                             </td>
                             <td>{{ user_obj.date_joined|date:"Y-m-d H:i" }}</td>
                             <td>
-                                <div class="btn-group">
-                                    <a href="{% url 'admin_panel:user_update' user_obj.id %}" class="btn btn-sm btn-primary" title="编辑用户">
-                                        <i class="fas fa-edit"></i> 编辑
+                                <div class="d-flex justify-content-center">
+                                    <a href="{% url 'admin_panel:user_update' user_obj.id %}" class="btn btn-sm btn-primary action-btn mr-2" title="编辑用户">
+                                        <i class="fas fa-edit mr-1"></i> 编辑
                                     </a>
                                     
                                     {% if user_obj != request.user %}
-                                    <form method="post" action="{% url 'admin_panel:user_toggle_active' user_obj.id %}" class="d-inline ml-1" onsubmit="return confirm('确定要{% if user_obj.is_active %}禁用{% else %}启用{% endif %}此用户吗？');">
+                                    <form method="post" action="{% url 'admin_panel:user_toggle_active' user_obj.id %}" class="d-inline" onsubmit="return confirm('确定要{% if user_obj.is_active %}禁用{% else %}启用{% endif %}此用户吗？');">
                                         {% csrf_token %}
-                                        <button type="submit" class="btn btn-sm {% if user_obj.is_active %}btn-danger{% else %}btn-success{% endif %}" title="{% if user_obj.is_active %}禁用{% else %}启用{% endif %}用户">
-                                            <i class="fas {% if user_obj.is_active %}fa-user-slash{% else %}fa-user-check{% endif %}"></i> 
+                                        <button type="submit" class="btn btn-sm {% if user_obj.is_active %}btn-danger{% else %}btn-success{% endif %} action-btn mr-2" title="{% if user_obj.is_active %}禁用{% else %}启用{% endif %}用户">
+                                            <i class="fas {% if user_obj.is_active %}fa-user-slash{% else %}fa-user-check{% endif %} mr-1"></i> 
                                             {% if user_obj.is_active %}禁用{% else %}启用{% endif %}
                                         </button>
                                     </form>
+                                    
+                                    <a href="{% url 'admin_panel:user_delete_confirm' user_obj.id %}" class="btn btn-sm btn-danger action-btn" title="删除用户">
+                                        <i class="fas fa-trash-alt mr-1"></i> 删除
+                                    </a>
                                     {% endif %}
                                 </div>
                             </td>
@@ -297,19 +301,58 @@
         margin-right: 4px;
     }
     
+    /* 操作按钮样式统一 */
+    .action-btn {
+        min-width: 70px;
+        text-align: center;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    /* 确保暗色模式下按钮文本和图标颜色正确 */
+    html.theme-dark .btn-primary,
+    html[data-theme='dark'] .btn-primary,
+    body.dark-mode .btn-primary,
+    html.theme-dark .btn-danger,
+    html[data-theme='dark'] .btn-danger,
+    body.dark-mode .btn-danger,
+    html.theme-dark .btn-success,
+    html[data-theme='dark'] .btn-success,
+    body.dark-mode .btn-success {
+        color: #fff !important; /* 确保文本颜色为白色 */
+    }
+    
+    html.theme-dark .btn-primary i,
+    html[data-theme='dark'] .btn-primary i,
+    body.dark-mode .btn-primary i,
+    html.theme-dark .btn-danger i,
+    html[data-theme='dark'] .btn-danger i,
+    body.dark-mode .btn-danger i,
+    html.theme-dark .btn-success i,
+    html[data-theme='dark'] .btn-success i,
+    body.dark-mode .btn-success i {
+        color: #fff !important; /* 确保图标颜色为白色 */
+    }
+    
     /* 响应式调整 */
     @media (max-width: 768px) {
         .table-container {
             overflow-x: auto;
         }
         
-        .btn-group {
-            display: flex;
+        .d-flex {
             flex-wrap: wrap;
         }
         
-        .btn-group .btn {
+        /* 操作列的按钮容器保持居中 */
+        td .d-flex.justify-content-center {
+            justify-content: center !important;
+        }
+        
+        .action-btn {
             margin-bottom: 4px;
+            flex: 1 0 auto;
         }
         
         /* 确保移动设备上分页仍然保持水平 */

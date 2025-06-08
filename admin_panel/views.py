@@ -194,29 +194,77 @@ def user_update_view(request, user_id):
 @admin_required
 @require_POST
 def user_toggle_active_view(request, user_id):
-    """切换用户活动状态视图"""
-    user = get_object_or_404(User, id=user_id)
+    """切换用户激活状态"""
+    if request.method == 'POST':
+        user_obj = get_object_or_404(User, id=user_id)
+        
+        # 防止管理员停用自己的账户
+        if user_obj == request.user:
+            messages.error(request, '您不能停用自己的账户')
+            return redirect('admin_panel:user_list')
+        
+        # 切换状态
+        user_obj.is_active = not user_obj.is_active
+        user_obj.save()
+        
+        # 记录审计日志
+        action = "启用" if user_obj.is_active else "禁用"
+        AuditLog.objects.create(
+            user=request.user,
+            action_type=AuditActionType.USER_STATUS_CHANGE,
+            target_object_id=user_obj.id,
+            target_object_repr=f"用户 {user_obj.username}",
+            details=f"管理员 {request.user.username} {action}了用户 {user_obj.username}"
+        )
+        
+        messages.success(request, f'用户 {user_obj.username} 已{action}')
     
-    # 不允许管理员停用自己的账户
-    if user == request.user:
-        messages.error(request, '不能停用您自己的账户')
+    return redirect('admin_panel:user_list')
+
+@admin_required
+def user_delete_confirm_view(request, user_id):
+    """确认删除用户视图"""
+    user_obj = get_object_or_404(User, id=user_id)
+    
+    # 防止管理员删除自己的账户
+    if user_obj == request.user:
+        messages.error(request, '您不能删除自己的账户')
         return redirect('admin_panel:user_list')
     
-    # 切换状态
-    user.is_active = not user.is_active
-    user.save()
+    context = {
+        'user_obj': user_obj,
+        'admin_page_title': '确认删除用户',
+    }
+    return render(request, 'admin_panel/user_confirm_delete.html', context)
+
+@admin_required
+def user_delete_view(request, user_id):
+    """删除用户视图"""
+    if request.method == 'POST':
+        user_obj = get_object_or_404(User, id=user_id)
+        
+        # 防止管理员删除自己的账户
+        if user_obj == request.user:
+            messages.error(request, '您不能删除自己的账户')
+            return redirect('admin_panel:user_list')
+        
+        username = user_obj.username
+        
+        # 记录审计日志
+        AuditLog.objects.create(
+            user=request.user,
+            action_type=AuditActionType.USER_DELETE,
+            target_object_id=user_id,
+            target_object_repr=f"用户 {username}",
+            details=f"管理员 {request.user.username} 删除了用户 {username}"
+        )
+        
+        # 删除用户
+        user_obj.delete()
+        
+        messages.success(request, f'用户 {username} 已删除')
+        return redirect('admin_panel:user_list')
     
-    # 记录审计日志
-    status_text = "启用" if user.is_active else "停用"
-    AuditLog.objects.create(
-        user=request.user,
-        action_type=AuditActionType.USER_STATUS_CHANGE,
-        target_object_id=user.id,
-        target_object_repr=f"用户 {user.username}",
-        details=f"管理员 {request.user.username} {status_text}了用户 {user.username}"
-    )
-    
-    messages.success(request, f'用户 {user.username} 已被{status_text}')
     return redirect('admin_panel:user_list')
 
 @admin_required
