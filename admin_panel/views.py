@@ -132,19 +132,18 @@ def user_list_view(request):
 
 @admin_required
 def user_create_view(request):
-    """创建用户视图"""
+    """管理员创建用户视图"""
     if request.method == 'POST':
         form = AdminUserCreationForm(request.POST)
         if form.is_valid():
             user = form.save()
             
-            # 记录审计日志
-            AuditLog.objects.create(
-                user=request.user,
+            # 创建审计日志
+            log_audit_event(
+                request=request,
                 action_type=AuditActionType.USER_CREATE,
-                target_object_id=user.id,
-                target_object_repr=f"用户 {user.username}",
-                details=f"管理员 {request.user.username} 创建了用户 {user.username}"
+                target_object=user,
+                details=f"管理员创建了用户 {user.username}"
             )
             
             messages.success(request, f'用户 {user.username} 已成功创建')
@@ -152,73 +151,80 @@ def user_create_view(request):
     else:
         form = AdminUserCreationForm()
     
-    context = {
+    return render(request, 'admin_panel/user_form.html', {
         'form': form,
         'is_create': True,
-        'admin_page_title': '创建用户',
-    }
-    return render(request, 'admin_panel/user_form.html', context)
+        'admin_page_title': '创建用户'
+    })
 
 @admin_required
 def user_update_view(request, user_id):
-    """更新用户视图"""
-    user = get_object_or_404(User, id=user_id)
+    """管理员编辑用户视图"""
+    user_obj = get_object_or_404(User, pk=user_id)
+    
+    # 确保用户不能编辑自己的is_staff和is_superuser状态
+    editing_self = request.user.id == user_obj.id
     
     if request.method == 'POST':
-        form = AdminUserChangeForm(request.POST, instance=user)
+        form = AdminUserChangeForm(request.POST, instance=user_obj)
         if form.is_valid():
+            # 如果用户正在编辑自己，保持原有的is_staff和is_superuser值
+            if editing_self:
+                form.instance.is_staff = request.user.is_staff
+                form.instance.is_superuser = request.user.is_superuser
+            
             user = form.save()
             
-            # 记录审计日志
-            AuditLog.objects.create(
-                user=request.user,
+            # 显示任何可能的警告消息
+            if hasattr(form, 'add_warning') and form.add_warning:
+                messages.warning(request, form.add_warning)
+            
+            # 创建审计日志
+            log_audit_event(
+                request=request,
                 action_type=AuditActionType.USER_UPDATE,
-                target_object_id=user.id,
-                target_object_repr=f"用户 {user.username}",
-                details=f"管理员 {request.user.username} 更新了用户 {user.username} 的信息"
+                target_object=user,
+                details=f"管理员更新了用户 {user.username} 的信息"
             )
             
-            messages.success(request, f'用户 {user.username} 已成功更新')
+            messages.success(request, f'用户 {user.username} 的信息已成功更新')
             return redirect('admin_panel:user_list')
     else:
-        form = AdminUserChangeForm(instance=user)
+        form = AdminUserChangeForm(instance=user_obj)
     
-    context = {
+    return render(request, 'admin_panel/user_form.html', {
         'form': form,
-        'user_obj': user,  # 避免与模板上下文中的user冲突
+        'user_obj': user_obj,
         'is_create': False,
-        'admin_page_title': f'编辑用户 - {user.username}',
-    }
-    return render(request, 'admin_panel/user_form.html', context)
+        'editing_self': editing_self,
+        'admin_page_title': f'编辑用户 - {user_obj.username}'
+    })
 
 @admin_required
 @require_POST
 def user_toggle_active_view(request, user_id):
     """切换用户激活状态"""
-    if request.method == 'POST':
-        user_obj = get_object_or_404(User, id=user_id)
-        
-        # 防止管理员停用自己的账户
-        if user_obj == request.user:
-            messages.error(request, '您不能停用自己的账户')
-            return redirect('admin_panel:user_list')
-        
-        # 切换状态
-        user_obj.is_active = not user_obj.is_active
-        user_obj.save()
-        
-        # 记录审计日志
-        action = "启用" if user_obj.is_active else "禁用"
-        AuditLog.objects.create(
-            user=request.user,
-            action_type=AuditActionType.USER_STATUS_CHANGE,
-            target_object_id=user_obj.id,
-            target_object_repr=f"用户 {user_obj.username}",
-            details=f"管理员 {request.user.username} {action}了用户 {user_obj.username}"
-        )
-        
-        messages.success(request, f'用户 {user_obj.username} 已{action}')
+    user_obj = get_object_or_404(User, id=user_id)
     
+    # 防止管理员停用自己的账户
+    if user_obj == request.user:
+        messages.error(request, '您不能停用自己的账户')
+        return redirect('admin_panel:user_list')
+    
+    # 切换状态
+    user_obj.is_active = not user_obj.is_active
+    user_obj.save()
+    
+    # 记录审计日志
+    action = "启用" if user_obj.is_active else "禁用"
+    log_audit_event(
+        request=request,
+        action_type=AuditActionType.USER_STATUS_CHANGE,
+        target_object=user_obj,
+        details=f"管理员{action}了用户 {user_obj.username}"
+    )
+    
+    messages.success(request, f'用户 {user_obj.username} 已成功{action}')
     return redirect('admin_panel:user_list')
 
 @admin_required

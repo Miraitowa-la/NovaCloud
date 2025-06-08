@@ -6,7 +6,7 @@ from django.utils import timezone
 from django.contrib.auth.models import User
 
 from .forms import UserRegistrationForm, UserLoginForm, UserProfileEditForm, InvitationCodeCreateForm
-from .models import UserProfile, InvitationCode
+from .models import UserProfile, InvitationCode, Role
 from core.constants import AuditActionType
 from core.utils import log_audit_event
 
@@ -39,6 +39,22 @@ def register_view(request):
             
             # 创建用户配置文件
             user_profile = UserProfile.objects.create(user=new_user)
+            
+            # 根据用户类型分配角色
+            try:
+                if new_user.is_staff and new_user.is_superuser:
+                    # 为超级管理员分配"超级管理员"角色
+                    admin_role = Role.objects.get(codename='super_admin')
+                    user_profile.role = admin_role
+                else:
+                    # 为普通用户分配"普通用户"角色
+                    normal_role = Role.objects.get(codename='normal_user')
+                    user_profile.role = normal_role
+                
+                user_profile.save(update_fields=['role'])
+            except Role.DoesNotExist:
+                # 如果角色不存在，记录一条警告消息
+                messages.warning(request, '系统角色配置不完整，请联系管理员。')
             
             # 处理邀请码
             code_str = form.cleaned_data.get('invitation_code')

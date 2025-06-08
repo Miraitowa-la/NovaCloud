@@ -129,13 +129,20 @@ class AdminUserChangeForm(UserChangeForm):
         # 创建或更新UserProfile
         profile, created = UserProfile.objects.get_or_create(user=user)
         
-        if self.cleaned_data.get('role'):
-            profile.role = self.cleaned_data.get('role')
-        
-        # 如果用户是超级管理员，确保没有上级用户
+        # 如果用户是超级管理员，分配超级管理员角色
         if user.is_staff:
+            try:
+                admin_role = Role.objects.get(codename='super_admin')
+                profile.role = admin_role
+            except Role.DoesNotExist:
+                # 如果角色不存在，使用表单中选择的角色
+                profile.role = self.cleaned_data.get('role')
+            
+            # 确保超级管理员没有上级用户
             profile.parent_user = None
         else:
+            # 非超级管理员使用表单中选择的角色
+            profile.role = self.cleaned_data.get('role')
             profile.parent_user = self.cleaned_data.get('parent_user')
         
         if commit:
