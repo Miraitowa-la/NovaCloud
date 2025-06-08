@@ -293,6 +293,9 @@ def role_list_view(request):
     # 排序
     roles = roles.order_by('name')
     
+    # 标记系统默认角色
+    system_role_codenames = ['super_admin', 'normal_user']
+    
     # 分页
     paginator = Paginator(roles, 10)  # 每页10条记录
     page_number = request.GET.get('page', 1)
@@ -303,6 +306,7 @@ def role_list_view(request):
         'page_obj': page_obj,
         'search_query': search_query,
         'admin_page_title': '角色与权限管理',
+        'system_role_codenames': system_role_codenames,  # 传递系统角色列表到模板
     }
     return render(request, 'admin_panel/role_list.html', context)
 
@@ -340,6 +344,12 @@ def role_update_view(request, role_id):
     """更新角色视图"""
     role = get_object_or_404(Role, id=role_id)
     
+    # 检查是否为系统默认角色
+    system_role_codenames = ['super_admin', 'normal_user']
+    if role.codename in system_role_codenames:
+        messages.error(request, f'系统默认角色"{role.name}"不允许编辑')
+        return redirect('admin_panel:role_list')
+    
     if request.method == 'POST':
         form = RoleForm(request.POST, instance=role)
         if form.is_valid():
@@ -376,6 +386,12 @@ def role_delete_confirm_view(request, role_id):
     """角色删除确认视图"""
     role = get_object_or_404(Role, id=role_id)
     
+    # 检查是否为系统默认角色
+    system_role_codenames = ['super_admin', 'normal_user']
+    if role.codename in system_role_codenames:
+        messages.error(request, f'系统默认角色"{role.name}"不允许删除')
+        return redirect('admin_panel:role_list')
+    
     # 检查是否有用户使用此角色
     user_count = UserProfile.objects.filter(role=role).count()
     if user_count > 0:
@@ -395,6 +411,12 @@ def role_delete_confirm_view(request, role_id):
 def role_delete_view(request, role_id):
     """删除角色视图"""
     role = get_object_or_404(Role, id=role_id)
+    
+    # 检查是否为系统默认角色
+    system_role_codenames = ['super_admin', 'normal_user']
+    if role.codename in system_role_codenames:
+        messages.error(request, f'系统默认角色"{role.name}"不允许删除')
+        return redirect('admin_panel:role_list')
     
     # 检查是否有用户使用此角色
     user_count = UserProfile.objects.filter(role=role).count()
