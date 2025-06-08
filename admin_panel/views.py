@@ -577,6 +577,10 @@ def update_user_hierarchy_view(request):
         except User.DoesNotExist:
             return JsonResponse({'success': False, 'message': '源用户不存在'})
         
+        # 检查源用户是否为超级管理员，超级管理员不能设置上级用户
+        if source_user.is_staff:
+            return JsonResponse({'success': False, 'message': '超级管理员不能设置上级用户'})
+        
         # 获取目标用户（如果有）
         target_user = None
         if target_user_id:
@@ -585,6 +589,11 @@ def update_user_hierarchy_view(request):
             except User.DoesNotExist:
                 return JsonResponse({'success': False, 'message': '目标用户不存在'})
             
+            # 检查目标用户是否为超级管理员，超级管理员不能作为上级用户
+            if target_user.is_staff:
+                # 这种情况实际上是合法的，超级管理员可以作为其他用户的上级
+                pass
+                
             # 检查是否会导致循环引用（目标用户不能是源用户的下级）
             if is_descendant(target_user_id, source_user_id):
                 return JsonResponse({'success': False, 'message': '不能将用户移动到自己的下级用户下'})

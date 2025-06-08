@@ -2,7 +2,7 @@
 {% load admin_tags %}
 
 <li class="user-tree-item {% if not user.is_active %}inactive-user{% endif %} {% if user.is_staff %}is-staff{% endif %}" data-user-id="{{ user.id }}">
-    <div class="user-tree-node" draggable="true">
+    <div class="user-tree-node {% if user.is_staff %}not-draggable{% endif %}" {% if not user.is_staff %}draggable="true"{% endif %}>
         <!-- 展开/折叠按钮 -->
         {% with children=user_hierarchy|get_item:user.id|get_item:"children" %}
             {% if children|length > 0 %}

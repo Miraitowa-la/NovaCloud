@@ -103,6 +103,25 @@ class AdminUserChangeForm(UserChangeForm):
             
             # 避免将用户自己设为自己的上级
             self.fields['parent_user'].queryset = User.objects.exclude(pk=self.instance.pk)
+            
+            # 如果用户是超级管理员(is_staff=True)，禁用父级用户字段
+            if self.instance.is_staff:
+                self.fields['parent_user'].disabled = True
+                self.fields['parent_user'].help_text = "超级管理员不能设置上级用户"
+                self.fields['parent_user'].required = False
+                self.fields['parent_user'].initial = None
+                
+    def clean(self):
+        cleaned_data = super().clean()
+        is_staff = cleaned_data.get('is_staff')
+        parent_user = cleaned_data.get('parent_user')
+        
+        # 如果用户是超级管理员且设置了上级用户，清除上级用户
+        if is_staff and parent_user:
+            cleaned_data['parent_user'] = None
+            self.add_warning = "超级管理员不能设置上级用户，上级用户设置已被清除"
+        
+        return cleaned_data
     
     def save(self, commit=True):
         user = super().save(commit=True)
@@ -113,7 +132,10 @@ class AdminUserChangeForm(UserChangeForm):
         if self.cleaned_data.get('role'):
             profile.role = self.cleaned_data.get('role')
         
-        if self.cleaned_data.get('parent_user'):
+        # 如果用户是超级管理员，确保没有上级用户
+        if user.is_staff:
+            profile.parent_user = None
+        else:
             profile.parent_user = self.cleaned_data.get('parent_user')
         
         if commit:
