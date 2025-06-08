@@ -49,6 +49,7 @@
                             <th>角色名称</th>
                             <th>角色代码</th>
                             <th>描述</th>
+                            <th>创建者</th>
                             <th>用户数量</th>
                             <th>权限数量</th>
                             <th>操作</th>
@@ -65,6 +66,13 @@
                             </td>
                             <td><code>{{ role.codename }}</code></td>
                             <td>{{ role.description|truncatechars:20 }}</td>
+                            <td>
+                                {% if role.is_system %}
+                                <span class="text-muted">系统</span>
+                                {% else %}
+                                {{ role.creator.username }}
+                                {% endif %}
+                            </td>
                             <td>{{ role.user_count }}</td>
                             <td>{{ role.permissions.count }}</td>
                             <td>

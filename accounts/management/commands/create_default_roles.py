@@ -4,7 +4,7 @@ from accounts.models import Role
 from django.db.models import Q
 
 class Command(BaseCommand):
-    help = '创建默认角色："超级管理员"和"普通用户"'
+    help = '创建默认角色：\"超级管理员\"和\"普通用户\"'
 
     def handle(self, *args, **options):
         # 获取所有权限
@@ -21,31 +21,35 @@ class Command(BaseCommand):
             codename='super_admin',
             defaults={
                 'name': '超级管理员',
-                'description': '拥有系统所有权限的角色'
+                'description': '拥有系统所有权限的角色',
+                'is_system': True  # 标记为系统角色
             }
         )
         
-        # 分配所有权限给超级管理员
-        if admin_created:
-            admin_role.permissions.set(all_permissions)
-            self.stdout.write(self.style.SUCCESS(f'已创建超级管理员角色并分配所有权限'))
-        else:
-            admin_role.permissions.set(all_permissions)
-            self.stdout.write(self.style.SUCCESS(f'已更新超级管理员角色权限'))
-            
+        # 如果是现有角色，确保它被标记为系统角色
+        if not admin_created:
+            admin_role.is_system = True
+            admin_role.save()
+        
+        # 更新权限
+        admin_role.permissions.set(all_permissions)
+        self.stdout.write(self.style.SUCCESS(f'已{"创建" if admin_created else "更新"} 超级管理员角色'))
+        
         # 创建或获取普通用户角色
         normal_role, normal_created = Role.objects.get_or_create(
             codename='normal_user',
             defaults={
                 'name': '普通用户',
-                'description': '拥有物联网设备和策略引擎相关权限的基础角色'
+                'description': '拥有物联网设备和策略引擎相关权限的角色',
+                'is_system': True  # 标记为系统角色
             }
         )
         
-        # 分配物联网设备和策略引擎权限给普通用户
-        if normal_created:
-            normal_role.permissions.set(iot_strategy_permissions)
-            self.stdout.write(self.style.SUCCESS(f'已创建普通用户角色并分配相关权限'))
-        else:
-            normal_role.permissions.set(iot_strategy_permissions)
-            self.stdout.write(self.style.SUCCESS(f'已更新普通用户角色权限')) 
+        # 如果是现有角色，确保它被标记为系统角色
+        if not normal_created:
+            normal_role.is_system = True
+            normal_role.save()
+        
+        # 更新权限
+        normal_role.permissions.set(iot_strategy_permissions)
+        self.stdout.write(self.style.SUCCESS(f'已{"创建" if normal_created else "更新"} 普通用户角色')) 

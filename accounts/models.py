@@ -16,6 +16,15 @@ class Role(models.Model):
         blank=True,
         verbose_name="权限"
     )
+    creator = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='created_roles',
+        verbose_name="创建者",
+        null=True,  # 允许为空，用于系统默认角色
+        blank=True
+    )
+    is_system = models.BooleanField(default=False, verbose_name="系统角色")
 
     class Meta:
         verbose_name = "角色"

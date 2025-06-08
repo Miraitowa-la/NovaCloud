@@ -3,6 +3,7 @@ from django.contrib.auth.forms import UserCreationForm, UserChangeForm
 from django.contrib.auth.models import User, Permission
 from accounts.models import UserProfile, Role
 from core.constants import AUDIT_ACTION_CHOICES
+from django.db.models import Q
 
 class AdminUserCreationForm(UserCreationForm):
     """
@@ -32,6 +33,16 @@ class AdminUserCreationForm(UserCreationForm):
         widgets = {
             'username': forms.TextInput(attrs={'class': 'form-control', 'placeholder': '请输入用户名'}),
         }
+    
+    def __init__(self, *args, **kwargs):
+        self.request_user = kwargs.pop('request_user', None)  # 获取当前用户
+        super().__init__(*args, **kwargs)
+        
+        # 限制角色选择范围为系统角色和当前用户创建的角色
+        if self.request_user:
+            self.fields['role'].queryset = Role.objects.filter(
+                Q(is_system=True) | Q(creator=self.request_user)
+            ).order_by('is_system', 'name')
     
     def save(self, commit=True):
         user = super().save(commit=True)  # 先保存User对象以获取user_id
@@ -92,6 +103,7 @@ class AdminUserChangeForm(UserChangeForm):
         }
     
     def __init__(self, *args, **kwargs):
+        self.request_user = kwargs.pop('request_user', None)  # 获取当前用户
         super().__init__(*args, **kwargs)
         # 移除密码字段，密码修改应在另一个视图处理
         self.fields.pop('password', None)
@@ -110,6 +122,12 @@ class AdminUserChangeForm(UserChangeForm):
                 self.fields['parent_user'].help_text = "超级管理员不能设置上级用户"
                 self.fields['parent_user'].required = False
                 self.fields['parent_user'].initial = None
+        
+        # 限制角色选择范围为系统角色和当前用户创建的角色
+        if self.request_user:
+            self.fields['role'].queryset = Role.objects.filter(
+                Q(is_system=True) | Q(creator=self.request_user)
+            ).order_by('is_system', 'name')
                 
     def clean(self):
         cleaned_data = super().clean()
@@ -178,16 +196,30 @@ class RoleForm(forms.ModelForm):
     
     class Meta:
         model = Role
-        fields = ('name', 'codename', 'description', 'permissions')
+        fields = ('name', 'codename', 'description', 'permissions', 'creator', 'is_system')
+        widgets = {
+            'creator': forms.HiddenInput(),
+            'is_system': forms.HiddenInput()
+        }
     
     def __init__(self, *args, **kwargs):
+        user = kwargs.pop('user', None)  # 获取当前用户
         super().__init__(*args, **kwargs)
+        
+        # 默认隐藏creator和is_system字段
+        self.fields['creator'].required = False
+        self.fields['is_system'].required = False
+        
+        # 设置creator默认值为当前用户
+        if user and not self.instance.pk:  # 只在创建新角色时设置
+            self.fields['creator'].initial = user.id
+        
         # 按内容类型和模型名排序权限，使其更有组织性
         self.fields['permissions'].queryset = Permission.objects.all().order_by(
             'content_type__app_label', 
             'content_type__model', 
             'name'
-        ) 
+        )
 
 class AuditLogFilterForm(forms.Form):
     """

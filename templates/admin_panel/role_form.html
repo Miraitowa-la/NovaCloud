@@ -7,60 +7,60 @@
 <div class="container">
     <div class="row justify-content-center">
         <div class="col-md-8">
-            <div class="card shadow-sm">
+    <div class="card shadow-sm">
                 <div class="card-header">
                     <h4 class="card-title mb-0">
-                        {% if is_create %}
-                        <i class="fas fa-plus-circle text-primary mr-2"></i>创建角色
-                        {% else %}
-                        <i class="fas fa-edit text-primary mr-2"></i>编辑角色
-                        {% endif %}
-                        {% if not is_create and user_count > 0 %}
+                {% if is_create %}
+                <i class="fas fa-plus-circle text-primary mr-2"></i>创建角色
+                {% else %}
+                <i class="fas fa-edit text-primary mr-2"></i>编辑角色
+                {% endif %}
+            {% if not is_create and user_count > 0 %}
                         <span class="badge badge-info ml-2">{{ user_count }} 个用户使用此角色</span>
-                        {% endif %}
+            {% endif %}
                     </h4>
+        </div>
+        <div class="card-body">
+            <form method="post" action="{% if is_create %}{% url 'admin_panel:role_create' %}{% else %}{% url 'admin_panel:role_update' role.id %}{% endif %}">
+                {% csrf_token %}
+                
+                <!-- 表单错误提示 -->
+                {% if form.non_field_errors %}
+                <div class="alert alert-danger">
+                    <i class="fas fa-exclamation-circle mr-2"></i>
+                    {% for error in form.non_field_errors %}
+                    {{ error }}
+                    {% endfor %}
                 </div>
-                <div class="card-body">
-                    <form method="post" action="{% if is_create %}{% url 'admin_panel:role_create' %}{% else %}{% url 'admin_panel:role_update' role.id %}{% endif %}">
-                        {% csrf_token %}
-                        
-                        <!-- 表单错误提示 -->
-                        {% if form.non_field_errors %}
-                        <div class="alert alert-danger">
-                            <i class="fas fa-exclamation-circle mr-2"></i>
-                            {% for error in form.non_field_errors %}
-                            {{ error }}
-                            {% endfor %}
-                        </div>
-                        {% endif %}
-                        
-                        <!-- 基本信息部分 -->
+                {% endif %}
+                
+                <!-- 基本信息部分 -->
                         <h5 class="mb-3"><i class="fas fa-id-card text-primary mr-2"></i>基本信息</h5>
                         
-                        <!-- 角色名称字段 -->
+                            <!-- 角色名称字段 -->
                         <div class="form-group mb-3">
                             <label for="{{ form.name.id_for_label }}" class="form-label">角色名称</label>
-                            {{ form.name }}
-                            {% if form.name.errors %}
+                                    {{ form.name }}
+                                    {% if form.name.errors %}
                             <div class="text-danger mt-1">
-                                {% for error in form.name.errors %}
+                                        {% for error in form.name.errors %}
                                 <small><i class="fas fa-exclamation-circle mr-1"></i>{{ error }}</small>
-                                {% endfor %}
+                                        {% endfor %}
+                                    </div>
+                                    {% endif %}
                             </div>
-                            {% endif %}
-                        </div>
-                        
-                        <!-- 角色代码字段 -->
+                            
+                            <!-- 角色代码字段 -->
                         <div class="form-group mb-3">
                             <label for="{{ form.codename.id_for_label }}" class="form-label">角色代码</label>
-                            {{ form.codename }}
-                            {% if form.codename.errors %}
+                                    {{ form.codename }}
+                                    {% if form.codename.errors %}
                             <div class="text-danger mt-1">
-                                {% for error in form.codename.errors %}
+                                        {% for error in form.codename.errors %}
                                 <small><i class="fas fa-exclamation-circle mr-1"></i>{{ error }}</small>
-                                {% endfor %}
-                            </div>
-                            {% endif %}
+                                        {% endfor %}
+                                    </div>
+                                    {% endif %}
                         </div>
                         
                         <!-- 角色描述字段 -->
@@ -75,9 +75,9 @@
                             </div>
                             {% endif %}
                             <div class="form-text text-muted">简要描述此角色的用途和权限范围</div>
-                        </div>
-                        
-                        <!-- 权限分配部分 -->
+                </div>
+                
+                <!-- 权限分配部分 -->
                         <h5 class="mb-3 mt-4"><i class="fas fa-shield-alt text-primary mr-2"></i>权限分配</h5>
                         
                         {% if form.permissions.errors %}
@@ -145,13 +145,13 @@
                                     </div>
                                     
                                     <div class="app-group-content">
-                                        {% regroup app_group.list|dictsort:"content_type.model" by content_type.model as permissions_by_model %}
-                                        {% for model_group in permissions_by_model %}
+                                    {% regroup app_group.list|dictsort:"content_type.model" by content_type.model as permissions_by_model %}
+                                    {% for model_group in permissions_by_model %}
                                         <div class="permission-model-group ml-4 mb-3" data-model="{{ model_group.grouper }}" data-app="{{ app_group.grouper }}">
                                             <div class="d-flex justify-content-between align-items-center">
-                                                <h6 class="model-name">
+                                        <h6 class="model-name">
                                                     <i class="fas fa-caret-down toggle-model-group mr-2" data-model="{{ model_group.grouper }}" data-app="{{ app_group.grouper }}"></i>
-                                                    <i class="fas fa-table text-secondary mr-2"></i>
+                                            <i class="fas fa-table text-secondary mr-2"></i>
                                                     <span class="model-group-name">
                                                         {% if model_group.grouper == 'permission' %}
                                                         权限
@@ -194,10 +194,10 @@
                                                         {% elif model_group.grouper == 'executionlog' %}
                                                         执行日志
                                                         {% else %}
-                                                        {{ model_group.grouper|title }}
+                                            {{ model_group.grouper|title }}
                                                         {% endif %}
                                                     </span>
-                                                </h6>
+                                        </h6>
                                                 <div class="model-group-controls">
                                                     <div class="custom-control custom-checkbox mr-2">
                                                         <input type="checkbox" class="custom-control-input model-group-checkbox" 
@@ -212,20 +212,20 @@
                                             </div>
                                             
                                             <div class="permission-items ml-4 model-group-content">
-                                                <div class="row">
-                                                    {% for permission in model_group.list %}
+                                            <div class="row">
+                                                {% for permission in model_group.list %}
                                                     <div class="col-md-6 mb-2">
                                                         <div class="custom-control custom-checkbox">
-                                                            <input 
-                                                                type="checkbox" 
-                                                                name="permissions" 
-                                                                value="{{ permission.pk }}" 
-                                                                id="id_permissions_{{ permission.pk }}" 
+                                                        <input 
+                                                            type="checkbox" 
+                                                            name="permissions" 
+                                                            value="{{ permission.pk }}" 
+                                                            id="id_permissions_{{ permission.pk }}" 
                                                                 class="custom-control-input permission-checkbox"
                                                                 data-app="{{ app_group.grouper }}"
                                                                 data-model="{{ model_group.grouper }}"
-                                                                {% if permission in form.permissions.initial|default:'' %}checked{% endif %}
-                                                            >
+                                                            {% if permission in form.permissions.initial|default:'' %}checked{% endif %}
+                                                        >
                                                             <label class="custom-control-label" for="id_permissions_{{ permission.pk }}">
                                                                 {% if 'add' in permission.codename %}
                                                                 <span class="text-success">添加</span>
@@ -236,7 +236,7 @@
                                                                 {% elif 'view' in permission.codename %}
                                                                 <span class="text-info">查看</span>
                                                                 {% else %}
-                                                                {{ permission.name }}
+                                                            {{ permission.name }}
                                                                 {% endif %}
                                                                 
                                                                 {% if 'add' in permission.codename %}
@@ -248,7 +248,7 @@
                                                                 {% elif 'view' in permission.codename %}
                                                                 {{ permission.content_type.model|title }}
                                                                 {% endif %}
-                                                            </label>
+                                                        </label>
                                                         </div>
                                                     </div>
                                                     {% endfor %}
@@ -259,21 +259,21 @@
                                     </div>
                                 </div>
                                 {% endfor %}
-                            </div>
-                        </div>
-                        
-                        <!-- 按钮组 -->
+                    </div>
+                </div>
+                
+                <!-- 按钮组 -->
                         <div class="d-flex mt-4">
                             <a href="{% url 'admin_panel:role_list' %}" class="btn btn-secondary flex-grow-1">
                                 <i class="fas fa-arrow-left mr-1"></i> 返回
-                            </a>
+                    </a>
                             <div style="width: 15px;"></div>
                             <button type="submit" class="btn btn-primary flex-grow-1">
-                                <i class="fas {% if is_create %}fa-plus-circle{% else %}fa-save{% endif %} mr-1"></i>
-                                {% if is_create %}创建角色{% else %}保存更改{% endif %}
-                            </button>
-                        </div>
-                    </form>
+                        <i class="fas {% if is_create %}fa-plus-circle{% else %}fa-save{% endif %} mr-1"></i>
+                        {% if is_create %}创建角色{% else %}保存更改{% endif %}
+                    </button>
+                </div>
+            </form>
                 </div>
             </div>
         </div>

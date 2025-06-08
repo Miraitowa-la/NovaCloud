@@ -134,7 +134,7 @@ def user_list_view(request):
 def user_create_view(request):
     """管理员创建用户视图"""
     if request.method == 'POST':
-        form = AdminUserCreationForm(request.POST)
+        form = AdminUserCreationForm(request.POST, request_user=request.user)
         if form.is_valid():
             user = form.save()
             
@@ -149,7 +149,7 @@ def user_create_view(request):
             messages.success(request, f'用户 {user.username} 已成功创建')
             return redirect('admin_panel:user_list')
     else:
-        form = AdminUserCreationForm()
+        form = AdminUserCreationForm(request_user=request.user)
     
     return render(request, 'admin_panel/user_form.html', {
         'form': form,
@@ -166,7 +166,7 @@ def user_update_view(request, user_id):
     editing_self = request.user.id == user_obj.id
     
     if request.method == 'POST':
-        form = AdminUserChangeForm(request.POST, instance=user_obj)
+        form = AdminUserChangeForm(request.POST, instance=user_obj, request_user=request.user)
         if form.is_valid():
             # 如果用户正在编辑自己，保持原有的is_staff和is_superuser值
             if editing_self:
@@ -190,7 +190,7 @@ def user_update_view(request, user_id):
             messages.success(request, f'用户 {user.username} 的信息已成功更新')
             return redirect('admin_panel:user_list')
     else:
-        form = AdminUserChangeForm(instance=user_obj)
+        form = AdminUserChangeForm(instance=user_obj, request_user=request.user)
     
     return render(request, 'admin_panel/user_form.html', {
         'form': form,
@@ -280,7 +280,10 @@ def role_list_view(request):
     search_query = request.GET.get('search', '')
     
     # 查询角色列表，并关联用户数量
-    roles = Role.objects.annotate(user_count=Count('userprofile'))
+    # 只显示系统角色和当前用户创建的角色
+    roles = Role.objects.filter(
+        Q(is_system=True) | Q(creator=request.user)
+    ).annotate(user_count=Count('userprofile'))
     
     # 应用搜索条件
     if search_query:
@@ -291,7 +294,7 @@ def role_list_view(request):
         )
     
     # 排序
-    roles = roles.order_by('name')
+    roles = roles.order_by('is_system', 'name')
     
     # 标记系统默认角色
     system_role_codenames = ['super_admin', 'normal_user']
@@ -314,9 +317,15 @@ def role_list_view(request):
 def role_create_view(request):
     """创建角色视图"""
     if request.method == 'POST':
-        form = RoleForm(request.POST)
+        form = RoleForm(request.POST, user=request.user)
         if form.is_valid():
-            role = form.save()
+            role = form.save(commit=False)
+            role.creator = request.user  # 设置创建者
+            role.is_system = False  # 确保不是系统角色
+            role.save()
+            
+            # 保存多对多关系
+            form.save_m2m()
             
             # 记录审计日志
             AuditLog.objects.create(
@@ -330,7 +339,7 @@ def role_create_view(request):
             messages.success(request, f'角色 {role.name} 已成功创建')
             return redirect('admin_panel:role_list')
     else:
-        form = RoleForm()
+        form = RoleForm(user=request.user)
     
     context = {
         'form': form,
@@ -350,8 +359,13 @@ def role_update_view(request, role_id):
         messages.error(request, f'系统默认角色"{role.name}"不允许编辑')
         return redirect('admin_panel:role_list')
     
+    # 检查是否有权限编辑该角色
+    if not role.is_system and role.creator != request.user:
+        messages.error(request, f'您没有权限编辑角色"{role.name}"')
+        return redirect('admin_panel:role_list')
+    
     if request.method == 'POST':
-        form = RoleForm(request.POST, instance=role)
+        form = RoleForm(request.POST, instance=role, user=request.user)
         if form.is_valid():
             role = form.save()
             
@@ -367,7 +381,7 @@ def role_update_view(request, role_id):
             messages.success(request, f'角色 {role.name} 已成功更新')
             return redirect('admin_panel:role_list')
     else:
-        form = RoleForm(instance=role)
+        form = RoleForm(instance=role, user=request.user)
     
     # 获取关联到此角色的用户数量
     user_count = UserProfile.objects.filter(role=role).count()
@@ -388,8 +402,13 @@ def role_delete_confirm_view(request, role_id):
     
     # 检查是否为系统默认角色
     system_role_codenames = ['super_admin', 'normal_user']
-    if role.codename in system_role_codenames:
+    if role.codename in system_role_codenames or role.is_system:
         messages.error(request, f'系统默认角色"{role.name}"不允许删除')
+        return redirect('admin_panel:role_list')
+    
+    # 检查是否有权限删除该角色
+    if role.creator != request.user:
+        messages.error(request, f'您没有权限删除角色"{role.name}"')
         return redirect('admin_panel:role_list')
     
     # 检查是否有用户使用此角色
@@ -414,8 +433,13 @@ def role_delete_view(request, role_id):
     
     # 检查是否为系统默认角色
     system_role_codenames = ['super_admin', 'normal_user']
-    if role.codename in system_role_codenames:
+    if role.codename in system_role_codenames or role.is_system:
         messages.error(request, f'系统默认角色"{role.name}"不允许删除')
+        return redirect('admin_panel:role_list')
+    
+    # 检查是否有权限删除该角色
+    if role.creator != request.user:
+        messages.error(request, f'您没有权限删除角色"{role.name}"')
         return redirect('admin_panel:role_list')
     
     # 检查是否有用户使用此角色
