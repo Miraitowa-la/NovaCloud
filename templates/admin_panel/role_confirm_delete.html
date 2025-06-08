@@ -1,32 +1,84 @@
-{% extends "admin_panel/base_admin.html" %}
+{% extends 'admin_panel/base_admin.html' %}
 {% load static %}
 
-{% block admin_page_title %}确认删除角色{% endblock %}
+{% block admin_page_title %}{{ admin_page_title }}{% endblock %}
 
 {% block admin_content_main %}
 <div class="container">
-    <div class="card shadow-sm">
-        <div class="card-header">
-            <h5 class="card-title mb-0"><i class="fas fa-trash-alt text-danger mr-2"></i>确认删除角色</h5>
-        </div>
-        <div class="card-body">
-            <div class="alert alert-warning">
-                <i class="fas fa-exclamation-triangle mr-2"></i>
-                您确定要删除角色 <strong>{{ role.name }}</strong> 吗？此操作无法撤销。
-            </div>
-            
-            <form method="post" action="{% url 'admin_panel:role_delete' role.id %}">
-                {% csrf_token %}
-                <div class="d-flex justify-content-between mt-4">
-                    <a href="{% url 'admin_panel:role_list' %}" class="btn btn-outline-secondary">
-                        <i class="fas fa-arrow-left mr-1"></i> 返回
-                    </a>
-                    <button type="submit" class="btn btn-danger">
-                        <i class="fas fa-trash-alt mr-1"></i> 确认删除
-                    </button>
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow-sm">
+                <div class="card-header bg-danger text-white">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-exclamation-triangle mr-2"></i> 确认删除角色
+                    </h5>
                 </div>
-            </form>
+                <div class="card-body">
+                    <p class="text-center mb-4">
+                        您确定要删除角色 <strong>"{{ role.name }}"</strong> 吗？<br>
+                        此操作将<span class="text-danger">永久删除</span>该角色及其所有关联数据，且<span class="text-danger">无法恢复</span>。
+                    </p>
+                    
+                    <div class="card mb-3 border-0 shadow-sm">
+                        <div class="card-header bg-light border-bottom">
+                            <h6 class="mb-0">
+                                <i class="fas fa-info-circle text-primary mr-2"></i>角色详细信息
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="info-group mb-3">
+                                        <label class="text-muted mb-1">角色名称</label>
+                                        <h6>{{ role.name }}</h6>
+                                    </div>
+                                    <div class="info-group mb-3">
+                                        <label class="text-muted mb-1">角色代码</label>
+                                        <h6><code>{{ role.codename }}</code></h6>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="info-group mb-3">
+                                        <label class="text-muted mb-1">权限数量</label>
+                                        <h6>{{ role.permissions.count }} 个权限</h6>
+                                    </div>
+                                    <div class="info-group mb-3">
+                                        <label class="text-muted mb-1">使用该角色的用户数</label>
+                                        <h6>{{ user_count }} 个用户</h6>
+                                    </div>
+                                </div>
+                            </div>
+                            {% if role.description %}
+                            <div class="info-group">
+                                <label class="text-muted mb-1">角色描述</label>
+                                <h6>{{ role.description }}</h6>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="alert alert-warning text-left">
+                        <div style="display:flex; align-items:flex-start;">
+                            <i class="fas fa-info-circle mt-1 mr-2"></i>
+                            <div>删除角色操作将同时删除该角色的所有权限配置。如果有用户正在使用此角色，系统将阻止删除操作。</div>
+                        </div>
+                    </div>
+                    
+                    <form method="post" action="{% url 'admin_panel:role_delete' role.id %}" class="text-center">
+                        {% csrf_token %}
+                        <div class="d-flex mt-4">
+                            <a href="{% url 'admin_panel:role_list' %}" class="btn btn-secondary flex-grow-1">
+                                <i class="fas fa-times mr-1"></i> 取消
+                            </a>
+                            <div style="width: 15px;"></div>
+                            <button type="submit" class="btn btn-danger flex-grow-1">
+                                <i class="fas fa-trash mr-1"></i> 确认删除
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
         </div>
     </div>
 </div>
-{% endblock admin_content_main %} 
+{% endblock %} 

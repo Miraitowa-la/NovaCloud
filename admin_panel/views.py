@@ -366,6 +366,25 @@ def role_update_view(request, role_id):
     return render(request, 'admin_panel/role_form.html', context)
 
 @admin_required
+def role_delete_confirm_view(request, role_id):
+    """角色删除确认视图"""
+    role = get_object_or_404(Role, id=role_id)
+    
+    # 检查是否有用户使用此角色
+    user_count = UserProfile.objects.filter(role=role).count()
+    if user_count > 0:
+        messages.error(request, f'无法删除角色 {role.name}，因为有 {user_count} 个用户正在使用此角色')
+        return redirect('admin_panel:role_list')
+    
+    context = {
+        'role': role,
+        'user_count': user_count,
+        'admin_page_title': f'确认删除角色 - {role.name}'
+    }
+    
+    return render(request, 'admin_panel/role_confirm_delete.html', context)
+
+@admin_required
 @require_POST
 def role_delete_view(request, role_id):
     """删除角色视图"""
